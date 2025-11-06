@@ -1,0 +1,2 @@
+model,dataset,mode,accuracy,correct,total,avg_time_per_sample,total_time
+Qwen3-0.6B,math,standard,0.49,49,100,44.224442460536956,4422.444246053696

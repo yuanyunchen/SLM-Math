@@ -31,10 +31,6 @@ DETAILED="true"
 ################################################################################
 # Run evaluation
 
-cd "$(dirname "$0")/.."
-
-source ~/anaconda3/bin/activate slm_math
-
 python scripts/evaluate_batch.py \
     --model "$MODEL" \
     --round "$ROUND_NAME" \

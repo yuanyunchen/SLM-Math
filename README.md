@@ -2,6 +2,22 @@
 
 Evaluate Qwen3 Small Language Models on mathematical reasoning benchmarks (GSM8K and MATH datasets).
 
+## Setup
+
+### 1. Create Environment
+
+```bash
+# Create conda environment with Python 3.10
+conda create -y --name slm_math python=3.10
+conda activate slm_math
+```
+
+### 2. Install Packages
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Quick Start
 
 ```bash
@@ -105,13 +121,12 @@ Example: `test_Qwen3-0.6B_gsm8k_100_1106/`
 
 Both preprocessed to CSV with question IDs for error analysis.
 
-## Environment
+## Environment Requirements
 
-```bash
-conda env: slm_math (Python 3.10)
-```
-
-**Required packages**: transformers, datasets, torch, pandas, tqdm
+- **Python**: 3.10.18
+- **Conda environment**: `slm_math`
+- **Key packages**: torch, transformers (4.57+), datasets, pandas, tqdm
+- **Disk space**: ~2GB for Qwen3-0.6B model, ~10GB for datasets
 
 ## Advanced: rStar-Math
 
