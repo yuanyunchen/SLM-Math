@@ -1,211 +1,147 @@
 # SLM-Math: Small Language Models for Mathematical Reasoning
 
-This project evaluates the performance of Qwen3 Small Language Models on mathematical reasoning benchmarks (GSM8K and MATH).
+Evaluate Qwen3 Small Language Models on mathematical reasoning benchmarks (GSM8K and MATH datasets).
 
-## Project Overview
+## Quick Start
 
-This repository contains scripts and tools to:
-- Download and prepare mathematical reasoning datasets (GSM8K, MATH)
-- Download Qwen3 models (0.6B, 1.7B, 4B, 8B parameters)
-- Evaluate model performance on benchmarks
-- Generate detailed performance reports with metrics and timing
+```bash
+# Activate environment
+conda activate slm_math
+
+# Run evaluation (50 samples on GSM8K with Qwen3-0.6B)
+bash shells/run_evaluation.sh
+```
+
+Results saved to: `results/<round>_<model>_<dataset>_<count>_<MMDD>/`
 
 ## Project Structure
 
 ```
 SLM-Math/
-├── data/                    # Dataset storage
-│   ├── gsm8k/              # GSM8K dataset
-│   └── math/               # MATH dataset
-├── models/                  # Downloaded models
-│   ├── Qwen3-0.6B/
-│   ├── Qwen3-1.7B/
-│   ├── Qwen3-4B-Instruct-2507/
-│   └── Qwen3-8B/
-├── scripts/                 # Python scripts
-│   ├── download_datasets.py    # Download datasets
-│   ├── download_models.py      # Download models
-│   ├── evaluate.py            # Evaluation script
-│   ├── utils.py              # Utility functions
-│   └── test_setup.py         # Setup verification
-├── results/                 # Evaluation results
-│   ├── metrics/            # Individual model results
-│   └── summary_report.txt  # Overall summary
-├── requirements.txt         # Python dependencies
-└── run_evaluation.sh       # Evaluation runner script
+├── models/
+│   └── Qwen3-0.6B/          # Only 0.6B model tracked in git
+├── data/
+│   ├── gsm8k/               # GSM8K dataset (1,319 test samples)
+│   ├── math/                # MATH dataset (competition math)
+│   └── csv/                 # Preprocessed CSV for analysis
+├── scripts/
+│   ├── evaluate_batch.py    # Main evaluation script
+│   └── utils.py             # Helper functions
+├── shells/
+│   ├── run_evaluation.sh    # Single evaluation runner
+│   └── run_full_test.sh     # Batch evaluation
+├── results/                 # Timestamped evaluation results
+│   └── <round>_<model>_<dataset>_<count>_<MMDD>/
+│       ├── log/             # Detailed logs
+│       ├── answers/         # Predictions JSON
+│       ├── metrics_*.csv    # Metrics table
+│       └── metrics_*.txt    # Summary report
+└── rStar-Math/              # Advanced reasoning (requires A100 GPU)
 ```
 
-## Setup Instructions
+## Evaluation Modes
 
-### Prerequisites
-- Python 3.9+
-- 20GB+ disk space for models
-- Hugging Face account and API token
-
-### Installation
-
-1. Clone the repository:
+### Standard Mode
+Direct answer generation with step-by-step reasoning.
 ```bash
-cd /Users/yuanyunchen/Desktop/GitHub/SLM-Math
+# In shells/run_evaluation.sh, set:
+MODE="standard"
 ```
 
-2. Install dependencies:
+### Thinking Mode
+Deep reasoning with Chain-of-Thought analysis.
 ```bash
-pip install -r requirements.txt
+MODE="thinking"
 ```
 
-3. Set Hugging Face token (already configured in scripts):
+## Parameters
+
+Edit `shells/run_evaluation.sh`:
+
 ```bash
-export HF_TOKEN="your_token_here"
+MODEL="Qwen3-0.6B"           # Model to evaluate
+ROUND_NAME="test"            # Test round name
+DATASET="gsm8k"              # gsm8k or math
+COUNT=50                     # Number of samples (0 = entire dataset)
+MODE="standard"              # standard or thinking
+DETAILED="true"              # true = show tokens, false = progress bar only
 ```
 
-### Download Data and Models
+## Output Structure
 
-1. Download datasets:
-```bash
-cd scripts
-python download_datasets.py
-```
+**Directory naming**: `<round>_<model>_<dataset>_<count>_<MMDD>_[HHMM]`
 
-2. Download models:
-```bash
-python download_models.py
-```
+Example: `test_Qwen3-0.6B_gsm8k_100_1106/`
 
-3. Verify setup:
-```bash
-python test_setup.py
-```
+**Files**:
+- `log/*.log` - Full execution logs
+- `answers/*_answers.json` - All predictions with analysis
+- `metrics_*.csv` - Structured metrics data
+- `metrics_*.txt` - Human-readable summary
 
-## Running Evaluations
+## Key Features
 
-### Quick Start
+✅ **Automatic timestamping** - No overwriting results  
+✅ **Progress tracking** - Real-time accuracy updates  
+✅ **Two output modes** - Detailed (streaming tokens) or compact (progress bar)  
+✅ **Full dataset support** - Set `COUNT=0` to run entire dataset  
+✅ **CSV export** - Easy manual error analysis with question IDs  
 
-Run the complete evaluation pipeline:
-```bash
-./run_evaluation.sh
-```
+## Models Available
 
-### Manual Evaluation
+| Model | Parameters | Status |
+|-------|------------|--------|
+| Qwen3-0.6B | 0.6B | ✅ In Git |
+| Qwen3-1.7B | 1.7B | Local only |
+| Qwen3-4B-Thinking | 4B | Local only |
+| Qwen3-8B | 8B | Local only |
 
-Run evaluation for specific models:
-```bash
-cd scripts
-python evaluate.py
-```
-
-The script will:
-- Test each model on GSM8K and MATH datasets
-- Generate predictions for test samples
-- Calculate accuracy metrics
-- Record inference time
-- Save results to `../results/metrics/`
-
-## Evaluation Metrics
-
-For each model-dataset combination, we report:
-- **Accuracy**: Percentage of correctly solved problems
-- **Total Time**: Complete evaluation duration
-- **Avg Time per Sample**: Average inference time per problem
-- **Correct/Total**: Number of correct predictions
-
-## Results
-
-Results are saved in two formats:
-
-1. **Individual Results** (`results/metrics/`):
-   - JSON files with detailed predictions
-   - Format: `{model}_{dataset}_results.json`
-
-2. **Summary Report** (`results/summary_report.txt`):
-   - Aggregated performance metrics
-   - Comparison across all models
-
-## Models
-
-### Qwen3 Series
-
-| Model | Parameters | Size | Description |
-|-------|------------|------|-------------|
-| Qwen3-0.6B | 0.6B | ~1.2GB | Smallest model |
-| Qwen3-1.7B | 1.7B | ~3.4GB | Small model |
-| Qwen3-4B-Instruct | 4B | ~8GB | Medium model (Instruct) |
-| Qwen3-8B | 8B | ~16GB | Large model |
+*Only Qwen3-0.6B is tracked in git to keep repo size manageable.*
 
 ## Datasets
 
-### GSM8K
-- **Description**: Grade School Math 8K problems
-- **Size**: 7,473 training + 1,319 test samples
-- **Focus**: Multi-step arithmetic reasoning
-- **Format**: Natural language math word problems
+**GSM8K**: Grade school math word problems (1,319 test samples)  
+**MATH**: High school competition math (challenging)
 
-### MATH
-- **Description**: High school mathematics competition problems
-- **Difficulty**: Challenging problems across multiple topics
-- **Topics**: Algebra, geometry, calculus, probability, etc.
+Both preprocessed to CSV with question IDs for error analysis.
 
-## Technical Details
+## Environment
 
-### Answer Extraction
-The evaluation uses sophisticated answer extraction to handle various formats:
-- Extract numerical answers from text
-- Normalize fractions and decimals
-- Handle mathematical notation
-- Support multiple answer formats
-
-### Inference Configuration
-- **Temperature**: 0.7
-- **Max New Tokens**: 512
-- **Sampling**: Greedy decoding
-- **Precision**: FP16 (float16)
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Out of Memory**:
-   - Reduce `MAX_SAMPLES` in `evaluate.py`
-   - Use smaller models (0.5B, 1.5B)
-
-2. **Slow Download**:
-   - Check internet connection
-   - Use HF mirror if available
-   - Download models one at a time
-
-3. **Import Errors**:
-   - Reinstall dependencies: `pip install -r requirements.txt --upgrade`
-   - Check Python version: `python --version`
-
-## Performance Expectations
-
-Based on preliminary testing:
-- **GSM8K**: Models show strong performance on grade school problems
-- **MATH**: More challenging, performance varies by problem difficulty
-- **Speed**: Larger models are slower but generally more accurate
-
-## Citation
-
-If you use this code or results, please cite:
-
-```bibtex
-@misc{slm-math-2025,
-  title={SLM-Math: Evaluating Small Language Models on Mathematical Reasoning},
-  author={Your Name},
-  year={2025}
-}
+```bash
+conda env: slm_math (Python 3.10)
 ```
 
-## License
+**Required packages**: transformers, datasets, torch, pandas, tqdm
 
-This project uses:
-- Qwen2.5 models: Apache 2.0 License
-- GSM8K dataset: MIT License
-- Code: MIT License
+## Advanced: rStar-Math
 
-## Acknowledgments
+Deep reasoning with Monte Carlo Tree Search (MCTS).
 
-- Qwen Team for the excellent Qwen2.5 models
-- OpenAI for the GSM8K dataset
-- Hendrycks et al. for the MATH dataset
+**Requirements**:
+- A100 80GB GPU
+- CUDA 12.4
+- vLLM
 
+Setup complete in `rStar-Math/` directory. See `rStar-Math/RSTAR_SETUP_STATUS.md` for transfer instructions to GPU machine.
+
+## Sample Results
+
+```
+Model: Qwen3-0.6B
+Dataset: GSM8K
+Samples: 50
+Accuracy: 42.0% (21/50)
+Avg Time/Sample: 45.3s
+```
+
+## Tips
+
+1. **Start small**: Use `COUNT=10` for quick tests
+2. **Monitor progress**: Non-detailed mode shows running accuracy
+3. **Check logs**: All output saved to log files regardless of display mode
+4. **Manual analysis**: Use CSV files in `data/csv/` with question IDs from results
+
+---
+
+**Project**: Columbia COMS4705 NLP Final Project  
+**Date**: November 2025
