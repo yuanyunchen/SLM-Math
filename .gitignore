@@ -1,14 +1,26 @@
-# Directories
-dataset/
-cache/
-output/
-results/
-models/
-data/
+# Large data directories (exclude from git)
+# Exclude all models except Qwen3-0.6B
+models/*
+!models/Qwen3-0.6B/
+!models/Qwen3-0.6B/**
+# data/raw/
+# data/cache/
 
-# Log files
-*.log
-WLOG.md
+# Exclude large dataset files but keep processed CSV
+# data/*.tar
+# data/*.zip
+# data/*.json
+# data/gsm8k/
+# data/math/
+# data/MATH/
+# data/MATH_github/
+
+# Keep results structure but exclude large outputs
+# results/*/log/*.log
+# results/*/answers/*.json
+
+
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Python
 *.pyc
@@ -38,9 +50,11 @@ venv/
 env/
 ENV/
 .venv
+slm_math/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # IDEs
 .vscode/

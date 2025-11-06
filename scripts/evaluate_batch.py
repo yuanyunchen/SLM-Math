@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument('--model', type=str, required=True, help='Model name (e.g., Qwen3-0.6B)')
     parser.add_argument('--round', type=str, required=True, help='Test round name (e.g., round1_standard)')
     parser.add_argument('--dataset', type=str, required=True, choices=['gsm8k', 'math'], help='Dataset name')
-    parser.add_argument('--count', type=int, required=True, help='Number of test cases')
+    parser.add_argument('--count', type=int, required=True, help='Number of test cases (0 = run entire dataset)')
     parser.add_argument('--mode', type=str, required=True, choices=['standard', 'thinking'], help='Evaluation mode')
     parser.add_argument('--detailed', type=str, default='false', choices=['true', 'false'], help='Detailed output (true/false)')
     return parser.parse_args()
@@ -191,16 +191,6 @@ def run_evaluation(args):
     # Setup paths
     base_path = Path(__file__).parent.parent
     model_dir = base_path / 'models' / args.model
-    results_dir = base_path / 'results' / args.round
-    log_dir = results_dir / 'log'
-    answers_dir = results_dir / 'answers'
-    
-    # Create directories
-    log_dir.mkdir(parents=True, exist_ok=True)
-    answers_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Setup logging
-    log_file = log_dir / f"{args.model}_{args.dataset}_{args.mode}.log"
     
     # Check model exists
     if not model_dir.exists():
@@ -236,13 +226,42 @@ def run_evaluation(args):
     try:
         test_data = load_dataset_for_eval(args.dataset, str(base_path))
         print(f"Dataset loaded: {len(test_data)} total samples")
-        print(f"Testing on {min(args.count, len(test_data))} samples\n")
+        
+        # Handle count=0 (run entire dataset)
+        if args.count == 0:
+            num_samples = len(test_data)
+            print(f"Testing on ENTIRE dataset: {num_samples} samples\n")
+        else:
+            num_samples = min(args.count, len(test_data))
+            print(f"Testing on {num_samples} samples\n")
     except Exception as e:
         print(f"ERROR loading dataset: {e}")
         return None
     
+    # Create results directory with timestamp-based naming
+    # Format: roundName_ModelName_Dataset_Count_MonthDate[_MinuteSecond]
+    now = datetime.now()
+    month_date = now.strftime("%m%d")
+    minute_second = now.strftime("%H%M")
+    
+    base_dir_name = f"{args.round}_{args.model}_{args.dataset}_{num_samples}_{month_date}"
+    results_dir = base_path / 'results' / base_dir_name
+    
+    # If directory already exists, add minute_second
+    if results_dir.exists():
+        base_dir_name = f"{args.round}_{args.model}_{args.dataset}_{num_samples}_{month_date}_{minute_second}"
+        results_dir = base_path / 'results' / base_dir_name
+    
+    log_dir = results_dir / 'log'
+    answers_dir = results_dir / 'answers'
+    
+    # Create directories
+    log_dir.mkdir(parents=True, exist_ok=True)
+    answers_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(f"Results directory: {results_dir}\n")
+    
     # Prepare results
-    num_samples = min(args.count, len(test_data))
     results = {
         "model": args.model,
         "dataset": args.dataset,
@@ -275,13 +294,17 @@ def run_evaluation(args):
     log_and_print(f"{'='*80}\n")
     
     # Initialize progress bar for non-detailed mode
+    progress_bar = None
     if not detailed:
-        from tqdm import tqdm
         progress_bar = tqdm(total=num_samples, desc="Progress", unit="sample", 
                           bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
     
     # Run evaluation
     for idx in range(num_samples):
+        # Initialize variables to avoid undefined variable errors
+        question = None
+        ground_truth = None
+        
         log_and_print(f"\n{'─'*80}", to_console=detailed)
         log_and_print(f"[Sample {idx+1}/{num_samples}]", to_console=detailed)
         example = test_data[idx]
@@ -449,7 +472,7 @@ def run_evaluation(args):
                 progress_bar.update(1)
     
     # Close progress bar if used
-    if not detailed:
+    if progress_bar is not None:
         progress_bar.close()
     
     end_time = time.time()
