@@ -4,7 +4,6 @@ Standardized Evaluation Script for SLM-Math
 Usage: python evaluate_batch.py --model MODEL_NAME --round ROUND_NAME --dataset DATASET --count COUNT --mode MODE
 """
 
-import os
 import sys
 import json
 import time
@@ -12,11 +11,19 @@ import argparse
 import torch
 import pandas as pd
 from pathlib import Path
-from datasets import load_from_disk
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer
 from tqdm import tqdm
 from datetime import datetime
-import re
+
+from utils.prompt_utils import (
+    extract_answer, 
+    check_answer,
+    format_prompt_standard, 
+    format_prompt_thinking,
+    parse_thinking_output,
+    load_dataset_for_eval,
+    extract_question_and_answer
+)
+from models.inference import load_model, generate_response
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Batch evaluation script')
@@ -27,150 +34,6 @@ def parse_args():
     parser.add_argument('--mode', type=str, required=True, choices=['standard', 'thinking'], help='Evaluation mode')
     parser.add_argument('--detailed', type=str, default='false', choices=['true', 'false'], help='Detailed output (true/false)')
     return parser.parse_args()
-
-def extract_answer(text: str) -> str:
-    """Extract numerical answer from model output"""
-    patterns = [
-        r'####\s*([+-]?\d+\.?\d*)',
-        r'(?:answer|Answer|ANSWER)[\s:=]+\$?([+-]?\d+\.?\d*)',
-        r'\\boxed\{([^}]+)\}',
-        r'\$([+-]?\d+\.?\d*)\s*$',
-        r'([+-]?\d+\.?\d*)\s*(?:dollars?|eggs?|meters?|bolts?|people?|students?|items?)\s*(?:\.|$)',
-    ]
-    
-    for pattern in patterns:
-        matches = list(re.finditer(pattern, text, re.IGNORECASE))
-        if matches:
-            answer = matches[-1].group(1).strip()
-            if answer:
-                return normalize_answer(answer)
-    
-    last_numbers = re.findall(r'([+-]?\d+\.?\d*)', text[-200:])
-    if last_numbers:
-        return normalize_answer(last_numbers[-1])
-    
-    return None
-
-def normalize_answer(answer: str) -> str:
-    """Normalize answer to standardized format"""
-    answer = answer.strip()
-    answer = answer.replace(',', '').replace('$', '').replace('%', '')
-    answer = answer.replace(' ', '')
-    
-    try:
-        if '/' in answer:
-            parts = answer.split('/')
-            if len(parts) == 2:
-                num = float(parts[0])
-                den = float(parts[1])
-                if den != 0:
-                    answer = str(num / den)
-        
-        float_val = float(answer)
-        if float_val.is_integer():
-            answer = str(int(float_val))
-        else:
-            answer = str(float_val)
-    except:
-        pass
-    
-    return answer.lower()
-
-def check_answer(predicted: str, ground_truth: str) -> bool:
-    """Check if predicted answer matches ground truth"""
-    if not predicted or not ground_truth:
-        return False
-    
-    pred_normalized = normalize_answer(predicted)
-    gt_normalized = normalize_answer(ground_truth)
-    
-    if pred_normalized == gt_normalized:
-        return True
-    
-    try:
-        pred_num = float(pred_normalized)
-        gt_num = float(gt_normalized)
-        return abs(pred_num - gt_num) < 1e-3
-    except:
-        pass
-    
-    return pred_normalized in gt_normalized or gt_normalized in pred_normalized
-
-def format_prompt_standard(question: str, dataset_name: str) -> str:
-    """Format prompt for standard (non-thinking) mode - using common benchmark format"""
-    if dataset_name == "gsm8k":
-        return f"""{question}
-Please reason step by step, and put your final answer within \\boxed{{}}."""
-    else:  # math dataset
-        return f"""{question}
-Please reason step by step, and put your final answer within \\boxed{{}}."""
-
-def format_prompt_thinking(question: str, dataset_name: str) -> str:
-    """Format prompt for thinking mode - simple step-by-step format"""
-    return f"""{question}
-
-Let me solve this step by step and put the final answer in \\boxed{{}}.
-
-Step 1:"""
-
-def parse_thinking_output(response: str) -> dict:
-    """Parse thinking mode output to extract analysis, CoT, and answer"""
-    result = {
-        'analysis': '',
-        'chain_of_thought': '',
-        'final_answer': ''
-    }
-    
-    # Try to extract Analysis section (multiple formats)
-    analysis_patterns = [
-        r'\*\*Analysis\*\*:?(.*?)(?:\*\*|$)',
-        r'Analysis:?(.*?)(?:Chain of Thought|Step|$)',
-        r'<Analysis>(.*?)(?:</Analysis>|<|$)',
-    ]
-    for pattern in analysis_patterns:
-        match = re.search(pattern, response, re.DOTALL | re.IGNORECASE)
-        if match:
-            result['analysis'] = match.group(1).strip()[:500]
-            break
-    
-    # If no analysis found, use first part of response
-    if not result['analysis']:
-        lines = response.split('\n')
-        result['analysis'] = ' '.join(lines[:3])[:500]
-    
-    # Try to extract Chain of Thought
-    cot_patterns = [
-        r'\*\*Chain of Thought\*\*:?(.*?)(?:\*\*Final Answer\*\*|\\boxed|$)',
-        r'Chain of Thought:?(.*?)(?:Final Answer|\\boxed|$)',
-        r'Step-by-step.*?:?(.*?)(?:Final Answer|\\boxed|$)',
-    ]
-    for pattern in cot_patterns:
-        match = re.search(pattern, response, re.DOTALL | re.IGNORECASE)
-        if match:
-            result['chain_of_thought'] = match.group(1).strip()[:1000]
-            break
-    
-    # If no CoT found, use full response
-    if not result['chain_of_thought']:
-        result['chain_of_thought'] = response[:1000]
-    
-    # Extract final answer
-    answer = extract_answer(response)
-    result['final_answer'] = answer if answer else ''
-    
-    return result
-
-def load_dataset_for_eval(dataset_name: str, base_path: str):
-    """Load dataset from disk"""
-    dataset_path = os.path.join(base_path, 'data', dataset_name)
-    dataset = load_from_disk(dataset_path)
-    
-    if 'test' in dataset:
-        return dataset['test']
-    elif 'train' in dataset:
-        return dataset['train']
-    else:
-        raise ValueError(f"No valid split found in dataset {dataset_name}")
 
 def run_evaluation(args):
     """Main evaluation function"""
@@ -190,33 +53,10 @@ def run_evaluation(args):
     
     # Setup paths
     base_path = Path(__file__).parent.parent
-    model_dir = base_path / 'models' / args.model
-    
-    # Check model exists
-    if not model_dir.exists():
-        print(f"ERROR: Model directory {model_dir} not found!")
-        return None
-    
-    model_files = list(model_dir.glob("*.safetensors")) + list(model_dir.glob("*.bin"))
-    if not model_files:
-        print(f"ERROR: No model files found in {model_dir}!")
-        return None
     
     # Load model
-    print(f"Loading model from {model_dir}...")
     try:
-        tokenizer = AutoTokenizer.from_pretrained(
-            str(model_dir),
-            trust_remote_code=True
-        )
-        model = AutoModelForCausalLM.from_pretrained(
-            str(model_dir),
-            trust_remote_code=True,
-            torch_dtype=torch.float32,
-            device_map="cpu"
-        )
-        model.eval()
-        print(f"Model loaded successfully on CPU\n")
+        model, tokenizer = load_model(args.model, base_path)
     except Exception as e:
         print(f"ERROR loading model: {e}")
         return None
@@ -310,18 +150,7 @@ def run_evaluation(args):
         example = test_data[idx]
         
         # Get question and ground truth
-        if args.dataset == "gsm8k":
-            question = example['question']
-            ground_truth = example['answer'].split('####')[-1].strip()
-        elif args.dataset == "math":
-            question = example['problem']
-            solution = example['solution']
-            boxed_match = re.search(r'\\boxed\{([^}]+)\}', solution)
-            if boxed_match:
-                ground_truth = boxed_match.group(1)
-            else:
-                numbers = re.findall(r'[+-]?\d+\.?\d*', solution)
-                ground_truth = numbers[-1] if numbers else solution
+        question, ground_truth = extract_question_and_answer(example, args.dataset)
         
         question_preview = question[:150] + ('...' if len(question) > 150 else '')
         log_and_print(f"Question: {question_preview}", to_console=detailed)
@@ -339,36 +168,13 @@ def run_evaluation(args):
         
         # Generate response
         try:
-            inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
-            inputs = {k: v.to(model.device) for k, v in inputs.items()}
-            
             log_and_print(f"\n{'─'*40}", to_console=detailed)
             log_and_print(f"🤖 Generating ({args.mode} mode)...", to_console=detailed)
             log_and_print(f"{'─'*40}", to_console=detailed)
             
             sample_start_time = time.time()
-            
-            # Create streamer for real-time token-by-token output (only if detailed)
-            if detailed:
-                streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-            else:
-                streamer = None
-            
-            with torch.no_grad():
-                outputs = model.generate(
-                    **inputs,
-                    max_new_tokens=1024 if args.mode == "thinking" else 512,
-                    temperature=0.1,  # Lower temperature to reduce repetition
-                    do_sample=False,
-                    pad_token_id=tokenizer.eos_token_id,
-                    repetition_penalty=1.2,  # Add repetition penalty
-                    streamer=streamer  # Enable token-by-token streaming only if detailed
-                )
-            
+            response = generate_response(model, tokenizer, prompt, args.mode, detailed)
             sample_time = time.time() - sample_start_time
-            
-            generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-            response = generated_text[len(prompt):].strip()
             
             # Log full response to file always
             with open(log_file, 'a', encoding='utf-8') as f:

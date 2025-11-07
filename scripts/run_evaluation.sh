@@ -9,11 +9,11 @@ MODEL="Qwen3-0.6B"
 
 # Test round name (used for organizing results)
 # Results will be saved to: results/<ROUND_NAME>_<MODEL>_<DATASET>_<COUNT>_<MMDD>[_HHMM]/
-ROUND_NAME="test"
+ROUND_NAME="testFixedOutput"
 
 # Dataset to use
 # Options: gsm8k (grade school math), math (competition math)
-DATASET="math"
+DATASET="gsm8k"
 
 # Number of test cases to run (set to 0 to run the entire dataset)
 COUNT=100
@@ -31,7 +31,8 @@ DETAILED="true"
 ################################################################################
 # Run evaluation
 
-python scripts/evaluate_batch.py \
+# Use Python's -m flag to run as a module (automatically adds current dir to path)
+python -m evaluation.eval_pipeline \
     --model "$MODEL" \
     --round "$ROUND_NAME" \
     --dataset "$DATASET" \

@@ -1,2 +1,0 @@
-model,dataset,mode,accuracy,correct,total,avg_time_per_sample,total_time
-Qwen3-0.6B,gsm8k,standard,0.52,26,50,39.81088904380798,1990.5444521903992

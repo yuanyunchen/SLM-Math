@@ -24,8 +24,19 @@ pip install -r requirements.txt
 # Activate environment
 conda activate slm_math
 
-# Run evaluation (50 samples on GSM8K with Qwen3-0.6B)
-bash shells/run_evaluation.sh
+# Run evaluation (100 samples on GSM8K with Qwen3-0.6B)
+bash scripts/run_evaluation.sh
+```
+
+**Alternative**: Run directly with Python:
+```bash
+python -m evaluation.eval_pipeline \
+    --model "Qwen3-0.6B" \
+    --round "test" \
+    --dataset "gsm8k" \
+    --count 100 \
+    --mode "standard" \
+    --detailed "true"
 ```
 
 Results saved to: `results/<round>_<model>_<dataset>_<count>_<MMDD>/`
@@ -34,18 +45,23 @@ Results saved to: `results/<round>_<model>_<dataset>_<count>_<MMDD>/`
 
 ```
 SLM-Math/
-├── models/
-│   └── Qwen3-0.6B/          # Only 0.6B model tracked in git
+├── pretrained_models/       # Model checkpoints
+│   ├── Qwen3-0.6B/          # Only 0.6B model tracked in git
+│   ├── Qwen3-1.7B/          # Local only
+│   ├── Qwen3-4B-Thinking-2507/  # Local only
+│   └── Qwen3-8B/            # Local only
 ├── data/
 │   ├── gsm8k/               # GSM8K dataset (1,319 test samples)
 │   ├── math/                # MATH dataset (competition math)
 │   └── csv/                 # Preprocessed CSV for analysis
+├── evaluation/
+│   └── eval_pipeline.py     # Main evaluation script
+├── models/
+│   └── inference.py         # Model loading and generation utilities
+├── utils/
+│   └── prompt_utils.py      # Prompt formatting, answer extraction, dataset loading
 ├── scripts/
-│   ├── evaluate_batch.py    # Main evaluation script
-│   └── utils.py             # Helper functions
-├── shells/
-│   ├── run_evaluation.sh    # Single evaluation runner
-│   └── run_full_test.sh     # Batch evaluation
+│   └── run_evaluation.sh    # Evaluation runner script
 ├── results/                 # Timestamped evaluation results
 │   └── <round>_<model>_<dataset>_<count>_<MMDD>/
 │       ├── log/             # Detailed logs
@@ -60,7 +76,7 @@ SLM-Math/
 ### Standard Mode
 Direct answer generation with step-by-step reasoning.
 ```bash
-# In shells/run_evaluation.sh, set:
+# In scripts/run_evaluation.sh, set:
 MODE="standard"
 ```
 
@@ -72,13 +88,13 @@ MODE="thinking"
 
 ## Parameters
 
-Edit `shells/run_evaluation.sh`:
+Edit `scripts/run_evaluation.sh`:
 
 ```bash
 MODEL="Qwen3-0.6B"           # Model to evaluate
-ROUND_NAME="test"            # Test round name
+ROUND_NAME="testFixedOutput" # Test round name
 DATASET="gsm8k"              # gsm8k or math
-COUNT=50                     # Number of samples (0 = entire dataset)
+COUNT=100                     # Number of samples (0 = entire dataset)
 MODE="standard"              # standard or thinking
 DETAILED="true"              # true = show tokens, false = progress bar only
 ```
@@ -109,10 +125,10 @@ Example: `test_Qwen3-0.6B_gsm8k_100_1106/`
 |-------|------------|--------|
 | Qwen3-0.6B | 0.6B | ✅ In Git |
 | Qwen3-1.7B | 1.7B | Local only |
-| Qwen3-4B-Thinking | 4B | Local only |
+| Qwen3-4B-Thinking-2507 | 4B | Local only |
 | Qwen3-8B | 8B | Local only |
 
-*Only Qwen3-0.6B is tracked in git to keep repo size manageable.*
+*Only Qwen3-0.6B is tracked in git to keep repo size manageable. Models are stored in `pretrained_models/` directory.*
 
 ## Datasets
 
