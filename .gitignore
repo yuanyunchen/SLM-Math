@@ -2,6 +2,8 @@
 
 # Exclude all pretrained model checkpoints (too large for git)
 pretrained_models/*
+!pretrained_models/Qwen3-0.6B
+!pretrained_models/Qwen3-0.6B/**
 
 # Allow models/ directory Python files (inference.py, __init__.py)
 models/*
@@ -19,8 +21,6 @@ cache/
 # Exclude all results (timestamped evaluation outputs)
 results/*
 
-# Exclude rStar-Math subdirectory (separate project, large files)
-rStar-Math/
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------
 
