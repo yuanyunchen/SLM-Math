@@ -1,60 +1,47 @@
 # Large data directories (exclude from git)
-# Exclude all models except Qwen3-0.6B
-models/*
-!models/Qwen3-0.6B/
-!models/Qwen3-0.6B/**
-# data/raw/
-# data/cache/
 
-# Exclude large dataset files but keep processed CSV
-# data/*.tar
-# data/*.zip
-# data/*.json
+# Exclude all pretrained model checkpoints (too large for git)
+pretrained_models/*
+
+# Allow models/ directory Python files (inference.py, __init__.py)
+models/*
+!models/*.py
+
+# Exclude cache directory
+cache/
+
+# Exclude dataset raw files (keep structure, exclude large files)
+# data/gsm8k/ and data/math/ are large, but may want to keep structure
+# Uncomment if you want to exclude them:
 # data/gsm8k/
 # data/math/
-# data/MATH/
-# data/MATH_github/
 
-# Keep results structure but exclude large outputs
-# results/*/log/*.log
-# results/*/answers/*.json
+# Exclude all results (timestamped evaluation outputs)
+results/*
 
+# Exclude rStar-Math subdirectory (separate project, large files)
+rStar-Math/
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Python
-*.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
+*.so
 *.egg
+*.egg-info/
+dist/
+build/
 
 # Virtual environments
 venv/
+.venv
 env/
 ENV/
-.venv
-slm_math/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-*.ipynb
+.conda/
 
 # IDEs
 .vscode/
@@ -69,6 +56,12 @@ Thumbs.db
 
 # Temporary files
 *.tmp
-*.temp
+*.log
 *.bak
 
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
