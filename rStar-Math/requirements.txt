@@ -1,0 +1,15 @@
+antlr4-python3-runtime==4.11.1
+omegaconf==2.4.0.dev2
+termcolor
+jsonlines
+pebble
+vllm==0.6.6.post1 # >=0.6.6.post1
+matplotlib
+pyparsing
+scipy
+word2number
+transformers==4.45.2
+trl==0.9.6
+func_timeout
+editdistance
+datasets

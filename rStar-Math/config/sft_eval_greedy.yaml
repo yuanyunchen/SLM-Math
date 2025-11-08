@@ -1,0 +1,22 @@
+mode: "mcts"          
+model_dir: ""
+few_shot_path: "./rstar_deepthink/few_shots/few_shots.json"
+prompt_path: "./rstar_deepthink/few_shots/sft_prompt.json" 
+swap_space: 0
+temperature: 0
+errors_threshold: 3   # most allowed consecutive python errors
+prompt_wrap: "rstar"
+result_unwrap: "rstar"
+step_delim: "\n"
+stop: ["<end_of_code>", "<end_of_answer>"]
+max_depth: 2
+n_generate_sample: 1
+best_of: 1
+seed: 42
+is_sampling: False
+iterations: 1
+max_tokens: 4096
+need_value_func: False
+batch_size: 5000
+num_few_shot: 0
+max_model_len: 4096
