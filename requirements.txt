@@ -20,7 +20,6 @@ attrs==25.3.0
 babel==2.17.0
 backcall==0.2.0
 backoff==2.2.1
-basicsr==1.4.2
 bcrypt==5.0.0
 beautifulsoup4==4.13.4
 bleach==6.2.0
@@ -128,8 +127,8 @@ langchain-core==0.1.53
 langchain-text-splitters==0.0.1
 langsmith==0.1.147
 lazy_loader==0.1
+patch-ng==1.17.4
 libclang==12.0.0
-lmdb==1.4.1
 lxml==4.6.4
 Markdown==3.8
 markdown-it-py==3.0.0
@@ -202,7 +201,6 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycocotools==2.0.7
 pycparser==2.22
-pycrypto==2.6.1
 pydantic==2.11.7
 pydantic_core==2.33.2
 pydot==1.4.2
@@ -220,3 +218,8 @@ python-dateutil==2.9.0.post0
 python-docx==1.2.0
 python-dotenv==1.2.1
 python-json-logger==3.3.0
+
+# Add maintained replacement for the unmaintained `pycrypto` package.
+# `pycryptodome` is a drop-in replacement that provides the `Crypto` namespace
+# and provides prebuilt wheels for Windows so pip won't try to compile C extensions.
+pycryptodome>=3.18.0
