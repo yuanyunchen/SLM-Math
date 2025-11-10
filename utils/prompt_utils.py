@@ -14,10 +14,13 @@ from datasets import load_from_disk
 # ============================================================================
 
 def format_prompt_standard(question: str, dataset_name: str) -> str:
-    """Format prompt for standard (non-thinking) mode - using common benchmark format"""
-    
-    return f"""{question}
-Please reason step by step, and put your final answer within \\boxed{{}}."""
+    """Format prompt for standard (non-thinking) mode."""
+    instruction = (
+        "Solve using bullet-point math expressions only. "
+        "Follow one reasoning path without restating or reconsidering steps. "
+        "After the calculations, output **Final Answer**: \\boxed{numeric value} and stop."
+    )
+    return f"{instruction}\nQuestion: {question}"
 
 
 def format_prompt_thinking(question: str, dataset_name: str) -> str:

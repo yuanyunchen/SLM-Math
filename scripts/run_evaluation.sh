@@ -16,7 +16,7 @@ ROUND_NAME="testFixedOutput"
 DATASET="gsm8k"
 
 # Number of test cases to run (set to 0 to run the entire dataset)
-COUNT=100
+COUNT=10
 
 # Evaluation mode
 # Options:
