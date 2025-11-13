@@ -64,14 +64,15 @@ def load_model(model_name: str, base_path: Path):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     model = AutoModelForCausalLM.from_pretrained(
         str(model_dir),
         trust_remote_code=True,
-        torch_dtype=torch.float32,
-        device_map="cpu"
+        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        device_map=device
     )
     model.eval()
-    print("Model loaded successfully on CPU\n")
+    print(f"Model loaded successfully on {device.upper()}\n")
     
     return model, tokenizer
 
@@ -94,24 +95,27 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
     
     with torch.no_grad():
         outputs = model.generate(
-            **inputs,
-            max_new_tokens=MAX_TOKEN,
-            temperature=0.1,
-            top_p=0.2,
-            top_k=20,
-            do_sample=True,
-            repetition_penalty=1.1,
-            streamer=streamer,
-            eos_token_id=tokenizer.eos_token_id,
-            stopping_criteria=stopping_criteria,
             # **inputs,
             # max_new_tokens=MAX_TOKEN,
-            # temperature=0.0,
-            # do_sample=False,
+            # temperature=0.2,
+            # top_p=0.3,
+            # top_k=10,
+            # do_sample=True,
             # repetition_penalty=1.1,
             # streamer=streamer,
             # eos_token_id=tokenizer.eos_token_id,
             # stopping_criteria=stopping_criteria,
+            
+            **inputs,
+            max_new_tokens=MAX_TOKEN,
+            temperature=0.1,
+            do_sample=False,
+            pad_token_id=tokenizer.eos_token_id,
+            # pad_token_id=tokenizer.pad_token_id,
+            # eos_token_id=tokenizer.eos_token_id,
+            repetition_penalty=1.2,
+            stopping_criteria=stopping_criteria,
+            streamer=streamer
         )
     
     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)

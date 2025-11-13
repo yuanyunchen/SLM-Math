@@ -13,10 +13,13 @@ ROUND_NAME="testFixedOutput"
 
 # Dataset to use
 # Options: gsm8k (grade school math), math (competition math)
-DATASET="gsm8k"
+DATASET="math-train"
 
 # Number of test cases to run (set to 0 to run the entire dataset)
-COUNT=10
+COUNT=129
+
+# Zero-based dataset index to start from (useful for resuming)
+START_INDEX=1190
 
 # Evaluation mode
 # Options:
@@ -37,6 +40,6 @@ python -m evaluation.eval_pipeline \
     --round "$ROUND_NAME" \
     --dataset "$DATASET" \
     --count "$COUNT" \
+    --start "$START_INDEX" \
     --mode "$MODE" \
     --detailed "$DETAILED"
-
