@@ -29,8 +29,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Batch evaluation script')
     parser.add_argument('--model', type=str, required=True, help='Model name (e.g., Qwen3-0.6B)')
     parser.add_argument('--round', type=str, required=True, help='Test round name (e.g., round1_standard)')
-    parser.add_argument('--dataset', type=str, required=True, choices=['gsm8k', 'math'], help='Dataset name')
+    parser.add_argument('--dataset', type=str, required=True, help="Dataset name or dataset-split (e.g., 'gsm8k' or 'gsm8k-train')")
+    parser.add_argument('--split', type=str, default=None, help='Dataset split to evaluate (overrides suffix)')
     parser.add_argument('--count', type=int, required=True, help='Number of test cases (0 = run entire dataset)')
+    parser.add_argument('--start', type=int, default=0, help='Zero-based index to start evaluation from')
     parser.add_argument('--mode', type=str, required=True, choices=['standard', 'thinking'], help='Evaluation mode')
     parser.add_argument('--detailed', type=str, default='false', choices=['true', 'false'], help='Detailed output (true/false)')
     return parser.parse_args()
@@ -43,9 +45,22 @@ def run_evaluation(args):
     print(f"\n{'='*80}")
     print(f"SLM-Math Evaluation")
     print(f"{'='*80}")
+    dataset_name = args.dataset
+    split_name = args.split
+    if '-' in dataset_name:
+        parts = dataset_name.split('-', 1)
+        dataset_name, suffix = parts[0], parts[1]
+        if split_name is None:
+            split_name = suffix
+    if split_name is None:
+        split_name = 'test'
+    args.dataset = dataset_name
+    args.split = split_name
+
     print(f"Model: {args.model}")
     print(f"Round: {args.round}")
-    print(f"Dataset: {args.dataset.upper()}")
+    print(f"Dataset: {dataset_name.upper()}")
+    print(f"Split: {split_name}")
     print(f"Count: {args.count}")
     print(f"Mode: {args.mode}")
     print(f"Detailed Output: {detailed}")
@@ -62,18 +77,26 @@ def run_evaluation(args):
         return None
     
     # Load dataset
-    print(f"Loading dataset {args.dataset}...")
+    print(f"Loading dataset {dataset_name}...")
     try:
-        test_data = load_dataset_for_eval(args.dataset, str(base_path))
-        print(f"Dataset loaded: {len(test_data)} total samples")
-        
-        # Handle count=0 (run entire dataset)
+        test_data = load_dataset_for_eval(dataset_name, str(base_path), split_name=split_name)
+        total_samples = len(test_data)
+        print(f"Dataset split '{split_name}' loaded: {total_samples} total samples")
+
+        start_index = max(0, args.start)
+        if start_index >= total_samples:
+            print(f"ERROR: start index {start_index} is outside the dataset (size {total_samples}).")
+            return None
+
+        remaining = total_samples - start_index
+
+        # Handle count=0 (run entire remaining dataset)
         if args.count == 0:
-            num_samples = len(test_data)
-            print(f"Testing on ENTIRE dataset: {num_samples} samples\n")
+            num_samples = remaining
+            print(f"Testing on remaining {num_samples} samples starting at index {start_index} (sample #{start_index+1})\n")
         else:
-            num_samples = min(args.count, len(test_data))
-            print(f"Testing on {num_samples} samples\n")
+            num_samples = min(args.count, remaining)
+            print(f"Testing on {num_samples} samples starting at index {start_index} (sample #{start_index+1})\n")
     except Exception as e:
         print(f"ERROR loading dataset: {e}")
         return None
@@ -108,6 +131,7 @@ def run_evaluation(args):
         "mode": args.mode,
         "round": args.round,
         "num_samples": num_samples,
+        "start_index": start_index,
         "correct": 0,
         "total": 0,
         "accuracy": 0.0,
@@ -140,14 +164,14 @@ def run_evaluation(args):
                           bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
     
     # Run evaluation
-    for idx in range(num_samples):
+    for local_idx, dataset_idx in enumerate(range(start_index, start_index + num_samples)):
         # Initialize variables to avoid undefined variable errors
         question = None
         ground_truth = None
         
         log_and_print(f"\n{'─'*80}", to_console=detailed)
-        log_and_print(f"[Sample {idx+1}/{num_samples}]", to_console=detailed)
-        example = test_data[idx]
+        log_and_print(f"[Sample {local_idx+1}/{num_samples} | Dataset Index: {dataset_idx}]", to_console=detailed)
+        example = test_data[dataset_idx]
         
         # Get question and ground truth
         question, ground_truth = extract_question_and_answer(example, args.dataset)
@@ -195,7 +219,7 @@ def run_evaluation(args):
                 predicted_answer = parsed['final_answer']
                 
                 prediction_entry = {
-                    "question_id": idx,
+                    "question_id": dataset_idx,
                     "question": question,
                     "ground_truth": ground_truth,
                     "analysis": parsed['analysis'][:300],
@@ -207,7 +231,7 @@ def run_evaluation(args):
             else:
                 predicted_answer = extract_answer(response)
                 prediction_entry = {
-                    "question_id": idx,
+                    "question_id": dataset_idx,
                     "question": question,
                     "ground_truth": ground_truth,
                     "predicted_answer": predicted_answer,
@@ -247,7 +271,7 @@ def run_evaluation(args):
             
             # Update progress display
             if detailed:
-                print(f"[{idx+1}/{num_samples}] {status_symbol} {predicted_answer} (Expected: {ground_truth}) | Score: {results['correct']}/{results['total']} ({current_accuracy*100:.1f}%)")
+                print(f"[{local_idx+1}/{num_samples}] {status_symbol} {predicted_answer} (Expected: {ground_truth}) | Score: {results['correct']}/{results['total']} ({current_accuracy*100:.1f}%)")
                 print(f"{'─'*80}")
             else:
                 # Update progress bar with accuracy info
@@ -255,12 +279,12 @@ def run_evaluation(args):
                 progress_bar.update(1)
             
         except Exception as e:
-            error_msg = f"ERROR processing sample {idx}: {e}"
+            error_msg = f"ERROR processing sample {dataset_idx}: {e}"
             log_and_print(f"\n✗ {error_msg}")
             
             results["total"] += 1
             results["predictions"].append({
-                "question_id": idx,
+                "question_id": dataset_idx,
                 "question": question,
                 "ground_truth": ground_truth,
                 "predicted_answer": None,
@@ -271,7 +295,7 @@ def run_evaluation(args):
             
             # Update progress display for error
             if detailed:
-                print(f"[{idx+1}/{num_samples}] ✗ ERROR | Score: {results['correct']}/{results['total']} ({current_accuracy*100:.1f}%)")
+                print(f"[{local_idx+1}/{num_samples}] ✗ ERROR | Score: {results['correct']}/{results['total']} ({current_accuracy*100:.1f}%)")
                 print(f"{'─'*80}")
             else:
                 progress_bar.set_postfix({'Accuracy': f'{current_accuracy*100:.1f}%', 'Correct': f'{results["correct"]}/{results["total"]}'})
