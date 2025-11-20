@@ -16,6 +16,7 @@ from transformers import (
 MAX_TOKEN = 2048
 
 
+<<<<<<< Updated upstream
 class StopOnBoxedAnswer(StoppingCriteria):
     """Halts generation once a \\boxed{} answer is produced."""
 
@@ -41,6 +42,8 @@ class StopOnBoxedAnswer(StoppingCriteria):
 
 
 
+=======
+>>>>>>> Stashed changes
 def load_model(model_name: str, base_path: Path):
     """Load model and tokenizer from disk"""
     model_dir = base_path / 'pretrained_models' / model_name
