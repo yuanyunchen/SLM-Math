@@ -52,24 +52,23 @@ Please reason step by step, and put your final answer within \\boxed{{}}."""
 
 
 # Implementation for multi-agent: checker prompt
-def format_prompt_checker(question: str, solver_final_answer: str, dataset_name: str) -> str:
+def format_prompt_checker(solver_response: str, dataset_name: str) -> str:
     """
     Build a minimal prompt for the checker agent.
 
-    The checker only sees the problem and the solver's final numeric answer and
-    must output a single VERDICT line.
+    The checker only sees the solver's step-by-step solution (chain-of-thought)
+    and must judge whether the reasoning and calculations are coherent.
     """
-    candidate_answer = solver_final_answer if solver_final_answer is not None else "UNKNOWN"
+    return f"""You are evaluating a step-by-step math solution.
 
-    return f"""You are checking a numeric answer to a math word problem.
+Proposed solution:
+{solver_response}
 
-Problem:
-{question}
+Do NOT re-solve the problem from scratch. Instead, read the solution and judge:
+- Are the steps logically consistent?
+- Are the calculations and transitions between steps mathematically valid?
 
-Candidate answer:
-{candidate_answer}
-
-Decide if the candidate answer is correct, incorrect, or unclear.
+Based on the reasoning alone, decide if the solution's thought process seems correct, incorrect, or unclear.
 
 Output exactly one line:
 VERDICT: CORRECT

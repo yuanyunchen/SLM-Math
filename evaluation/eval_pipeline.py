@@ -219,8 +219,8 @@ def run_evaluation(args):
                     solver_response = generate_response(model, tokenizer, fallback_prompt, "standard", detailed)
                     solver_answer = extract_answer(solver_response)
 
-                # Checker: only sees the original problem and solver's final numeric answer
-                checker_prompt = format_prompt_checker(question, solver_answer, args.dataset)
+                # Checker: only sees the solver's step-by-step solution (CoT), not the raw question
+                checker_prompt = format_prompt_checker(solver_response, args.dataset)
                 log_and_print("\n" + "-" * 40, to_console=detailed)
                 log_and_print("[Multi-Agent] Generating Checker response...", to_console=detailed)
                 log_and_print("-" * 40, to_console=detailed)
