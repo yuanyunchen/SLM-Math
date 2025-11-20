@@ -31,6 +31,80 @@ def format_prompt_thinking(question: str, dataset_name: str) -> str:
     return format_prompt_standard(question, dataset_name)
 
 
+# Implementation for multi-agent: solver prompt
+def format_prompt_solver(question: str, dataset_name: str) -> str:
+    """
+    Multi-agent solver: slightly more guided than the standard prompt,
+    but still natural for the model.
+    """
+    return f"""You are a careful math problem solver.
+
+Problem:
+{question}
+
+Think step by step and show your reasoning briefly.
+Avoid extremely long explanations.
+
+At the end, write your final numeric answer on its own line in this format:
+Final Answer: \\boxed{{NUMBER}}"""
+
+
+# Implementation for multi-agent: checker prompt
+def format_prompt_checker(question: str, solver_final_answer: str, dataset_name: str) -> str:
+    """
+    Build a prompt for the checker agent.
+
+    The checker only sees the original problem and the solver's final numeric answer,
+    not the full chain-of-thought. This keeps the task simple: recompute the answer
+    and judge whether the candidate number is correct, incorrect, or unclear.
+    """
+    candidate_answer = solver_final_answer if solver_final_answer is not None else "UNKNOWN"
+
+    return f"""You are a math solution checker.
+
+Problem:
+{question}
+
+Candidate final numeric answer:
+{candidate_answer}
+
+Carefully recompute the answer yourself (do the math in your head) and decide if the candidate answer is correct.
+
+Write your answer in two parts:
+1) One short paragraph (1–3 sentences) explaining whether you think the candidate answer is correct, incorrect, or unclear.
+2) On the FINAL line, output exactly one of:
+   VERDICT: CORRECT
+   VERDICT: INCORRECT
+   VERDICT: UNCLEAR
+
+Use UNCLEAR only if you truly cannot decide.
+Do not write anything after the VERDICT line."""
+
+
+# Implementation for multi-agent: reflector prompt
+def format_prompt_reflector(question: str, solver_response: str, checker_response: str, dataset_name: str) -> str:
+    """
+    Multi-agent reflector: use solver + checker to improve or confirm the solution.
+    """
+    return f"""You are improving a math solution.
+
+Problem:
+{question}
+
+Previous solution:
+{solver_response}
+
+Checker's comments:
+{checker_response}
+
+If the previous solution is correct, rewrite it more clearly.
+If there is a mistake, fix it and recompute the answer.
+Keep the reasoning concise but correct.
+
+At the end, write your final numeric answer on its own line in this format:
+Final Answer: \\boxed{{NUMBER}}"""
+
+
 # ============================================================================
 # ANSWER EXTRACTION AND CHECKING FUNCTIONS
 # ============================================================================
@@ -39,6 +113,9 @@ def extract_answer(text: str) -> Optional[str]:
     """Extract numerical answer from text, trying multiple patterns."""
     # Try specific answer patterns first
     patterns = [
+        # Implementation for multi-agent: handle explicit "Final Answer" forms first
+        r'Final Answer[:\s]*\\boxed\{([^}]+)\}',  # Final Answer: \boxed{42}
+        r'Final Answer[:\s]+\$?([+-]?\d+\.?\d*)',  # Final Answer: 42
         r'####\s*([+-]?\d+\.?\d*)',  # GSM8K format: #### 42
         r'(?:answer|Answer|ANSWER)[\s:=]+\$?([+-]?\d+\.?\d*)',  # "answer: 42" or "Answer = 42"
         r'\\boxed\{([^}]+)\}',  # LaTeX boxed
@@ -162,6 +239,55 @@ def parse_thinking_output(response: str) -> dict:
     result['final_answer'] = answer if answer else ''
     
     return result
+
+
+# Implementation for multi-agent: parse checker verdict
+def parse_checker_verdict(response: str) -> Optional[str]:
+    """
+    Parse the checker agent's verdict from its response.
+    Expected primary format:
+        VERDICT: CORRECT
+        or
+        VERDICT: INCORRECT
+    Falls back to simple keyword heuristics if the structured pattern is missing.
+    """
+    upper = response.upper()
+
+    # Prefer explicit VERDICT line, including UNCLEAR
+    match = re.search(r'VERDICT\s*:\s*(CORRECT|INCORRECT|UNCLEAR)', upper)
+    if match:
+        return match.group(1).upper()
+
+    # Heuristic fallback on first part of the response
+    head = upper[:400]
+    if "VERDICT" in head:
+        # Try to infer from context near the word VERDICT
+        tail = head[head.find("VERDICT") :]
+        if "INCORRECT" in tail and "CORRECT" not in tail:
+            return "INCORRECT"
+        if "CORRECT" in tail and "INCORRECT" not in tail:
+            return "CORRECT"
+
+    # Global heuristic if VERDICT line is missing entirely
+    if "INCORRECT" in upper and "CORRECT" not in upper:
+        return "INCORRECT"
+    if "CORRECT" in upper and "INCORRECT" not in upper:
+        return "CORRECT"
+
+    # Default: treat as UNCLEAR rather than None so downstream logic can rely on a string
+    return "UNCLEAR"
+
+
+# Implementation for multi-agent: parse checker reasoning to show in console / logs
+def parse_checker_reasoning(response: str) -> str:
+    """
+    Extract the REASONING section from the checker output.
+    If no explicit REASONING: line exists, return the full response.
+    """
+    match = re.search(r'REASONING\s*:\s*(.*)', response, re.IGNORECASE | re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return response.strip()
 
 
 # ============================================================================

@@ -40,6 +40,31 @@ class StopOnBoxedAnswer(StoppingCriteria):
         return False
 
 
+class StopAfterCheckerConclusion(StoppingCriteria):
+    """
+    Halts checker generation once a verdict and a short explanation have been produced.
+
+    Heuristic: once we see a line starting with 'VERDICT:' and at least two subsequent
+    non-empty lines, we treat the checker response as complete.
+    """
+
+    def __init__(self, tokenizer, prompt_token_len: int):
+        self.tokenizer = tokenizer
+        self.prompt_token_len = prompt_token_len
+
+    def __call__(self, input_ids, scores, **kwargs) -> bool:
+        generated_ids = input_ids[0][self.prompt_token_len :]
+        if generated_ids.numel() == 0:
+            return False
+
+        text = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+        upper = text.upper()
+
+        # Once the checker has written a VERDICT line, we consider the response complete.
+        # The prompt instructs the checker to end with a line like:
+        #   VERDICT: CORRECT / INCORRECT / UNCLEAR
+        return "VERDICT:" in upper
+
 
 def load_model(model_name: str, base_path: Path):
     """Load model and tokenizer from disk"""
@@ -78,7 +103,14 @@ def load_model(model_name: str, base_path: Path):
 
 
 def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool = False):
-    """Generate response from model given a prompt"""
+    """
+    Generate response from model given a prompt.
+
+    The `mode` argument is used to select decoding behavior and stopping criteria:
+      - "standard", "thinking", "solver", "reflector": stop when a \\boxed{} answer appears,
+        with a larger max_new_tokens budget.
+      - "checker": use a custom stopping rule that ends after a VERDICT line plus a short explanation.
+    """
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
     
@@ -90,32 +122,35 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
     else:
         streamer = None
 
-    # Stop decoding immediately after the boxed answer instead of wasting the full budget.
-    stopping_criteria = StoppingCriteriaList([StopOnBoxedAnswer(tokenizer, prompt_length)])
-    
+    # Configure stopping criteria and decoding parameters based on mode
+    stopping_criteria = StoppingCriteriaList()
+    gen_kwargs = {
+        "temperature": 0.1,
+        "do_sample": False,
+        "pad_token_id": tokenizer.eos_token_id,
+        "repetition_penalty": 1.2,
+        "streamer": streamer,
+    }
+
+    # Implementation for multi-agent: differentiate solver/checker/reflector behavior
+    if mode in {"standard", "thinking", "solver", "reflector"}:
+        # Stop once a \\boxed{} answer appears to avoid wasting tokens
+        stopping_criteria.append(StopOnBoxedAnswer(tokenizer, prompt_length))
+        gen_kwargs["max_new_tokens"] = MAX_TOKEN
+        gen_kwargs["stopping_criteria"] = stopping_criteria
+    elif mode == "checker":
+        # Checker: stop after VERDICT and a couple of explanation lines
+        stopping_criteria.append(StopAfterCheckerConclusion(tokenizer, prompt_length))
+        gen_kwargs["max_new_tokens"] = min(512, MAX_TOKEN)
+        gen_kwargs["stopping_criteria"] = stopping_criteria
+    else:
+        # Fallback: generic short generation
+        gen_kwargs["max_new_tokens"] = min(256, MAX_TOKEN)
+
     with torch.no_grad():
         outputs = model.generate(
-            # **inputs,
-            # max_new_tokens=MAX_TOKEN,
-            # temperature=0.2,
-            # top_p=0.3,
-            # top_k=10,
-            # do_sample=True,
-            # repetition_penalty=1.1,
-            # streamer=streamer,
-            # eos_token_id=tokenizer.eos_token_id,
-            # stopping_criteria=stopping_criteria,
-            
             **inputs,
-            max_new_tokens=MAX_TOKEN,
-            temperature=0.1,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id,
-            # pad_token_id=tokenizer.pad_token_id,
-            # eos_token_id=tokenizer.eos_token_id,
-            repetition_penalty=1.2,
-            stopping_criteria=stopping_criteria,
-            streamer=streamer
+            **gen_kwargs,
         )
     
     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
