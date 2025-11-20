@@ -37,48 +37,46 @@ def format_prompt_solver(question: str, dataset_name: str) -> str:
     Multi-agent solver: slightly more guided than the standard prompt,
     but still natural for the model.
     """
-    return f"""You are a careful math problem solver.
+#     return f"""You are a careful math problem solver.
 
-Problem:
-{question}
+# Problem:
+# {question}
 
-Think step by step and show your reasoning briefly.
-Avoid extremely long explanations.
+# Think step by step and show your reasoning briefly.
+# Avoid extremely long explanations.
 
-At the end, write your final numeric answer on its own line in this format:
-Final Answer: \\boxed{{NUMBER}}"""
+# At the end, write your final numeric answer on its own line in this format:
+# Final Answer: \\boxed{{NUMBER}}"""
+    return f"""{question}
+Please reason step by step, and put your final answer within \\boxed{{}}."""
 
 
 # Implementation for multi-agent: checker prompt
 def format_prompt_checker(question: str, solver_final_answer: str, dataset_name: str) -> str:
     """
-    Build a prompt for the checker agent.
+    Build a minimal prompt for the checker agent.
 
-    The checker only sees the original problem and the solver's final numeric answer,
-    not the full chain-of-thought. This keeps the task simple: recompute the answer
-    and judge whether the candidate number is correct, incorrect, or unclear.
+    The checker only sees the problem and the solver's final numeric answer and
+    must output a single VERDICT line.
     """
     candidate_answer = solver_final_answer if solver_final_answer is not None else "UNKNOWN"
 
-    return f"""You are a math solution checker.
+    return f"""You are checking a numeric answer to a math word problem.
 
 Problem:
 {question}
 
-Candidate final numeric answer:
+Candidate answer:
 {candidate_answer}
 
-Carefully recompute the answer yourself (do the math in your head) and decide if the candidate answer is correct.
+Decide if the candidate answer is correct, incorrect, or unclear.
 
-Write your answer in two parts:
-1) One short paragraph (1–3 sentences) explaining whether you think the candidate answer is correct, incorrect, or unclear.
-2) On the FINAL line, output exactly one of:
-   VERDICT: CORRECT
-   VERDICT: INCORRECT
-   VERDICT: UNCLEAR
-
-Use UNCLEAR only if you truly cannot decide.
-Do not write anything after the VERDICT line."""
+Output exactly one line:
+VERDICT: CORRECT
+or
+VERDICT: INCORRECT
+or
+VERDICT: UNCLEAR"""
 
 
 # Implementation for multi-agent: reflector prompt
