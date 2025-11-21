@@ -32,74 +32,98 @@ def format_prompt_thinking(question: str, dataset_name: str) -> str:
 
 
 # Implementation for multi-agent: solver prompt
-def format_prompt_solver(question: str, dataset_name: str) -> str:
+def format_prompt_solver(question: str, checker_feedback: str = "", dataset_name: str = "") -> str:
     """
-    Multi-agent solver: slightly more guided than the standard prompt,
-    but still natural for the model.
+    Multi-agent solver: accepts optional feedback from checker to improve solution.
+    
+    Args:
+        question: The math problem to solve
+        checker_feedback: Optional feedback/tip from checker (empty string for first attempt)
+        dataset_name: Dataset name (unused but kept for compatibility)
     """
-#     return f"""You are a careful math problem solver.
+    if checker_feedback and checker_feedback.strip():
+        return f"""{question}
 
-# Problem:
-# {question}
+Previous attempt feedback: {checker_feedback}
 
-# Think step by step and show your reasoning briefly.
-# Avoid extremely long explanations.
-
-# At the end, write your final numeric answer on its own line in this format:
-# Final Answer: \\boxed{{NUMBER}}"""
-    return f"""{question}
+Please reconsider the problem with the feedback in mind. Reason step by step, and put your final answer within \\boxed{{}}."""
+    else:
+        return f"""{question}
 Please reason step by step, and put your final answer within \\boxed{{}}."""
 
 
+
+# Implementation for multi-agent: extract solver's reasoning (CoT) without code blocks
+def extract_solver_cot(solver_response: str) -> str:
+    """
+    Extract the Chain of Thought (reasoning) from solver response.
+    Removes code blocks and outputs, keeps only the textual reasoning.
+    """
+    # Remove code blocks (```python ... ```)
+    cot = re.sub(r'```python.*?```', '', solver_response, flags=re.DOTALL)
+    # Remove output blocks (```output ... ```)
+    cot = re.sub(r'```output.*?```', '', cot, flags=re.DOTALL)
+    # Remove any remaining code blocks
+    cot = re.sub(r'```.*?```', '', cot, flags=re.DOTALL)
+    
+    # Remove the final boxed answer
+    cot = re.sub(r'\\boxed\{[^}]+\}', '[final answer]', cot)
+    
+    # Clean up excessive whitespace
+    lines = [line.strip() for line in cot.split('\n') if line.strip()]
+    cot = ' '.join(lines)
+    
+    # Limit length to ~400 characters (keep it concise)
+    if len(cot) > 400:
+        # Find a sentence break near 400 chars
+        sentences = re.split(r'[.!?]\s+', cot)
+        shortened = ""
+        for sent in sentences:
+            if len(shortened) + len(sent) < 400:
+                shortened += sent + ". "
+            else:
+                break
+        cot = shortened.strip()
+    
+    return cot.strip()
+
+
 # Implementation for multi-agent: checker prompt
-def format_prompt_checker(solver_response: str, dataset_name: str) -> str:
+def format_prompt_checker(question: str, solver_response: str, dataset_name: str = "") -> str:
     """
-    Build a minimal prompt for the checker agent.
-
-    The checker only sees the solver's step-by-step solution (chain-of-thought)
-    and must judge whether the reasoning and calculations are coherent.
+    Build a prompt for the checker agent.
+    
+    The checker evaluates if the solver's reasoning (CoT) is sound for the given question.
     """
-    return f"""You are evaluating a step-by-step math solution.
+    # Extract the boxed answer from solver response
+    solver_answer = extract_answer(solver_response)
+    
+    # If no answer found, try to find any boxed answer in the response
+    if not solver_answer:
+        boxed_match = re.search(r'\\boxed\{([^}]+)\}', solver_response)
+        if boxed_match:
+            solver_answer = boxed_match.group(1).strip()
+        else:
+            solver_answer = "No answer found"
+    
+    # Extract solver's reasoning (CoT)
+    solver_cot = extract_solver_cot(solver_response)
+    
+    return f"""Problem: {question}
 
-Proposed solution:
-{solver_response}
+Solution approach: {solver_cot}
+Final answer: {solver_answer}
 
-Do NOT re-solve the problem from scratch. Instead, read the solution and judge:
-- Are the steps logically consistent?
-- Are the calculations and transitions between steps mathematically valid?
+Review checklist:
+1. Does the solution use the right numbers from the problem?
+2. Are the calculations logical?
+3. Does the final answer make sense?
 
-Based on the reasoning alone, decide if the solution's thought process seems correct, incorrect, or unclear.
+If you see an error or something wrong, respond: INCORRECT
+If everything seems correct, respond: CORRECT
+If unsure, respond: UNCLEAR
 
-Output exactly one line:
-VERDICT: CORRECT
-or
-VERDICT: INCORRECT
-or
-VERDICT: UNCLEAR"""
-
-
-# Implementation for multi-agent: reflector prompt
-def format_prompt_reflector(question: str, solver_response: str, checker_response: str, dataset_name: str) -> str:
-    """
-    Multi-agent reflector: use solver + checker to improve or confirm the solution.
-    """
-    return f"""You are improving a math solution.
-
-Problem:
-{question}
-
-Previous solution:
-{solver_response}
-
-Checker's comments:
-{checker_response}
-
-If the previous solution is correct, rewrite it more clearly.
-If there is a mistake, fix it and recompute the answer.
-Keep the reasoning concise but correct.
-
-At the end, write your final numeric answer on its own line in this format:
-Final Answer: \\boxed{{NUMBER}}"""
+One word only:"""
 
 
 # ============================================================================
@@ -250,41 +274,106 @@ def parse_checker_verdict(response: str) -> Optional[str]:
     """
     upper = response.upper()
 
-    # Prefer explicit VERDICT line, including UNCLEAR
+    # Try to find explicit VERDICT: pattern first
     match = re.search(r'VERDICT\s*:\s*(CORRECT|INCORRECT|UNCLEAR)', upper)
     if match:
         return match.group(1).upper()
 
-    # Heuristic fallback on first part of the response
-    head = upper[:400]
-    if "VERDICT" in head:
-        # Try to infer from context near the word VERDICT
-        tail = head[head.find("VERDICT") :]
-        if "INCORRECT" in tail and "CORRECT" not in tail:
-            return "INCORRECT"
-        if "CORRECT" in tail and "INCORRECT" not in tail:
-            return "CORRECT"
+    # Look for standalone verdict words (our new format)
+    # Check for the word at start of line or after "verdict:"
+    standalone_match = re.search(r'(^|\n|VERDICT[:\s]+)(CORRECT|INCORRECT|UNCLEAR)(\s|$|\n)', upper)
+    if standalone_match:
+        return standalone_match.group(2).upper()
 
-    # Global heuristic if VERDICT line is missing entirely
-    if "INCORRECT" in upper and "CORRECT" not in upper:
-        return "INCORRECT"
-    if "CORRECT" in upper and "INCORRECT" not in upper:
+    # Handle common typos and variations - be fuzzy
+    # Look for CORRECT with possible extra letters or typos
+    if re.search(r'\bCORRE+CT\b', upper):  # CORREECT, CORRREECT, etc.
         return "CORRECT"
+    if re.search(r'\bCOR+ECT\b', upper):  # CORREECT variant
+        return "CORRECT"
+    
+    # Look for INCORRECT with typos
+    if re.search(r'\bINCORRE+CT\b', upper):  # INCORREECT, etc.
+        return "INCORRECT"
+    if re.search(r'\bINCOR+ECT\b', upper):
+        return "INCORRECT"
+    
+    # Look for UNCLEAR with typos
+    if re.search(r'\bUNCLE+AR\b', upper):  # UNCLLEAR, etc.
+        return "UNCLEAR"
+
+    # Heuristic fallback: look for keywords in first 200 chars
+    head = upper[:200]
+    
+    # Check for INCORRECT first (more specific than CORRECT)
+    if "INCORRECT" in head and "CORRECT" not in head:
+        return "INCORRECT"
+    
+    # Then check for CORRECT (excluding INCORRECT)
+    if "CORRECT" in head and "INCORRECT" not in head:
+        return "CORRECT"
+    
+    # Check for UNCLEAR
+    if "UNCLEAR" in head:
+        return "UNCLEAR"
 
     # Default: treat as UNCLEAR rather than None so downstream logic can rely on a string
     return "UNCLEAR"
 
 
+# Implementation for multi-agent: extract checker tip when INCORRECT
+def parse_checker_tip(response: str) -> str:
+    """
+    Extract the tip/feedback from checker response when verdict is INCORRECT.
+    Since VERDICT is at the end, the tip is the text BEFORE the VERDICT line.
+    Returns the tip text, or empty string if not found.
+    """
+    # Find the VERDICT line (should be at the end)
+    verdict_match = re.search(r'VERDICT\s*:\s*(?:CORRECT|INCORRECT|UNCLEAR)', response, re.IGNORECASE)
+    if verdict_match:
+        # Get text BEFORE the VERDICT line (this is the tip/reasoning)
+        tip_end = verdict_match.start()
+        tip = response[:tip_end].strip()
+        
+        # Clean up the tip - remove common prefixes and empty lines
+        tip = re.sub(r'^(tip|feedback|suggestion|hint|note|reasoning)[:\s]*', '', tip, flags=re.IGNORECASE)
+        tip = re.sub(r'\n\s*\n', ' ', tip)  # Replace multiple newlines with space
+        tip = tip.strip()
+        
+        # Limit tip length to reasonable size (2-3 sentences)
+        if len(tip) > 300:
+            # Try to find a good breaking point
+            sentences = re.split(r'[.!?]\s+', tip)
+            if len(sentences) > 1:
+                tip = '. '.join(sentences[:2]) + '.'
+            else:
+                tip = tip[:300]
+        
+        return tip
+    
+    return ""
+
+
 # Implementation for multi-agent: parse checker reasoning to show in console / logs
 def parse_checker_reasoning(response: str) -> str:
     """
-    Extract the REASONING section from the checker output.
-    If no explicit REASONING: line exists, return the full response.
+    Extract a clean version of the checker response.
+    Tries to extract just the VERDICT line and a short context around it.
+    If VERDICT is found, returns only that line. Otherwise returns a truncated version.
     """
-    match = re.search(r'REASONING\s*:\s*(.*)', response, re.IGNORECASE | re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return response.strip()
+    # First, try to find the VERDICT line
+    verdict_match = re.search(r'(VERDICT\s*:\s*(?:CORRECT|INCORRECT|UNCLEAR))', response, re.IGNORECASE)
+    if verdict_match:
+        # Return just the VERDICT line
+        return verdict_match.group(1).strip()
+    
+    # If no VERDICT found, try to find REASONING section
+    reasoning_match = re.search(r'REASONING\s*:\s*(.*?)(?:\n\n|\Z)', response, re.IGNORECASE | re.DOTALL)
+    if reasoning_match:
+        return reasoning_match.group(1).strip()[:200]  # Limit to 200 chars
+    
+    # Fallback: return first 200 characters of response
+    return response.strip()[:200]
 
 
 # ============================================================================

@@ -31,6 +31,10 @@ MODE="multi_agent"  # Implementation for multi-agent: you can set this to "multi
 # Detailed output mode
 DETAILED="true"
 
+# Optional: separate checker model to use for the checker agent
+# Set to empty string to use the same model as --model
+CHECKER_MODEL="Qwen2.5-1.5B"
+
 
 ################################################################################
 # Run evaluation
@@ -43,4 +47,5 @@ python -m evaluation.eval_pipeline \
     --count "$COUNT" \
     --start "$START_INDEX" \
     --mode "$MODE" \
+    --checker_model "$CHECKER_MODEL" \
     --detailed "$DETAILED"

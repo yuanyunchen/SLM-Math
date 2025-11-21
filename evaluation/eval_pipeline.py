@@ -8,6 +8,7 @@ import sys
 import json
 import time
 import argparse
+import re
 from pathlib import Path
 from datetime import datetime
 
@@ -26,10 +27,10 @@ from utils.prompt_utils import (
     # Implementation for multi-agent: import multi-agent prompt helpers
     format_prompt_solver,
     format_prompt_checker,
-    format_prompt_reflector,
     # Implementation for multi-agent: parse checker verdict and reasoning
     parse_checker_verdict,
     parse_checker_reasoning,
+    parse_checker_tip,
 )
 from models.inference import load_model, generate_response
 
@@ -57,6 +58,12 @@ def parse_args():
     )
     parser.add_argument(
         "--detailed", type=str, default="false", choices=["true", "false"], help="Detailed output (true/false)"
+    )
+    parser.add_argument(
+        "--checker_model",
+        type=str,
+        default=None,
+        help="Optional checker model name (e.g., Qwen2.5-Math-1.5B). If provided, the checker will load and use this model instead of the solver model.",
     )
     return parser.parse_args()
 
@@ -99,6 +106,21 @@ def run_evaluation(args):
     except Exception as e:
         print(f"ERROR loading model: {e}")
         return None
+
+    # Optionally load a separate checker model
+    checker_model = None
+    checker_tokenizer = None
+    try:
+        if args.checker_model and args.checker_model != args.model:
+            print(f"Loading checker model: {args.checker_model}")
+            checker_model, checker_tokenizer = load_model(args.checker_model, base_path)
+        else:
+            # Use the solver model for checker by default
+            checker_model, checker_tokenizer = model, tokenizer
+    except Exception as e:
+        print(f"ERROR loading checker model: {e}")
+        print("Falling back to using the solver model for checker.")
+        checker_model, checker_tokenizer = model, tokenizer
 
     # Load dataset
     print(f"Loading dataset {dataset_name}...")
@@ -199,101 +221,171 @@ def run_evaluation(args):
             f.write(f"Full Question: {question}\n")
 
         try:
-            # Implementation for multi-agent: solver + checker + reflector
+            # Implementation for multi-agent: iterative solver + checker loop
             if args.mode == "multi_agent":
-                # Solver
-                solver_prompt = format_prompt_solver(question, args.dataset)
-                log_and_print("\n" + "-" * 40, to_console=detailed)
-                log_and_print("[Multi-Agent] Generating Solver response...", to_console=detailed)
-                log_and_print("-" * 40, to_console=detailed)
-
                 sample_start_time = time.time()
-                # Implementation for multi-agent: use dedicated solver mode for generation
-                solver_response = generate_response(model, tokenizer, solver_prompt, "solver", detailed)
-                solver_answer = extract_answer(solver_response)
-
-                # Implementation for multi-agent: fallback only if solver truly outputs nothing
-                if not solver_response.strip():
-                    log_and_print("Solver response empty, falling back to standard prompt.", to_console=detailed)
-                    fallback_prompt = format_prompt_standard(question, args.dataset)
-                    solver_response = generate_response(model, tokenizer, fallback_prompt, "standard", detailed)
-                    solver_answer = extract_answer(solver_response)
-
-                # Checker: only sees the solver's step-by-step solution (CoT), not the raw question
-                checker_prompt = format_prompt_checker(solver_response, args.dataset)
-                log_and_print("\n" + "-" * 40, to_console=detailed)
-                log_and_print("[Multi-Agent] Generating Checker response...", to_console=detailed)
-                log_and_print("-" * 40, to_console=detailed)
-
-                # Implementation for multi-agent: use dedicated checker mode
-                checker_response = generate_response(model, tokenizer, checker_prompt, "checker", detailed)
-
-                # If checker responded with nothing, note it for debugging; verdict parsing will treat it as UNCLEAR.
-                if not checker_response.strip():
-                    log_and_print(
-                        "Checker produced empty response; treating verdict as UNCLEAR and keeping solver answer.",
-                        to_console=detailed,
-                    )
-
-                checker_verdict = parse_checker_verdict(checker_response)
-                checker_reasoning = parse_checker_reasoning(checker_response)
-
-                reflector_response = None
-
-                # Strategy (soft use of checker):
-                #   - If checker clearly says CORRECT, trust the solver's answer.
-                #   - If checker clearly says INCORRECT, call reflector to reconsider using solver + checker info.
-                #   - If checker is unclear (no VERDICT), default to solver's answer.
-                if checker_verdict == "CORRECT" and solver_answer is not None:
-                    predicted_answer = solver_answer
-                elif checker_verdict == "INCORRECT":
-                    reflector_prompt = format_prompt_reflector(
-                        question, solver_response, checker_response, args.dataset
-                    )
+                
+                # Store all attempts for majority voting if needed
+                solver_responses = []
+                solver_answers = []
+                checker_responses = []
+                checker_verdicts = []
+                
+                checker_feedback = ""  # Initially empty, will be filled by checker when INCORRECT
+                max_iterations = 5
+                predicted_answer = None
+                
+                for iteration in range(max_iterations):
+                    iteration_num = iteration + 1
+                    log_and_print("\n" + "=" * 40, to_console=detailed)
+                    log_and_print(f"[Iteration {iteration_num}/{max_iterations}]", to_console=detailed)
+                    log_and_print("=" * 40, to_console=detailed)
+                    
+                    # Step 1: Solver generates response
+                    solver_prompt = format_prompt_solver(question, checker_feedback, args.dataset)
                     log_and_print("\n" + "-" * 40, to_console=detailed)
-                    log_and_print("[Multi-Agent] Generating Reflector response...", to_console=detailed)
+                    log_and_print(f"[Iteration {iteration_num}] Generating Solver response...", to_console=detailed)
+                    if checker_feedback:
+                        log_and_print(f"Checker feedback: {checker_feedback}", to_console=detailed)
                     log_and_print("-" * 40, to_console=detailed)
-
-                    # Implementation for multi-agent: use dedicated reflector mode
-                    reflector_response = generate_response(model, tokenizer, reflector_prompt, "reflector", detailed)
-                    predicted_answer = extract_answer(reflector_response) or solver_answer
-                else:
-                    # Unclear verdict: fall back to solver's answer
-                    predicted_answer = solver_answer
+                    
+                    solver_response = generate_response(model, tokenizer, solver_prompt, "solver", detailed)
+                    solver_answer = extract_answer(solver_response)
+                    
+                    # Fallback if solver produces empty response
+                    if not solver_response.strip():
+                        log_and_print("Solver response empty, falling back to standard prompt.", to_console=detailed)
+                        fallback_prompt = format_prompt_standard(question, args.dataset)
+                        solver_response = generate_response(model, tokenizer, fallback_prompt, "standard", detailed)
+                        solver_answer = extract_answer(solver_response)
+                    
+                    solver_responses.append(solver_response)
+                    if solver_answer:
+                        solver_answers.append(solver_answer)
+                    
+                    # Step 2: Checker evaluates solver response
+                    checker_prompt = format_prompt_checker(question, solver_response, args.dataset)
+                    log_and_print("\n" + "-" * 40, to_console=detailed)
+                    log_and_print(f"[Iteration {iteration_num}] Generating Checker response...", to_console=detailed)
+                    log_and_print("-" * 40, to_console=detailed)
+                    
+                    checker_response = generate_response(checker_model, checker_tokenizer, checker_prompt, "checker", detailed)
+                    
+                    # If checker responded with nothing, retry with an even simpler prompt
+                    if not checker_response.strip():
+                        log_and_print(
+                            "Checker produced empty response; retrying with simpler prompt...",
+                            to_console=detailed,
+                        )
+                        # Try a very minimal prompt
+                        simple_checker_prompt = f"""Q: {question}\nA: {solver_answer}\n\nVERDICT:"""
+                        checker_response = generate_response(checker_model, checker_tokenizer, simple_checker_prompt, "checker", detailed)
+                        
+                        # If still empty, force a default verdict
+                        if not checker_response.strip():
+                            log_and_print(
+                                "Checker still empty after retry; defaulting to VERDICT: UNCLEAR",
+                                to_console=detailed,
+                            )
+                            checker_response = "VERDICT: UNCLEAR"
+                    
+                    checker_responses.append(checker_response)
+                    checker_verdict = parse_checker_verdict(checker_response)
+                    
+                    # Ensure we always have a valid verdict
+                    if checker_verdict not in ["CORRECT", "INCORRECT", "UNCLEAR"]:
+                        checker_verdict = "UNCLEAR"
+                    
+                    checker_verdicts.append(checker_verdict)
+                    
+                    log_and_print(f"\nChecker Verdict: {checker_verdict}", to_console=detailed)
+                    
+                    # Condition 1: If checker says CORRECT, use this answer and break
+                    if checker_verdict == "CORRECT":
+                        if solver_answer:
+                            predicted_answer = solver_answer
+                            log_and_print(f"\n✓ Checker confirmed solution is CORRECT. Using answer: {predicted_answer}", to_console=detailed)
+                            break
+                        else:
+                            log_and_print("Warning: Checker says CORRECT but no answer extracted. Continuing...", to_console=detailed)
+                    
+                    # Condition 2: If checker says INCORRECT, extract tip and loop back
+                    elif checker_verdict == "INCORRECT":
+                        # Extract tip from checker response
+                        checker_feedback = parse_checker_tip(checker_response)
+                        
+                        if checker_feedback:
+                            log_and_print(f"\n✗ Checker says INCORRECT. Tip: {checker_feedback}", to_console=detailed)
+                        else:
+                            log_and_print("\n✗ Checker says INCORRECT. No tip provided.", to_console=detailed)
+                            checker_feedback = "The previous solution was incorrect. Please reconsider the problem."
+                        
+                        # Continue to next iteration if not at max
+                        if iteration_num < max_iterations:
+                            log_and_print(f"Looping back to solver with feedback (iteration {iteration_num + 1}/{max_iterations})...", to_console=detailed)
+                            continue
+                        else:
+                            log_and_print("\nReached maximum iterations (5). Proceeding to majority vote...", to_console=detailed)
+                            break
+                    
+                    # Condition 3: If UNCLEAR, continue to next iteration or break if at max
+                    else:  # UNCLEAR
+                        log_and_print(f"\n? Checker verdict is UNCLEAR. ", to_console=detailed)
+                        if iteration_num < max_iterations:
+                            log_and_print(f"Continuing to next iteration...", to_console=detailed)
+                            checker_feedback = "The previous solution was unclear. Please try again with clearer reasoning."
+                            continue
+                        else:
+                            log_and_print("Reached maximum iterations. Proceeding to majority vote...", to_console=detailed)
+                            break
+                
+                # If we've exhausted all iterations without CORRECT verdict, use majority vote
+                if predicted_answer is None:
+                    log_and_print("\n" + "=" * 40, to_console=detailed)
+                    log_and_print("Using majority vote from all iterations", to_console=detailed)
+                    log_and_print("=" * 40, to_console=detailed)
+                    
+                    if solver_answers:
+                        # Count occurrences of each answer
+                        from collections import Counter
+                        answer_counts = Counter(solver_answers)
+                        most_common = answer_counts.most_common(1)[0]
+                        predicted_answer = most_common[0]
+                        log_and_print(f"Majority vote: {predicted_answer} (appeared {most_common[1]} times out of {len(solver_answers)} attempts)", to_console=detailed)
+                    else:
+                        # Fallback: use last answer if no answers extracted
+                        predicted_answer = solver_answers[-1] if solver_answers else None
+                        log_and_print(f"No answers extracted. Using last attempt.", to_console=detailed)
 
                 sample_time = time.time() - sample_start_time
 
-                # Log multi-agent responses in chronological order
+                # Log all iterations
                 with open(log_file, "a", encoding="utf-8") as f:
+                    f.write("\n" + "=" * 40 + "\n")
+                    f.write(f"Total Iterations: {len(solver_responses)}\n")
+                    f.write("=" * 40 + "\n")
+                    
+                    for i, (solver_resp, checker_resp, checker_v) in enumerate(zip(solver_responses, checker_responses, checker_verdicts), 1):
+                        f.write(f"\n--- Iteration {i} ---\n")
+                        f.write("Solver Response:\n")
+                        f.write(solver_resp + "\n")
+                        f.write("\nChecker Response:\n")
+                        f.write(checker_resp + "\n")
+                        f.write(f"Checker Verdict: {checker_v}\n")
+                        if checker_v == "INCORRECT" and i < len(solver_responses):
+                            tip = parse_checker_tip(checker_resp)
+                            if tip:
+                                f.write(f"Checker Tip: {tip}\n")
+                    
                     f.write("\n" + "-" * 40 + "\n")
-                    f.write("Solver Response:\n")
-                    f.write(solver_response + "\n")
-                    f.write("-" * 40 + "\n")
-
-                with open(log_file, "a", encoding="utf-8") as f:
-                    f.write("Checker Response:\n")
-                    f.write(checker_response + "\n")
-                    f.write(f"Parsed Checker Verdict: {checker_verdict}\n")
-                    f.write("Parsed Checker Reasoning:\n")
-                    f.write(checker_reasoning + "\n")
-                    f.write("-" * 40 + "\n")
-
-                with open(log_file, "a", encoding="utf-8") as f:
-                    if reflector_response is not None:
-                        f.write("Reflector Response:\n")
-                        f.write(reflector_response + "\n")
-                        f.write("-" * 40 + "\n")
-                    else:
-                        f.write("Reflector was skipped (using solver answer).\n")
-                        f.write("-" * 40 + "\n")
+                    f.write(f"Final Predicted Answer: {predicted_answer}\n")
                     f.write(f"Total multi-agent generation time: {sample_time:.2f}s\n")
                     f.write("-" * 40 + "\n")
 
                 if detailed:
                     print("\n" + "-" * 40)
-                    print(f"Checker VERDICT: {checker_verdict}")
-                    if checker_reasoning:
-                        print(f"Checker REASONING: {checker_reasoning}")
+                    print(f"Total Iterations: {len(solver_responses)}")
+                    print(f"Final Answer: {predicted_answer}")
                     print(f"Multi-agent generation time: {sample_time:.2f}s")
                     print("-" * 40)
 
@@ -301,12 +393,11 @@ def run_evaluation(args):
                     "question_id": dataset_idx,
                     "question": question,
                     "ground_truth": ground_truth,
-                    "solver_response": solver_response[:1000],
-                    "solver_answer": solver_answer,
-                    "checker_response": checker_response[:1000],
-                    "checker_verdict": checker_verdict,
-                    "checker_reasoning": checker_reasoning,
-                    "reflector_response": reflector_response[:1000] if reflector_response is not None else None,
+                    "num_iterations": len(solver_responses),
+                    "solver_responses": [resp[:500] for resp in solver_responses],
+                    "solver_answers": solver_answers,
+                    "checker_responses": [resp[:500] for resp in checker_responses],
+                    "checker_verdicts": checker_verdicts,
                     "predicted_answer": predicted_answer,
                     "correct": False,
                 }
@@ -493,6 +584,14 @@ def run_evaluation(args):
     print(f"Updated metrics: {metrics_txt}\n")
 
     # Cleanup
+    # If a separate checker model was loaded, try to free it as well
+    try:
+        if 'checker_model' in locals() and checker_model is not None and checker_model is not model:
+            del checker_model
+            del checker_tokenizer
+    except Exception:
+        pass
+
     del model
     torch.cuda.empty_cache()
 
