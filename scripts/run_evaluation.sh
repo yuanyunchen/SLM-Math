@@ -16,10 +16,10 @@ ROUND_NAME="testFixedOutput"
 DATASET="gsm8k-test"
 
 # Number of test cases to run (set to 0 to run the entire dataset)
-COUNT=20
+COUNT=200
 
 # Zero-based dataset index to start from (useful for resuming)
-START_INDEX=0
+START_INDEX=100
 
 # Evaluation mode
 # Options:
@@ -33,7 +33,7 @@ DETAILED="true"
 
 # Optional: separate checker model to use for the checker agent
 # Set to empty string to use the same model as --model
-CHECKER_MODEL="Qwen2.5-1.5B"
+CHECKER_MODEL="Qwen2.5-Math-1.5B"
 
 
 ################################################################################
