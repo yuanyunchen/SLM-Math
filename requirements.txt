@@ -21,14 +21,14 @@ sympy>=1.12
 peft>=0.5.0
 
 # Optional: Quantization (for QLoRA training)
-# bitsandbytes>=0.41.0  # Uncomment if using QLoRA
+bitsandbytes>=0.41.0  # Uncomment if using QLoRA
 
 # Optional: OpenAI API (for CoT data generation)
-# openai>=1.0.0  # Uncomment if using build_CoT_data.py
+openai>=1.0.0  # Uncomment if using build_CoT_data.py
 
 # Optional: vLLM for accelerated inference (requires CUDA 11.8+)
 # Install separately: pip install vllm
-# vllm>=0.4.0
+vllm>=0.4.0
 
 # Security: Maintained replacement for pycrypto
 pycryptodome>=3.18.0
