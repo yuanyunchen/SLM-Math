@@ -11,7 +11,7 @@ models/*
 cache/
 
 # Exclude all dataset files and directories
-data/
+# data/
 
 # Exclude all results (timestamped evaluation outputs)
 results/
