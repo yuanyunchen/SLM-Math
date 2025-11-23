@@ -1,9 +1,7 @@
 # Large data directories (exclude from git)
 
 # Exclude all pretrained model checkpoints (too large for git)
-pretrained_models/*
-!pretrained_models/Qwen3-0.6B
-!pretrained_models/Qwen3-0.6B/**
+pretrained_models/
 
 # Allow models/ directory Python files (inference.py, __init__.py)
 models/*
@@ -12,14 +10,18 @@ models/*
 # Exclude cache directory
 cache/
 
-# Exclude dataset raw files (keep structure, exclude large files)
-# data/gsm8k/ and data/math/ are large, but may want to keep structure
-# Uncomment if you want to exclude them:
-# data/gsm8k/
-# data/math/
+# Exclude all dataset files and directories
+data/
 
 # Exclude all results (timestamped evaluation outputs)
-results/*
+results/
+
+# Exclude documentation and logs
+docs/
+logs/
+
+# Exclude rStar-Math directory
+rStar-Math/
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------

@@ -1,0 +1,181 @@
+# ==============================================================================
+# SFT Training Configuration with QLoRA (4-bit Quantization)
+# Memory-Efficient Training for Qwen2.5-Math-1.5B
+# ==============================================================================
+
+# ==============================================================================
+# Model Configuration
+# ==============================================================================
+model:
+  name: "Qwen2.5-Math-1.5B"
+  path: "pretrained_models/Qwen2.5-Math-1.5B"
+  trust_remote_code: true
+
+# ==============================================================================
+# LoRA Configuration
+# ==============================================================================
+lora:
+  enabled: true
+  # QLoRA typically uses higher rank for better performance
+  r: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# ==============================================================================
+# QLoRA Configuration (4-bit Quantization)
+# ==============================================================================
+qlora:
+  # Enable QLoRA - reduces memory by ~75%
+  enabled: true
+  # Quantization bits: 4 (recommended) or 8
+  bits: 4
+  # Quantization type: "nf4" (NormalFloat4, recommended) or "fp4"
+  quant_type: "nf4"
+  # Use double quantization for further memory reduction
+  use_double_quant: true
+  # Compute dtype: "bfloat16" (recommended), "float16", or "float32"
+  compute_dtype: "bfloat16"
+
+# ==============================================================================
+# Data Configuration
+# ==============================================================================
+data:
+  train_files:
+    - "data/cot_generated/cot_x_ai_grok_4_1_fast_reasoning_gsm8k_train_7473_1120_2035/cot_data.json"
+  dataset_name: "gsm8k"
+  max_seq_length: 1536
+  train_split_ratio: 0.9
+  num_workers: 4
+
+# ==============================================================================
+# Training Configuration
+# ==============================================================================
+training:
+  output_dir: "results/sft_checkpoints"
+  run_name: "qwen25math_1.5b_cot_qlora"
+  
+  # Batch sizes (can be larger with QLoRA due to lower memory usage)
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8  # Effective batch = 2 * 8 = 16
+  
+  # Training duration
+  num_train_epochs: 3
+  max_steps: -1
+  
+  # Learning rate (QLoRA can use slightly higher LR)
+  learning_rate: 2.0e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+  
+  # Regularization
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  
+  # Logging
+  logging_dir: "logs"
+
+# ==============================================================================
+# Optimizer Configuration
+# ==============================================================================
+optimizer:
+  # Use paged_adamw_32bit for QLoRA (memory efficient)
+  type: "paged_adamw_32bit"
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+
+# ==============================================================================
+# Precision Configuration
+# ==============================================================================
+precision:
+  # QLoRA handles quantization internally, use BF16 for compute
+  fp16: false
+  bf16: true
+  fp16_full_eval: false
+  bf16_full_eval: true
+
+# ==============================================================================
+# Memory Configuration
+# ==============================================================================
+memory:
+  # Gradient checkpointing saves memory
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+
+# ==============================================================================
+# Checkpoint Configuration
+# ==============================================================================
+checkpoint:
+  save_strategy: "steps"
+  save_steps: 500
+  save_total_limit: 3
+  save_optimizer: false
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+# ==============================================================================
+# Logging Configuration
+# ==============================================================================
+logging:
+  logging_strategy: "steps"
+  logging_steps: 10
+  report_to: ["tensorboard"]
+  log_level: "info"
+  log_on_each_node: true
+
+# ==============================================================================
+# Evaluation Configuration
+# ==============================================================================
+evaluation:
+  evaluation_strategy: "steps"
+  eval_strategy: "steps"
+  eval_steps: 500
+  per_device_eval_batch_size: 2
+
+# ==============================================================================
+# Early Stopping
+# ==============================================================================
+early_stopping:
+  enabled: false
+  patience: 3
+  threshold: 0.0
+
+# ==============================================================================
+# DeepSpeed (Optional)
+# ==============================================================================
+deepspeed:
+  enabled: false
+
+# ==============================================================================
+# Miscellaneous
+# ==============================================================================
+misc:
+  seed: 42
+  data_seed: 42
+  use_cpu: false
+  dataloader_num_workers: 4
+  dataloader_pin_memory: true
+  remove_unused_columns: true
+  label_smoothing_factor: 0.0
+  group_by_length: false
+  resume_from_checkpoint: null
+  ignore_data_skip: false
+  disable_tqdm: false
+  push_to_hub: false
+  hub_model_id: null
+  hub_token: null
+
+

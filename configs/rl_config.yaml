@@ -1,0 +1,145 @@
+# ==============================================================================
+# Rule-based RL Training Configuration
+# Reinforcement Learning for Mathematical Reasoning
+# ==============================================================================
+
+# ==============================================================================
+# Model Configuration
+# ==============================================================================
+model:
+  name: "Qwen2.5-Math-1.5B"
+  path: "pretrained_models/Qwen2.5-Math-1.5B"
+  trust_remote_code: true
+
+# ==============================================================================
+# LoRA Configuration
+# ==============================================================================
+lora:
+  enabled: true
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# ==============================================================================
+# RL Algorithm Configuration
+# ==============================================================================
+rl:
+  # Algorithm: "ppo" (Proximal Policy Optimization), "grpo", "reinforce"
+  algorithm: "ppo"
+  
+  # Training duration
+  num_epochs: 3
+  batch_size: 8
+  mini_batch_size: 2
+  gradient_accumulation_steps: 4
+  
+  # PPO-specific parameters
+  ppo_epochs: 4              # Number of PPO optimization epochs per batch
+  clip_range: 0.2            # PPO clip range
+  value_clip_range: 0.2      # Value function clip range
+  kl_coef: 0.1               # KL divergence coefficient
+  gamma: 0.99                # Discount factor
+  lam: 0.95                  # GAE lambda
+  
+  # Learning rates
+  learning_rate: 1.0e-5      # Policy learning rate
+  value_lr: 5.0e-6           # Value function learning rate
+  lr_scheduler: "cosine"
+  warmup_ratio: 0.1
+  
+  # Generation parameters
+  max_new_tokens: 2048
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 50
+  do_sample: true
+
+# ==============================================================================
+# Reward Configuration
+# ==============================================================================
+reward:
+  # Reward weights for different components
+  correctness_weight: 1.0          # Answer correctness (most important)
+  format_weight: 0.1               # Proper formatting (<think>, \\boxed{})
+  reasoning_quality_weight: 0.2    # Quality of reasoning steps
+  length_penalty_coef: 0.001       # Penalty for excessive length
+  
+  # Reward normalization
+  normalize_rewards: true
+  reward_clip: 10.0
+  
+  # Success criteria
+  correct_answer_reward: 1.0
+  wrong_answer_penalty: -1.0
+  no_answer_penalty: -0.5
+
+# ==============================================================================
+# Data Configuration
+# ==============================================================================
+data:
+  train_files:
+    - "data/cot_generated/cot_x_ai_grok_4_1_fast_reasoning_gsm8k_train_7473_1120_2035/cot_data.json"
+  dataset_name: "gsm8k"
+  max_samples: -1              # -1 for all samples
+  train_split_ratio: 0.9
+  shuffle: true
+  seed: 42
+
+# ==============================================================================
+# Training Configuration
+# ==============================================================================
+training:
+  output_dir: "results/rl_checkpoints"
+  run_name: "qwen25math_1.5b_rl_ppo"
+  
+  # Checkpointing
+  save_steps: 100
+  save_total_limit: 3
+  save_optimizer: false
+  
+  # Evaluation
+  eval_steps: 100
+  eval_samples: 100
+  
+  # Logging
+  logging_steps: 10
+  logging_dir: "logs/rl"
+  report_to: ["tensorboard"]
+  
+  # Training control
+  max_steps: -1
+  early_stopping_patience: 3
+  
+  # Memory optimization
+  gradient_checkpointing: true
+  bf16: true
+  fp16: false
+
+# ==============================================================================
+# Reference Model Configuration
+# ==============================================================================
+reference:
+  # Use the same base model as reference (frozen)
+  use_same_model: true
+  # Or specify a different model path
+  model_path: null
+  # Keep reference model frozen
+  frozen: true
+
+# ==============================================================================
+# Miscellaneous
+# ==============================================================================
+misc:
+  seed: 42
+  num_workers: 4
+  resume_from_checkpoint: null
+  log_level: "info"
+
+

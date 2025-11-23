@@ -1,0 +1,106 @@
+# ==============================================================================
+# Quick Test Configuration - 100 samples, minimal training
+# For testing pipeline functionality
+# ==============================================================================
+
+model:
+  name: "Qwen2.5-Math-1.5B"
+  path: "pretrained_models/Qwen2.5-Math-1.5B"
+  trust_remote_code: true
+
+lora:
+  enabled: true
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+data:
+  train_files:
+    - "data/cot_generated/cot_x_ai_grok_4_1_fast_reasoning_gsm8k_train_7473_1120_2035/cot_data.json"
+  dataset_name: "gsm8k"
+  max_seq_length: 1024
+  train_split_ratio: 0.9
+  num_workers: 2
+
+training:
+  output_dir: "results/sft_checkpoints"
+  run_name: "test_pipeline_100samples"
+  
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 4
+  
+  num_train_epochs: 1
+  max_steps: 20  # Only 20 steps for quick test
+  
+  learning_rate: 2.0e-4
+  lr_scheduler_type: "constant"
+  warmup_ratio: 0.0
+  
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+optimizer:
+  type: "adamw_torch"
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+
+precision:
+  fp16: false
+  bf16: false  # Disable for compatibility
+  fp16_full_eval: false
+  bf16_full_eval: false
+
+memory:
+  gradient_checkpointing: false
+
+checkpoint:
+  save_strategy: "steps"
+  save_steps: 10
+  save_total_limit: 2
+  save_optimizer: false
+  load_best_model_at_end: false
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+
+logging:
+  logging_strategy: "steps"
+  logging_steps: 5
+  logging_dir: "logs"
+  report_to: ["tensorboard"]
+  log_level: "info"
+  log_on_each_node: true
+
+evaluation:
+  evaluation_strategy: "steps"
+  eval_steps: 10
+  per_device_eval_batch_size: 1
+  eval_accumulation_steps: null
+
+early_stopping:
+  enabled: false
+
+deepspeed:
+  enabled: false
+
+misc:
+  seed: 42
+  data_seed: 42
+  no_cuda: false
+  dataloader_num_workers: 1
+  dataloader_pin_memory: false
+  remove_unused_columns: true
+  label_smoothing_factor: 0.0
+  group_by_length: false
+  resume_from_checkpoint: null
+  ignore_data_skip: false
+  disable_tqdm: false
+  push_to_hub: false
+
+

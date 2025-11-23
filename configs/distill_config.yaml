@@ -1,0 +1,196 @@
+# ==============================================================================
+# On-Policy Distillation Configuration
+# Student learns from teacher's online generations
+# ==============================================================================
+
+# ==============================================================================
+# Teacher Model Configuration
+# ==============================================================================
+teacher:
+  name: "Qwen2.5-Math-7B"  # Larger/better model as teacher
+  path: "pretrained_models/Qwen2.5-Math-7B"
+  trust_remote_code: true
+  # Teacher can use checkpoint from previous training
+  checkpoint_path: null
+  # Keep teacher frozen during distillation
+  frozen: true
+
+# ==============================================================================
+# Student Model Configuration
+# ==============================================================================
+student:
+  name: "Qwen2.5-Math-1.5B"  # Smaller model as student
+  path: "pretrained_models/Qwen2.5-Math-1.5B"
+  trust_remote_code: true
+  # Student can start from pretrained or SFT checkpoint
+  init_from_checkpoint: null
+
+# ==============================================================================
+# LoRA Configuration (for student)
+# ==============================================================================
+lora:
+  enabled: true
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# ==============================================================================
+# Distillation Strategy
+# ==============================================================================
+distillation:
+  # Type: "on_policy", "iterative", "self_distill"
+  type: "on_policy"
+  
+  # Online generation from teacher
+  online_generation: true
+  generation_batch_size: 4
+  
+  # Number of generations per prompt
+  num_generations_per_prompt: 1
+  
+  # Generation parameters for teacher
+  generation:
+    max_new_tokens: 2048
+    temperature: 0.7
+    top_p: 0.9
+    top_k: 50
+    do_sample: true
+  
+  # Quality filtering
+  filter_by_correctness: true
+  filter_by_format: true
+  min_quality_score: 0.7
+  keep_top_k_generations: 1
+
+# ==============================================================================
+# Loss Configuration
+# ==============================================================================
+loss:
+  # Distillation temperature (higher = softer targets)
+  temperature: 2.0
+  
+  # Loss weights
+  kl_loss_weight: 0.5      # Knowledge distillation (from teacher logits)
+  ce_loss_weight: 0.5      # Supervised learning (from labels)
+  
+  # Alternative: use only KL or only CE
+  use_kl_only: false
+  use_ce_only: false
+
+# ==============================================================================
+# Data Configuration
+# ==============================================================================
+data:
+  # Training data (questions)
+  train_files:
+    - "data/cot_generated/cot_x_ai_grok_4_1_fast_reasoning_gsm8k_train_7473_1120_2035/cot_data.json"
+  dataset_name: "gsm8k"
+  max_samples: -1
+  train_split_ratio: 0.9
+  shuffle: true
+  seed: 42
+  
+  # Use only prompts (teacher will generate responses)
+  use_prompts_only: true
+
+# ==============================================================================
+# Training Configuration
+# ==============================================================================
+training:
+  output_dir: "results/distill_checkpoints"
+  run_name: "qwen25math_1.5b_distill_from_7b"
+  
+  # Training schedule
+  num_epochs: 3
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8
+  
+  # Learning rate
+  learning_rate: 2.0e-5
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+  
+  # Optimization
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+  
+  # Memory optimization
+  gradient_checkpointing: true
+  bf16: true
+  fp16: false
+
+# ==============================================================================
+# Checkpointing
+# ==============================================================================
+checkpoint:
+  save_strategy: "steps"
+  save_steps: 100
+  save_total_limit: 3
+  save_optimizer: false
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+
+# ==============================================================================
+# Evaluation
+# ==============================================================================
+evaluation:
+  eval_strategy: "steps"
+  eval_steps: 100
+  eval_samples: 200
+  # Evaluate on teacher's generations
+  eval_on_teacher_outputs: true
+
+# ==============================================================================
+# Logging
+# ==============================================================================
+logging:
+  logging_strategy: "steps"
+  logging_steps: 10
+  logging_dir: "logs/distill"
+  report_to: ["tensorboard"]
+  log_level: "info"
+  
+  # Log teacher generation examples
+  log_generation_examples: true
+  num_examples_to_log: 3
+
+# ==============================================================================
+# Iterative Distillation (Optional)
+# ==============================================================================
+iterative:
+  # Enable iterative distillation (student becomes teacher)
+  enabled: false
+  num_iterations: 3
+  # Update teacher every N epochs
+  update_teacher_every: 1
+
+# ==============================================================================
+# Self-Distillation (Optional)
+# ==============================================================================
+self_distill:
+  # Use same model as teacher and student (self-improvement)
+  enabled: false
+  # Use model's own generations from previous checkpoint
+  use_previous_checkpoint: true
+
+# ==============================================================================
+# Miscellaneous
+# ==============================================================================
+misc:
+  seed: 42
+  num_workers: 4
+  resume_from_checkpoint: null
+  disable_tqdm: false
+
+

@@ -1,6 +1,5 @@
 """
-Dataset loading utilities (duplicate of utils/prompt_utils.py functions).
-This file is kept for backward compatibility but functions are imported from utils.prompt_utils in the main codebase.
+Dataset loading utilities.
 """
 
 import os
@@ -8,17 +7,15 @@ import re
 from datasets import load_from_disk
 
 
-def load_dataset_for_eval(dataset_name: str, base_path: str):
-    """Load dataset from disk"""
+def load_dataset_for_eval(dataset_name: str, base_path: str, split_name: str = 'test'):
+    """Load dataset split from disk"""
     dataset_path = os.path.join(base_path, 'data', dataset_name)
     dataset = load_from_disk(dataset_path)
     
-    if 'test' in dataset:
-        return dataset['test']
-    elif 'train' in dataset:
-        return dataset['train']
-    else:
-        raise ValueError(f"No valid split found in dataset {dataset_name}")
+    if split_name in dataset:
+        return dataset[split_name]
+    available = ', '.join(dataset.keys())
+    raise ValueError(f"Split '{split_name}' not found in dataset {dataset_name}. Available splits: {available}")
 
 
 def extract_question_and_answer(example: dict, dataset_name: str) -> tuple:

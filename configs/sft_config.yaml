@@ -1,0 +1,255 @@
+# ==============================================================================
+# SFT Training Configuration for Qwen2.5-Math-1.5B
+# Chain-of-Thought Reasoning Model Training
+# ==============================================================================
+
+# ==============================================================================
+# Model Configuration
+# ==============================================================================
+model:
+  # Base model name or path
+  name: "Qwen2.5-Math-1.5B"
+  # Path to pretrained model (relative to project root)
+  path: "pretrained_models/Qwen2.5-Math-1.5B"
+  # Trust remote code (required for some models)
+  trust_remote_code: true
+
+# ==============================================================================
+# LoRA Configuration (Parameter-Efficient Fine-Tuning)
+# ==============================================================================
+lora:
+  # Whether to use LoRA
+  enabled: true
+  # LoRA rank (higher = more parameters, better performance, more memory)
+  # Recommended: 8-16 for small models, 16-64 for large models
+  r: 16
+  # LoRA alpha (scaling factor, typically 2x of r)
+  alpha: 32
+  # Dropout probability for LoRA layers
+  dropout: 0.05
+  # Target modules to apply LoRA
+  # Qwen2.5 uses: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+  # Bias training strategy: "none", "all", or "lora_only"
+  bias: "none"
+  # Task type
+  task_type: "CAUSAL_LM"
+
+# ==============================================================================
+# QLoRA Configuration (Quantized LoRA for Memory Efficiency)
+# ==============================================================================
+qlora:
+  # Whether to use QLoRA (4-bit quantization + LoRA)
+  # QLoRA reduces memory usage by ~75% compared to full LoRA
+  enabled: false
+  # Quantization bits: 4 or 8
+  bits: 4
+  # Quantization type: "nf4" (NormalFloat4) or "fp4" (FP4)
+  # nf4 is recommended for better performance
+  quant_type: "nf4"
+  # Use double quantization (further reduces memory)
+  use_double_quant: true
+  # Compute dtype for quantized model
+  # "float16", "bfloat16", or "float32"
+  compute_dtype: "bfloat16"
+
+# ==============================================================================
+# Data Configuration
+# ==============================================================================
+data:
+  # Training data files (can be single file or list)
+  train_files:
+    - "data/cot_generated/cot_x_ai_grok_4_1_fast_reasoning_gsm8k_train_7473_1120_2035/cot_data.json"
+  # Dataset name (for prompt formatting)
+  dataset_name: "gsm8k"
+  # Maximum sequence length (tokens)
+  # Based on analysis: avg ~400 tokens, max ~1046 tokens
+  # Recommendation: 1536 covers 99%+ samples with good efficiency
+  max_seq_length: 1536
+  # Train/validation split ratio
+  train_split_ratio: 0.9
+  # Number of workers for data loading
+  num_workers: 4
+
+# ==============================================================================
+# Training Hyperparameters
+# ==============================================================================
+training:
+  # Output directory for checkpoints and logs
+  output_dir: "results/sft_checkpoints"
+  # Run name (will be appended to output_dir)
+  run_name: "qwen25math_1.5b_cot_gsm8k"
+  
+  # Batch size per device (GPU)
+  # Adjust based on available memory
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  
+  # Gradient accumulation steps
+  # Effective batch size = per_device_batch_size × gradient_accumulation_steps × num_gpus
+  # Recommended effective batch size: 32-64 for math reasoning tasks
+  gradient_accumulation_steps: 16
+  
+  # Number of training epochs
+  num_train_epochs: 3
+  
+  # Maximum training steps (set to 0 to disable, will use num_train_epochs instead)
+  max_steps: 0
+  
+  # Learning rate
+  # LoRA: 1e-4 to 2e-4
+  # Full fine-tuning: 5e-6 to 1e-5
+  learning_rate: 2.0e-4
+  
+  # Learning rate scheduler type
+  # Options: "linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"
+  lr_scheduler_type: "cosine"
+  
+  # Warmup ratio (fraction of total steps)
+  warmup_ratio: 0.03
+  
+  # Weight decay for AdamW optimizer
+  weight_decay: 0.01
+  
+  # Maximum gradient norm for clipping
+  max_grad_norm: 1.0
+
+# ==============================================================================
+# Optimizer Configuration
+# ==============================================================================
+optimizer:
+  # Optimizer type: "adamw_torch", "adamw_8bit", "adamw_bnb_8bit", "sgd", "adafactor"
+  # Use "adamw_torch" for standard training
+  # Use "adamw_8bit" or "adamw_bnb_8bit" to save memory
+  type: "adamw_torch"
+  # Adam beta1
+  adam_beta1: 0.9
+  # Adam beta2
+  adam_beta2: 0.999
+  # Adam epsilon
+  adam_epsilon: 1.0e-8
+
+# ==============================================================================
+# Precision and Memory
+# ==============================================================================
+precision:
+  # Use FP16 mixed precision (for older GPUs)
+  fp16: false
+  # Use BF16 mixed precision (recommended for Ampere+ GPUs: A100, 4090, etc.)
+  bf16: true
+  # Full evaluation in FP32 (more accurate but slower)
+  fp16_full_eval: false
+  bf16_full_eval: false
+
+memory:
+  # Enable gradient checkpointing to save memory (trades compute for memory)
+  gradient_checkpointing: true
+  # Gradient checkpointing kwargs
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+
+# ==============================================================================
+# Checkpoint and Logging
+# ==============================================================================
+checkpoint:
+  # Save strategy: "no", "epoch", "steps"
+  save_strategy: "steps"
+  # Save checkpoint every N steps
+  save_steps: 100
+  # Maximum number of checkpoints to keep
+  save_total_limit: 3
+  # Save optimizer and scheduler states
+  save_optimizer: true
+  # Load best model at the end of training
+  load_best_model_at_end: true
+  # Metric to determine best model
+  metric_for_best_model: "eval_loss"
+  # Whether lower is better for the metric
+  greater_is_better: false
+
+logging:
+  # Logging strategy: "no", "epoch", "steps"
+  logging_strategy: "steps"
+  # Log every N steps
+  logging_steps: 10
+  # Logging directory
+  logging_dir: "logs"
+  # Report to: "tensorboard", "wandb", "none", or list
+  report_to: ["tensorboard"]
+  # Log level: "debug", "info", "warning", "error", "critical", "passive"
+  log_level: "info"
+  # Log on each node in distributed training
+  log_on_each_node: true
+
+# ==============================================================================
+# Evaluation Configuration
+# ==============================================================================
+evaluation:
+  # Evaluation strategy: "no", "epoch", "steps"
+  evaluation_strategy: "steps"
+  # Evaluate every N steps
+  eval_steps: 100
+  # Evaluation batch size (can be larger than train batch)
+  per_device_eval_batch_size: 4
+  # Evaluation accumulation steps (to reduce memory during eval)
+  eval_accumulation_steps: null
+
+# ==============================================================================
+# Early Stopping (optional)
+# ==============================================================================
+early_stopping:
+  # Enable early stopping
+  enabled: false
+  # Number of evaluation calls with no improvement after which training will be stopped
+  patience: 3
+  # Minimum change to qualify as improvement
+  threshold: 0.0
+
+# ==============================================================================
+# DeepSpeed Configuration (optional, for multi-GPU or large models)
+# ==============================================================================
+deepspeed:
+  # Enable DeepSpeed
+  enabled: false
+  # DeepSpeed config file path
+  config_file: "configs/ds_config_stage2.json"
+
+# ==============================================================================
+# Miscellaneous
+# ==============================================================================
+misc:
+  # Random seed for reproducibility
+  seed: 42
+  # Data seed
+  data_seed: 42
+  # Whether to use CPU even if GPU is available
+  no_cuda: false
+  # Number of CPU threads for data loading
+  dataloader_num_workers: 4
+  # Pin memory for faster data transfer (GPU training)
+  dataloader_pin_memory: true
+  # Remove unused columns from dataset
+  remove_unused_columns: true
+  # Label smoothing factor
+  label_smoothing_factor: 0.0
+  # Group samples by length to minimize padding
+  group_by_length: false
+  # Length column name if group_by_length is True
+  length_column_name: "length"
+  # Resume from checkpoint path (optional)
+  resume_from_checkpoint: null
+  # Ignore data skip (useful when resuming)
+  ignore_data_skip: false
+  # Disable tqdm progress bars
+  disable_tqdm: false
+  # Push to HuggingFace Hub
+  push_to_hub: false
+  # Hub model ID
+  hub_model_id: null
+  # Hub token
+  hub_token: null
+
