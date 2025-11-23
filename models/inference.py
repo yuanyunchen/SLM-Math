@@ -16,7 +16,6 @@ from transformers import (
 MAX_TOKEN = 2048
 
 
-<<<<<<< Updated upstream
 class StopOnBoxedAnswer(StoppingCriteria):
     """Halts generation once a \\boxed{} answer is produced."""
 
@@ -25,10 +24,25 @@ class StopOnBoxedAnswer(StoppingCriteria):
         self.prompt_token_len = prompt_token_len
 
     def _has_boxed_answer(self, text: str) -> bool:
+        """Check if text contains a complete \boxed{} with balanced braces."""
         idx = text.rfind("\\boxed{")
         if idx == -1:
             return False
-        return "}" in text[idx:]
+        
+        # Count opening and closing braces after \boxed{
+        after_boxed = text[idx + 7:]  # Skip "\boxed{"
+        brace_count = 1  # Start with 1 for the opening brace of \boxed{
+        
+        for char in after_boxed:
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    # Found matching closing brace
+                    return True
+        
+        return False  # No matching closing brace found
 
     def __call__(self, input_ids, scores, **kwargs) -> bool:
         # Decode the running hypothesis beyond the prompt so we react to newly created text only.
@@ -41,9 +55,6 @@ class StopOnBoxedAnswer(StoppingCriteria):
         return False
 
 
-
-=======
->>>>>>> Stashed changes
 def load_model(model_name: str, base_path: Path):
     """Load model and tokenizer from disk"""
     model_dir = base_path / 'pretrained_models' / model_name
