@@ -1,12 +1,7 @@
 # Large data directories (exclude from git)
 
 # Exclude all pretrained model checkpoints (too large for git)
-pretrained_models/*
-!pretrained_models/.gitkeep
-# Keep Qwen3-0.6B model (small enough for git)
-!pretrained_models/Qwen3-0.6B/
-!pretrained_models/Qwen3-0.6B/**
-
+pretrained_models/
 
 # Allow models/ directory Python files (inference.py, __init__.py)
 models/*
@@ -16,7 +11,8 @@ models/*
 cache/
 
 # Exclude all dataset files and directories
-# data/
+data/
+data/*
 
 # Exclude all results (timestamped evaluation outputs)
 results/
