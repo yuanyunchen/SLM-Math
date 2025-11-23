@@ -13,13 +13,13 @@ ROUND_NAME="testFixedOutput"
 
 # Dataset to use
 # Options: gsm8k (grade school math), math (competition math)
-DATASET="gsm8k-test"
+DATASET="math-train"
 
 # Number of test cases to run (set to 0 to run the entire dataset)
 COUNT=200
 
 # Zero-based dataset index to start from (useful for resuming)
-START_INDEX=100
+START_INDEX=0
 
 # Evaluation mode
 # Options:
