@@ -202,17 +202,25 @@ class VLLMEngine(BaseInferenceEngine):
         # Extract parameters
         max_tokens = kwargs.get('max_new_tokens', 4096)
         temperature = kwargs.get('temperature', 0.1)
+        do_sample = kwargs.get('do_sample', False)
         top_p = kwargs.get('top_p', 1.0)
         repetition_penalty = kwargs.get('repetition_penalty', 1.2)
         
+        # For greedy decoding (do_sample=False), use temperature=0
+        # This matches transformers' behavior
+        if not do_sample and temperature > 0:
+            temperature = 0.0
+        
         # vLLM sampling parameters
+        # Note: Removed stop=["\\boxed{"] because it prematurely truncates answers
+        # The model should naturally complete the answer and reach EOS
         sampling_params = self.SamplingParams(
             temperature=temperature,
-            top_p=top_p,
+            top_p=top_p if do_sample else 1.0,
             max_tokens=max_tokens,
             repetition_penalty=repetition_penalty,
-            stop=["\\boxed{"],  # Stop patterns (will be refined)
             skip_special_tokens=True,
+            # stop tokens removed to prevent premature truncation
         )
         
         # Generate

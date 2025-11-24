@@ -136,9 +136,13 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
     """Generate response from model given a prompt."""
     inputs = tokenizer(prompt, return_tensors="pt", truncation=False)
     
+    # Get model device - handle both inference engines and standard models
     try:
-        model_device = next(model.parameters()).device
-    except StopIteration:
+        if hasattr(model, 'device'):
+            model_device = model.device
+        else:
+            model_device = next(model.parameters()).device
+    except (StopIteration, AttributeError):
         model_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     inputs = {k: v.to(model_device) for k, v in inputs.items()}

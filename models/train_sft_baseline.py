@@ -440,5 +440,54 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+    
+    # Setup W&B login at the very beginning if requested
+    if args.use_wandb:
+        try:
+            import wandb
+            print("\n" + "=" * 80)
+            print("Weights & Biases (W&B) Login Required")
+            print("=" * 80)
+            
+            # Try to check if already logged in
+            try:
+                api = wandb.Api()
+                if api.api_key:
+                    print(f"✓ Already logged in to W&B as: {api.default_entity if hasattr(api, 'default_entity') else 'user'}")
+                else:
+                    raise ValueError("Not logged in")
+            except:
+                # Not logged in, prompt for login
+                print("\nPlease log in to Weights & Biases")
+                print("You can find your API key at: https://wandb.ai/authorize")
+                print("\nOption 1: Enter your API key when prompted")
+                print("Option 2: Set WANDB_API_KEY environment variable")
+                print("Option 3: Run 'wandb login' before running this script\n")
+                
+                # Try login
+                if not wandb.login(relogin=True):
+                    raise Exception("W&B login failed")
+            
+            print("✓ W&B login successful!")
+            print("=" * 80 + "\n")
+            
+        except ImportError:
+            print("WARNING: wandb is not installed. Installing now...")
+            import subprocess
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "wandb"])
+            import wandb
+            print("\nPlease log in to Weights & Biases")
+            print("You can find your API key at: https://wandb.ai/authorize\n")
+            if not wandb.login():
+                raise Exception("W&B login failed")
+                
+        except Exception as e:
+            print(f"\n✗ ERROR: Failed to setup W&B: {e}")
+            print("Please choose one of the following:")
+            print("  1. Run 'wandb login' in terminal before running this script")
+            print("  2. Set WANDB_API_KEY environment variable")
+            print("  3. Disable W&B by removing --use_wandb flag\n")
+            sys.exit(1)
+    
     train(args)
 

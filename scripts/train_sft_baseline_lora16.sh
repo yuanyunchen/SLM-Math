@@ -24,7 +24,7 @@ LORA_RANK=16
 NUM_EPOCHS=5
 
 # Batch size (single GPU, LoRA can use larger batch)
-BATCH_SIZE=32
+BATCH_SIZE=16
 
 # Gradient accumulation steps
 # Effective batch size = BATCH_SIZE * GRADIENT_ACCUMULATION_STEPS
@@ -39,7 +39,7 @@ export CUDA_VISIBLE_DEVICES=1
 GPUS="1"
 
 # Enable Weights & Biases logging
-USE_WANDB=""  # Add --use_wandb flag if you want to enable wandb
+USE_WANDB="--use_wandb"  # Weights & Biases logging enabled
 
 ################################################################################
 # Run training

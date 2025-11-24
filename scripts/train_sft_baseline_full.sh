@@ -29,14 +29,14 @@ BATCH_SIZE=16
 GRADIENT_ACCUMULATION_STEPS=4
 
 # Save checkpoint every N epochs
-SAVE_EVERY_N_EPOCHS=2
+SAVE_EVERY_N_EPOCHS=1
 
 # GPU to use (GPU 0)
 export CUDA_VISIBLE_DEVICES=0
 GPUS="0"
 
 # Enable Weights & Biases logging
-USE_WANDB=""  # Add --use_wandb flag if you want to enable wandb
+USE_WANDB="--use_wandb"  # Add --use_wandb flag if you want to enable wandb
 
 ################################################################################
 # Run training

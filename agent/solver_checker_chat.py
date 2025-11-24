@@ -396,8 +396,13 @@ def generate_with_chat_template(
     
     # Get model device
     try:
-        model_device = next(model.parameters()).device
-    except StopIteration:
+        if hasattr(model, 'device'):
+            # Inference engine or model with device attribute
+            model_device = model.device
+        else:
+            # Standard PyTorch model
+            model_device = next(model.parameters()).device
+    except (StopIteration, AttributeError):
         model_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     inputs = {k: v.to(model_device) for k, v in inputs.items()}
@@ -430,12 +435,26 @@ def generate_with_chat_template(
     if role == "checker":
         generation_kwargs['stopping_criteria'] = stopping_criteria
     
-    with torch.no_grad():
-        outputs = model.generate(**inputs, **generation_kwargs)
-    
-    # Decode only the new tokens (excluding the input prompt)
-    new_tokens = outputs[0][input_length:]
-    response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+    # Check if using inference engine or standard model
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (vLLM or TransformersEngine)
+        response = model.generate_single(
+            prompt,
+            max_new_tokens=generation_kwargs['max_new_tokens'],
+            temperature=generation_kwargs['temperature'],
+            do_sample=generation_kwargs['do_sample'],
+            top_p=generation_kwargs.get('top_p', 0.95),
+            repetition_penalty=generation_kwargs.get('repetition_penalty', 1.15),
+            detailed=detailed
+        )
+    else:
+        # Using standard PyTorch model
+        with torch.no_grad():
+            outputs = model.generate(**inputs, **generation_kwargs)
+        
+        # Decode only the new tokens (excluding the input prompt)
+        new_tokens = outputs[0][input_length:]
+        response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
     
     return response
 
@@ -530,8 +549,13 @@ def generate_checker_direct(
     
     # Get model device
     try:
-        model_device = next(model.parameters()).device
-    except StopIteration:
+        if hasattr(model, 'device'):
+            # Inference engine or model with device attribute
+            model_device = model.device
+        else:
+            # Standard PyTorch model
+            model_device = next(model.parameters()).device
+    except (StopIteration, AttributeError):
         model_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     inputs = {k: v.to(model_device) for k, v in inputs.items()}
@@ -548,23 +572,36 @@ def generate_checker_direct(
         StopAfterVerdict(tokenizer, min_length=50)
     ])
     
-    # Generate
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
+    # Generate - handle both inference engines and standard models
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (vLLM or TransformersEngine)
+        response = model.generate_single(
+            prompt,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             do_sample=True if temperature > 0 else False,
             top_p=0.9,
-            pad_token_id=tokenizer.eos_token_id,
             repetition_penalty=1.2,
-            stopping_criteria=stopping_criteria,
-            streamer=streamer
+            detailed=detailed
         )
-    
-    # Decode only new tokens
-    new_tokens = outputs[0][input_length:]
-    response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+    else:
+        # Using standard PyTorch model
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                do_sample=True if temperature > 0 else False,
+                top_p=0.9,
+                pad_token_id=tokenizer.eos_token_id,
+                repetition_penalty=1.2,
+                stopping_criteria=stopping_criteria,
+                streamer=streamer
+            )
+        
+        # Decode only new tokens
+        new_tokens = outputs[0][input_length:]
+        response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
     
     return response
 

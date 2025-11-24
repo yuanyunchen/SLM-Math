@@ -31,8 +31,8 @@ DATASET="${DATASET:-gsm8k}"
 # Number of test cases to run (set to 0 to run the entire dataset)
 COUNT="${COUNT:-10}"
 
-# Maximum iterations for iterative agents
-MAX_ITERATIONS="${MAX_ITERATIONS:-5}"
+# Maximum iterations for iterative agents (reduced for speed)
+MAX_ITERATIONS="${MAX_ITERATIONS:-3}"  # Reduced from 5 to 3 for 40% faster execution
 
 # Maximum sub-problems for plan_and_reflection
 MAX_SUBPROBLEMS="${MAX_SUBPROBLEMS:-5}"
@@ -48,9 +48,12 @@ DETAILED="${DETAILED:-false}"
 # Save interval
 SAVE_INTERVAL="${SAVE_INTERVAL:-10}"
 
-# Batch processing settings
-BATCH_SIZE="${BATCH_SIZE:-8}"  # Process multiple samples in parallel
-INFERENCE_BACKEND="${INFERENCE_BACKEND:-transformers}"  # or 'vllm' for faster inference
+# Inference settings
+BATCH_SIZE="${BATCH_SIZE:-1}"  # Set to 1 for vLLM (vLLM handles batching internally)
+INFERENCE_BACKEND="${INFERENCE_BACKEND:-vllm}"  # 'vllm' for maximum speed, 'transformers' for compatibility
+
+# Execution mode: sequential (one agent at a time) or parallel (all agents at once)
+MODE="${MODE:-sequential}"  # Sequential is REQUIRED for vLLM
 
 ################################################################################
 # Agent Configuration

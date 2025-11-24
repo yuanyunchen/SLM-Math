@@ -104,7 +104,14 @@ def run_solver_checker_summarizer_chat_workflow(
         
         # Generate solver response
         inputs = tokenizer(conversation_text, return_tensors="pt", truncation=True, max_length=2048)
-        device = next(model.parameters()).device
+        # Get device - handle both inference engines and standard models
+        if hasattr(model, 'device'):
+            device = model.device
+        else:
+            try:
+                device = next(model.parameters()).device
+            except (StopIteration, AttributeError):
+                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         inputs = {k: v.to(device) for k, v in inputs.items()}
         
         with torch.no_grad():

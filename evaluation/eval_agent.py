@@ -313,10 +313,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'solver_checker_chat':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_solver_checker_chat_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     max_iterations=args.max_iterations,
                     detailed=detailed,
@@ -330,10 +332,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'solver_checker_trivial_chat':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_solver_checker_trivial_chat_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     max_iterations=args.max_iterations,
                     detailed=detailed,
@@ -391,10 +395,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'solver_checker_summarizer_chat':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_solver_checker_summarizer_chat_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     max_iterations=args.max_iterations,
                     detailed=detailed,
@@ -408,10 +414,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'plan_and_reflection':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_plan_and_reflection_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     max_iterations=args.max_iterations,
                     max_subproblems=args.max_subproblems,
@@ -426,10 +434,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'agent_with_python_tools':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_agent_with_python_tools(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     detailed=detailed,
                     dataset_name=dataset_name,
@@ -443,10 +453,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'majority_vote':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_majority_vote_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     num_runs=args.num_runs,
                     temperature=args.temperature,
