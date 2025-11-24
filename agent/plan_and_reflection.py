@@ -89,10 +89,25 @@ class PlanAndReflectionWorkflow:
         
         # Import utilities
         from utils.prompt_utils import extract_answer, check_answer
-        from models.inference import generate_response
+        from models.inference import generate_response as _generate_response
         self.extract_answer = extract_answer
         self.check_answer = check_answer
-        self.generate_response = generate_response
+        self._generate_response_fn = _generate_response
+        
+        # Create a wrapper to handle both inference engine and raw model
+        if hasattr(model, 'generate_single'):
+            # Using inference engine
+            self.generate_response = lambda m, t, prompt, mode, detailed: m.generate_single(
+                prompt,
+                max_new_tokens=4096,
+                temperature=0.1,
+                do_sample=False,
+                repetition_penalty=1.2,
+                detailed=detailed
+            )
+        else:
+            # Using standard model
+            self.generate_response = _generate_response
     
     def run(self, question: str, ground_truth: str) -> Dict:
         """
@@ -178,11 +193,14 @@ class PlanAndReflectionWorkflow:
         first_answer = iterations[0]['answer'] if iterations else None
         first_correct = iterations[0]['is_correct'] if iterations else False
         
+        final_verdict = "CORRECT" if final_correct else "INCORRECT"
+        
         return {
             'question': question,
             'ground_truth': ground_truth,
             'predicted_answer': final_answer,
             'final_correct': final_correct,
+            'final_verdict': final_verdict,
             'first_answer': first_answer,
             'first_correct': first_correct,
             'total_iterations': len(iterations),

@@ -160,7 +160,6 @@ def run_solver_checker_with_tools_workflow(
         checker_prompt = format_prompt_checker(
             question,
             solver_response,
-            solver_answer,
             dataset_name
         )
         

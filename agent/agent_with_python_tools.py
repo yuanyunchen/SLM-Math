@@ -74,14 +74,26 @@ def run_agent_with_python_tools(
     if detailed:
         print(f"[Generating response...]")
     
-    # Generate response
-    response = generate_response(
-        model,
-        tokenizer,
-        prompt,
-        "standard",
-        detailed
-    )
+    # Generate response - check if model is an inference engine or raw model
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (from load_inference_engine_wrapper)
+        response = model.generate_single(
+            prompt,
+            max_new_tokens=4096,
+            temperature=0.1,
+            do_sample=False,
+            repetition_penalty=1.2,
+            detailed=detailed
+        )
+    else:
+        # Using standard model (from load_model)
+        response = generate_response(
+            model,
+            tokenizer,
+            prompt,
+            "standard",
+            detailed
+        )
     
     # Execute code if tools enabled
     code_executed = False
@@ -128,12 +140,14 @@ def run_agent_with_python_tools(
     
     # Determine case type (simpler for single-shot)
     case_type = "FIRST_TRY_SUCCESS" if final_correct else "FAILED"
+    final_verdict = "CORRECT" if final_correct else "INCORRECT"
     
     return {
         "question": question,
         "ground_truth": ground_truth,
         "predicted_answer": predicted_answer,
         "final_correct": final_correct,
+        "final_verdict": final_verdict,
         "first_answer": predicted_answer,  # Same as final for single-shot
         "first_correct": final_correct,
         "response": response,
