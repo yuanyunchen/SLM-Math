@@ -29,6 +29,11 @@ wandb/
 # Exclude milestone results
 milestone/
 
+# Exclude large backup/archive files
+*.tar.gz
+*.tar
+*.zip
+
 # Exclude documentation and logs
 docs/
 logs/
