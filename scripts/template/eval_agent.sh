@@ -13,11 +13,20 @@ set -e
 # Model
 MODEL="Qwen2.5-Math-1.5B"
 
+# Checkpoint path (optional)
+# Set to empty string "" to use base pretrained model
+# For LoRA: "checkpoints/lora_r16_20251124_130958/checkpoint-1188"
+# For SFT: "checkpoints/sft_20251124_131423/checkpoint-891"
+CHECKPOINT=""
+
 # Agent method: solver_checker, solver_checker_chat, or majority_vote
 AGENT="solver_checker"
 
 # For solver_checker: Checker model (leave empty to use same as solver)
 CHECKER_MODEL=""
+
+# For solver_checker: Checker checkpoint (optional, leave empty to use same as solver checkpoint)
+CHECKER_CHECKPOINT=""
 
 # For solver_checker and solver_checker_chat: Max iterations per problem
 MAX_ITERATIONS=5
@@ -81,10 +90,16 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "Evaluation Configuration:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Model: $MODEL"
+if [ -n "$CHECKPOINT" ]; then
+    echo "  Checkpoint: $CHECKPOINT"
+fi
 echo "  Agent Method: $AGENT"
 if [ "$AGENT" = "solver_checker" ]; then
 if [ -n "$CHECKER_MODEL" ]; then
     echo "  Checker Model: $CHECKER_MODEL"
+    if [ -n "$CHECKER_CHECKPOINT" ]; then
+        echo "  Checker Checkpoint: $CHECKER_CHECKPOINT"
+    fi
     else
         echo "  Checker Model: Same as solver"
     fi
@@ -123,11 +138,19 @@ CMD="python -m evaluation.eval_agent \
     --detailed \"$DETAILED\" \
     --save_interval \"$SAVE_INTERVAL\""
 
+# Add checkpoint parameter if specified
+if [ -n "$CHECKPOINT" ]; then
+    CMD="$CMD --checkpoint \"$CHECKPOINT\""
+fi
+
 # Add agent-specific parameters
 if [ "$AGENT" = "solver_checker" ] || [ "$AGENT" = "solver_checker_chat" ]; then
     CMD="$CMD --max_iterations \"$MAX_ITERATIONS\""
     if [ "$AGENT" = "solver_checker" ] && [ -n "$CHECKER_MODEL" ]; then
-    CMD="$CMD --checker_model \"$CHECKER_MODEL\""
+        CMD="$CMD --checker_model \"$CHECKER_MODEL\""
+        if [ -n "$CHECKER_CHECKPOINT" ]; then
+            CMD="$CMD --checker_checkpoint \"$CHECKER_CHECKPOINT\""
+        fi
     fi
 elif [ "$AGENT" = "majority_vote" ]; then
     CMD="$CMD --num_runs \"$NUM_RUNS\""

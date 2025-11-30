@@ -1,0 +1,99 @@
+# ==============================================================================
+# GRPO RL Training Configuration - TEST MODE
+# Small-scale test for debugging and validation
+# ==============================================================================
+
+model:
+  name: "Qwen2.5-Math-1.5B"
+  path: "pretrained_models/Qwen2.5-Math-1.5B"
+  trust_remote_code: true
+  load_in_8bit: false
+  load_in_4bit: false
+
+lora:
+  enabled: true
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+data:
+  train_file: "data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json"
+  max_samples: 10  # SMALL TEST SAMPLE
+  train_split_ratio: 0.8
+  shuffle: true
+  seed: 42
+
+grpo:
+  num_return_sequences: 2
+  reward_correct: 1.0
+  reward_wrong: -1.0
+  reward_no_answer: -0.5
+  kl_coef: 0.05
+  whiten_rewards: true
+  clip_range: 0.2
+  use_value_baseline: false
+
+generation:
+  max_new_tokens: 512  # Smaller for testing
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 50
+  do_sample: true
+  repetition_penalty: 1.1
+  pad_token_id: null
+
+training:
+  num_epochs: 1  # Only 1 epoch for test
+  max_steps: -1
+  per_device_train_batch_size: 2  # Small batch
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 1  # No accumulation for test
+  learning_rate: 5.0e-6
+  weight_decay: 0.01
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.1
+  warmup_steps: 0
+  fp16: false
+  bf16: false
+  gradient_checkpointing: true
+  evaluation_strategy: "no"  # No eval for test
+  save_strategy: "steps"
+  save_steps: 5  # Save frequently
+  save_total_limit: 2
+  load_best_model_at_end: false
+  logging_dir: "logs/rl_grpo_test"
+  logging_strategy: "steps"
+  logging_steps: 1  # Log every step
+  log_level: "info"
+  report_to: []
+  output_dir: "results/rl_grpo_test"
+  run_name: "grpo_test"
+  dataloader_num_workers: 0  # No parallel loading for test
+  dataloader_pin_memory: false
+  remove_unused_columns: false
+  seed: 42
+
+system:
+  cuda_visible_devices: "0"
+  use_deepspeed: false
+  deepspeed_config: null
+  local_rank: -1
+
+debug:
+  enabled: true
+  max_debug_samples: 10
+  save_sample_generations: true
+  num_samples_to_save: 5
+  sample_generation_steps: 5
+

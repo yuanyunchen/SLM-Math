@@ -26,23 +26,28 @@ from models.inference import load_model, generate_response, generate_response_ba
 def parse_args():
     parser = argparse.ArgumentParser(description='Batch evaluation script')
     parser.add_argument('--model', type=str, required=True, help='Model name (e.g., Qwen3-0.6B)')
+    parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint (LoRA adapter or fine-tuned model). Can be relative to project root or absolute path.')
     parser.add_argument('--round', type=str, required=True, help='Test round name (e.g., round1_standard)')
     parser.add_argument('--dataset', type=str, required=True, help="Dataset name or dataset-split (e.g., 'gsm8k' or 'gsm8k-train')")
     parser.add_argument('--split', type=str, default=None, help='Dataset split to evaluate (overrides suffix)')
     parser.add_argument('--count', type=int, required=True, help='Number of test cases (0 = run entire dataset)')
     parser.add_argument('--start', type=int, default=0, help='Zero-based index to start evaluation from')
     parser.add_argument('--mode', type=str, required=True, choices=['standard'], help='Evaluation mode')
-    parser.add_argument('--detailed', type=str, default='false', choices=['true', 'false'], help='Detailed output (true/false)')
+    parser.add_argument('--detailed', type=str, default='false', choices=['true', 'false'], help='Streaming console output for each sample (true/false)')
+    parser.add_argument('--log_samples', type=str, default='true', choices=['true', 'false'], help='Log full sample details to file (true/false)')
     parser.add_argument('--resume', type=str, default=None, help='Resume from existing results directory (e.g., results/round1_model_gsm8k_1000_0101)')
     parser.add_argument('--save_interval', type=int, default=10, help='Save intermediate results every N samples (default: 10)')
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size for inference (default: 1, recommended: 8-32)')
     parser.add_argument('--inference_backend', type=str, default='transformers', choices=['transformers', 'vllm'], help='Inference backend (default: transformers)')
+    parser.add_argument('--greedy', type=str, default='true', choices=['true', 'false'], help='Use greedy decoding (default: true). When true, ignores temperature/top_p/etc.')
     return parser.parse_args()
 
 def run_evaluation(args):
     """Main evaluation function"""
-    # Convert detailed arg to boolean
-    detailed = args.detailed.lower() == 'true'
+    # Convert args to boolean
+    detailed = args.detailed.lower() == 'true'      # Streaming console output
+    log_samples = args.log_samples.lower() == 'true'  # Log full sample details to file
+    greedy = args.greedy.lower() == 'true'
     
     print(f"\n{'='*80}")
     print(f"SLM-Math Evaluation")
@@ -60,6 +65,8 @@ def run_evaluation(args):
     args.split = split_name
 
     print(f"Model: {args.model}")
+    if args.checkpoint:
+        print(f"Checkpoint: {args.checkpoint}")
     print(f"Round: {args.round}")
     print(f"Dataset: {dataset_name.upper()}")
     print(f"Split: {split_name}")
@@ -67,7 +74,9 @@ def run_evaluation(args):
     print(f"Mode: {args.mode}")
     print(f"Batch Size: {args.batch_size}")
     print(f"Inference Backend: {args.inference_backend}")
-    print(f"Detailed Output: {detailed}")
+    print(f"Greedy Decoding: {greedy}")
+    print(f"Streaming Output: {detailed}")
+    print(f"Log Samples: {log_samples}")
     print(f"{'='*80}\n")
     
     # Setup paths
@@ -80,12 +89,18 @@ def run_evaluation(args):
             (model, tokenizer), inference_engine = load_inference_engine_wrapper(
                 args.model, 
                 base_path, 
-                backend=args.inference_backend
+                backend=args.inference_backend,
+                checkpoint_path=args.checkpoint
             )
-            use_batch_inference = True
+            # If inference_engine is None (e.g., checkpoint fallback), disable batch inference
+            # unless batch_size > 1 (in which case we can use transformers batch generation)
+            if inference_engine is None and args.batch_size == 1:
+                use_batch_inference = False
+            else:
+                use_batch_inference = (args.batch_size > 1) or (inference_engine is not None)
         else:
             # Use original load_model for backward compatibility
-            model, tokenizer = load_model(args.model, base_path)
+            model, tokenizer = load_model(args.model, base_path, checkpoint_path=args.checkpoint)
             inference_engine = None
             use_batch_inference = False
     except Exception as e:
@@ -217,6 +232,7 @@ def run_evaluation(args):
     
     # Setup logging to file
     log_file = log_dir / f"{args.model}_{args.dataset}_{args.mode}.log"
+    samples_log_file = log_dir / f"{args.model}_{args.dataset}_{args.mode}_samples.log"
     
     def log_and_print(message, to_console=True):
         """Log to file and optionally print to console"""
@@ -224,6 +240,22 @@ def run_evaluation(args):
             f.write(message + '\n')
         if to_console:
             print(message)
+    
+    def log_sample(sample_idx, question, ground_truth, predicted_answer, response, is_correct):
+        """Log full sample details to samples log file"""
+        if not log_samples:
+            return
+        with open(samples_log_file, 'a', encoding='utf-8') as f:
+            f.write(f"\n{'='*80}\n")
+            f.write(f"[Sample {sample_idx}] {'CORRECT' if is_correct else 'WRONG'}\n")
+            f.write(f"{'='*80}\n")
+            f.write(f"Question:\n{question}\n")
+            f.write(f"\n{'─'*40}\n")
+            f.write(f"Ground Truth: {ground_truth}\n")
+            f.write(f"Predicted: {predicted_answer}\n")
+            f.write(f"\n{'─'*40}\n")
+            f.write(f"Full Response:\n{response[:2000]}{'...(truncated)' if len(response) > 2000 else ''}\n")
+            f.write(f"{'='*80}\n")
     
     log_and_print(f"{'='*80}")
     if resume_mode:
@@ -251,7 +283,7 @@ def run_evaluation(args):
     if not detailed:
         initial_processed = len(processed_ids)
         progress_bar = tqdm(total=num_samples, initial=initial_processed, desc="Progress", unit="sample", 
-                          bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]')
+                          bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}] {postfix}')
     
     # Helper function to save intermediate results
     answer_file = answers_dir / f"{args.model}_{args.dataset}_{args.mode}_answers.json"
@@ -303,18 +335,28 @@ def run_evaluation(args):
                 
                 if inference_engine:
                     # Use inference engine
-                    batch_responses = inference_engine.generate_batch(
-                        batch_prompts,
-                        max_new_tokens=4096,
-                        temperature=0.1,
-                        do_sample=False,
-                        repetition_penalty=1.2,
-                        detailed=detailed
-                    )
+                    if greedy:
+                        batch_responses = inference_engine.generate_batch(
+                            batch_prompts,
+                            max_new_tokens=4096,
+                            temperature=1.0,  # Ignored when do_sample=False
+                            do_sample=False,
+                            detailed=detailed
+                        )
+                    else:
+                        batch_responses = inference_engine.generate_batch(
+                            batch_prompts,
+                            max_new_tokens=4096,
+                            temperature=0.7,
+                            do_sample=True,
+                            top_p=0.95,
+                            repetition_penalty=1.15,
+                            detailed=detailed
+                        )
                 else:
                     # Use transformers batch generation
                     batch_responses = generate_response_batch(
-                        model, tokenizer, batch_prompts, args.mode, detailed
+                        model, tokenizer, batch_prompts, args.mode, detailed, greedy=greedy
                     )
                 
                 batch_time = time.time() - batch_start_time
@@ -363,7 +405,7 @@ def run_evaluation(args):
                         print(f"{status_symbol} Predicted: {predicted_answer} (Expected: {ground_truth})")
                         print(f"Score: {results['correct']}/{results['total']} ({current_accuracy*100:.1f}%)")
                     else:
-                        progress_bar.set_postfix({'Accuracy': f'{current_accuracy*100:.1f}%'})
+                        progress_bar.set_postfix({'Accuracy': f'{current_accuracy*100:.1f}%', 'Correct': f'{results["correct"]}/{results["total"]}'})
                         progress_bar.update(1)
                 
                 # Save periodically
@@ -388,6 +430,8 @@ def run_evaluation(args):
                         "correct": False
                     })
                     if not detailed:
+                        current_accuracy = results["correct"] / results["total"] if results["total"] > 0 else 0
+                        progress_bar.set_postfix({'Accuracy': f'{current_accuracy*100:.1f}%', 'Correct': f'{results["correct"]}/{results["total"]}'})
                         progress_bar.update(1)
     
     else:
@@ -418,7 +462,9 @@ def run_evaluation(args):
                 log_and_print(f"{'─'*40}", to_console=detailed)
                 
                 sample_start_time = time.time()
-                response = generate_response(model, tokenizer, prompt, args.mode, detailed)
+                # Use inference_engine if available (for vLLM with batch_size=1), otherwise use model
+                model_to_use = inference_engine if inference_engine is not None else model
+                response = generate_response(model_to_use, tokenizer, prompt, args.mode, detailed, greedy=greedy)
                 sample_time = time.time() - sample_start_time
                 
                 # Log full response to file always
@@ -459,7 +505,7 @@ def run_evaluation(args):
                 current_accuracy = results["correct"] / results["total"]
                 status_symbol = "✓" if is_correct else "✗"
                 
-                # Log to file (always)
+                # Log to file (summary)
                 with open(log_file, 'a', encoding='utf-8') as f:
                     f.write(f"\n{status_symbol} Predicted: {predicted_answer}\n")
                     f.write(f"{status_symbol} Expected: {ground_truth}\n")
@@ -468,7 +514,10 @@ def run_evaluation(args):
                     f.write(f"Running Score: {results['correct']}/{results['total']} ({current_accuracy*100:.1f}%)\n")
                     f.write(f"{'─'*80}\n")
                 
-                # Print to console (detailed mode or summary)
+                # Log full sample details to separate file
+                log_sample(dataset_idx, question, ground_truth, predicted_answer, response, is_correct)
+                
+                # Print to console (detailed mode only)
                 if detailed:
                     print(f"\n{status_symbol} Predicted: {predicted_answer}")
                     print(f"{status_symbol} Expected: {ground_truth}")
@@ -585,7 +634,10 @@ def run_evaluation(args):
     print(f"Updated metrics: {metrics_txt}\n")
     
     # Cleanup
-    del model
+    if model is not None:
+        del model
+    if inference_engine is not None:
+        del inference_engine
     torch.cuda.empty_cache()
     
     return results

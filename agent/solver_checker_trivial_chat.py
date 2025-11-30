@@ -15,6 +15,10 @@ from typing import Dict, List, Tuple
 import re
 import torch
 from transformers import TextStreamer, StoppingCriteria, StoppingCriteriaList
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE
+)
 
 
 class StopOnBoxedAnswerOrVerdict(StoppingCriteria):
@@ -216,10 +220,7 @@ def generate_chat_response(
     prompt: str, 
     role: str, 
     detailed: bool = False,
-    max_new_tokens: int = 512,
-    temperature: float = None,
-    do_sample: bool = None,
-    top_p: float = None
+    max_new_tokens: int = 512
 ) -> str:
     """
     Generate response in chat context.
@@ -231,50 +232,56 @@ def generate_chat_response(
         role: 'solver' or 'checker'
         detailed: Whether to stream output
         max_new_tokens: Maximum tokens to generate
-        temperature: Override temperature (None = use defaults)
-        do_sample: Override do_sample (None = auto from temp)
-        top_p: Override top_p (None = use defaults)
     
     Returns:
         Generated response text
     """
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
-    inputs = {k: v.to(model.device) for k, v in inputs.items()}
-    
-    prompt_length = inputs['input_ids'].shape[1]
-    
-    if detailed:
-        streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-    else:
-        streamer = None
-    
-    stopping_criteria = StoppingCriteriaList([
-        StopOnBoxedAnswerOrVerdict(tokenizer, prompt_length, role)
-    ])
-    
-    # Use provided values or defaults
-    if temperature is None:
+    # Handle both inference engines and standard models
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (vLLM or TransformersEngine)
         temperature = 0.7 if role == "solver" else 0.3
-    if do_sample is None:
-        do_sample = temperature > 0
-    if top_p is None:
         top_p = 0.95 if role == "solver" else 0.9
-    
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
+        
+        response = model.generate_single(
+            prompt,
             max_new_tokens=max_new_tokens,
-            temperature=temperature if temperature > 0 else 1.0,
-            do_sample=do_sample,
+            temperature=temperature,
+            do_sample=True,
             top_p=top_p,
-            pad_token_id=tokenizer.eos_token_id,
             repetition_penalty=1.2,
-            stopping_criteria=stopping_criteria,
-            streamer=streamer
+            detailed=detailed
         )
-    
-    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    response = generated_text[len(prompt):].strip()
+    else:
+        # Using standard PyTorch model
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+        
+        prompt_length = inputs['input_ids'].shape[1]
+        
+        if detailed:
+            streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+        else:
+            streamer = None
+        
+        stopping_criteria = StoppingCriteriaList([
+            StopOnBoxedAnswerOrVerdict(tokenizer, prompt_length, role)
+        ])
+        
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                temperature=0.7 if role == "solver" else 0.3,
+                do_sample=True,
+                top_p=0.95 if role == "solver" else 0.9,
+                pad_token_id=tokenizer.eos_token_id,
+                repetition_penalty=1.2,
+                stopping_criteria=stopping_criteria,
+                streamer=streamer
+            )
+        
+        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        response = generated_text[len(prompt):].strip()
     
     return response
 
@@ -331,7 +338,6 @@ def run_solver_checker_chat_workflow(
     
     from models.inference import generate_response
     from utils.prompt_utils import extract_answer, check_answer, format_prompt_standard
-    from agent.unified_config import FIRST_ROUND_SOLVER_CONFIG, SUBSEQUENT_ROUND_CONFIG
     
     # Conversation history: list of {'role': 'solver'/'checker', 'content': '...'}
     conversation_history = []
@@ -350,29 +356,16 @@ def run_solver_checker_chat_workflow(
     for iteration_num in range(1, max_iterations + 1):
         # Step 1: Solver generates response
         if iteration_num == 1:
-            # First turn: use standard prompt with unified config (deterministic)
+            # First turn: use standard prompt
             solver_prompt = format_prompt_standard(question, dataset_name)
-            use_first_round_config = True
         else:
             # Subsequent turns: use conversation history
             solver_prompt = format_chat_prompt(conversation_history, "solver", question, dataset_name)
-            use_first_round_config = False
         
         try:
-            if use_first_round_config:
-                solver_response = generate_chat_response(
-                    model, tokenizer, solver_prompt, "solver", detailed, max_new_tokens=512,
-                    temperature=FIRST_ROUND_SOLVER_CONFIG['temperature'],
-                    do_sample=FIRST_ROUND_SOLVER_CONFIG['do_sample'],
-                    top_p=FIRST_ROUND_SOLVER_CONFIG['top_p']
-                )
-            else:
-                solver_response = generate_chat_response(
-                    model, tokenizer, solver_prompt, "solver", detailed, max_new_tokens=512,
-                    temperature=SUBSEQUENT_ROUND_CONFIG['temperature'],
-                    do_sample=SUBSEQUENT_ROUND_CONFIG['do_sample'],
-                    top_p=SUBSEQUENT_ROUND_CONFIG['top_p']
-                )
+            solver_response = generate_chat_response(
+                model, tokenizer, solver_prompt, "solver", detailed, max_new_tokens=512
+            )
         except Exception as e:
             solver_response = f"Error: {e}"
         
@@ -458,52 +451,14 @@ def run_solver_checker_chat_workflow(
         if len(conversation_history) > 10:  # More than 5 turns
             conversation_history = truncate_conversation_history(conversation_history, max_turns=6)
     
-    # OPTIMIZATION V2: Smart answer selection with first answer protection
+    # If no CORRECT verdict, use last valid answer (backward search)
     if predicted_answer is None:
-        from collections import Counter
-        
-        # Get first answer
-        first_answer_val = solver_answers[0] if solver_answers else None
-        
-        # Strategy 1: Protect first answer if it appears 2+ times
-        if first_answer_val and len(solver_answers) >= 2:
-            answer_counts = Counter(solver_answers)
-            first_count = answer_counts[first_answer_val]
-            
-            # If first answer appears 2+ times, use it (protects against degradation)
-            if first_count >= 2:
-                predicted_answer = first_answer_val
-                final_verdict = f"FIRST_ANSWER_PROTECTED_{first_count}x"
-                if detailed:
-                    print(f"[STRATEGY] Protecting first answer: {predicted_answer} (appeared {first_count} times)")
-        
-        # Strategy 2: Use most frequent answer if it appears 3+ times
-        if predicted_answer is None and len(solver_answers) >= 3:
-            answer_counts = Counter(solver_answers)
-            most_common_answer, max_count = answer_counts.most_common(1)[0]
-            
-            # Only use most frequent if significantly more common (3+ times)
-            if max_count >= 3:
-                predicted_answer = most_common_answer
-                final_verdict = f"MOST_FREQUENT_ANSWER_{max_count}x"
-                if detailed:
-                    print(f"[STRATEGY] Using most frequent answer: {predicted_answer} (appeared {max_count} times)")
-        
-        # Strategy 3: Default to first answer
-        if predicted_answer is None and len(solver_answers) > 0:
-            predicted_answer = solver_answers[0]
-            final_verdict = "FIRST_ANSWER_FALLBACK"
-            if detailed:
-                print(f"[STRATEGY] Using first answer as fallback: {predicted_answer}")
-        
-        # Strategy 4: Last resort - search backward
-        if predicted_answer is None:
-            for i in range(len(iterations) - 1, -1, -1):
-                iter_answer = iterations[i]['solver_answer']
-                if iter_answer and iter_answer.strip():
-                    predicted_answer = iter_answer
-                    final_verdict = f"LAST_VALID_ITER_{iterations[i]['iteration']}"
-                    break
+        for i in range(len(iterations) - 1, -1, -1):
+            iter_answer = iterations[i]['solver_answer']
+            if iter_answer and iter_answer.strip():
+                predicted_answer = iter_answer
+                final_verdict = f"LAST_VALID_ITER_{iterations[i]['iteration']}"
+                break
         
         if predicted_answer is None:
             final_verdict = "NO_VALID_ANSWER"
@@ -518,7 +473,7 @@ def run_solver_checker_chat_workflow(
     first_correct = check_answer(first_answer, ground_truth) if first_answer else False
     
     case_type = None
-    if first_correct and final_correct:
+    if first_correct and final_correct and len(iterations) == 1:
         case_type = "FIRST_TRY_SUCCESS"
     elif not first_correct and final_correct:
         case_type = "IMPROVED"

@@ -13,16 +13,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from transformers import TextStreamer, StoppingCriteria, StoppingCriteriaList
 from models.inference import StopOnBoxedAnswer
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
 
 
 def format_prompt_solver(question: str, checker_feedback: str = "", dataset_name: str = "") -> str:
     """
-    Format prompt for solver agent with feedback support (OPTIMIZED VERSION).
-    
-    OPTIMIZATIONS:
-    - Clearer instruction to reconsider solution when feedback is given
-    - Emphasis on showing calculation steps
-    - Explicit request for boxed answer format
+    Format prompt for solver agent (with feedback support).
     
     Args:
         question: The math problem to solve
@@ -35,9 +34,9 @@ def format_prompt_solver(question: str, checker_feedback: str = "", dataset_name
     if checker_feedback and checker_feedback.strip():
         return f"""{question}
 
-Your previous solution had issues. Feedback: {checker_feedback}
+Previous attempt feedback: {checker_feedback}
 
-Please solve the problem again from scratch. Show clear calculation steps and put your final answer in \\boxed{{answer}} format."""
+Please reconsider the problem with the feedback in mind. Reason step by step, and put your final answer within \\boxed{{}}."""
     else:
         # First iteration uses standard prompt
         import sys
@@ -80,11 +79,7 @@ def extract_solver_cot(solver_response: str) -> str:
 
 def format_prompt_checker(question: str, solver_response: str, dataset_name: str = "") -> str:
     """
-    Format prompt for checker agent (V6 - Stricter verification).
-    
-    OPTIMIZATION: More specific instructions to force clear verdict output.
-    - Asks model to verify the numerical answer
-    - Requires explicit INCORRECT or CORRECT at the start
+    Format prompt for checker agent.
     
     Args:
         question: The original math problem
@@ -108,99 +103,74 @@ def format_prompt_checker(question: str, solver_response: str, dataset_name: str
         else:
             solver_answer = "No answer found"
     
-    # Checker prompt V7 - emphasize verification, not re-solving
-    # Truncate question to reduce model's tendency to re-solve
-    short_question = question[:150] + "..." if len(question) > 150 else question
+    # Extract solver's reasoning
+    solver_cot = extract_solver_cot(solver_response)
     
-    return f"""Quick check: For "{short_question}"
+    return f"""You are a math checker. Review the following solution carefully.
 
-Proposed answer: {solver_answer}
+Problem: {question}
 
-Does this look right? Say CORRECT or INCORRECT."""
+Solver's reasoning: {solver_cot}
+
+Solver's final answer: {solver_answer}
+
+Your task:
+1. Extract all numbers from the problem
+2. Verify each calculation step
+3. Check if the logic is correct
+4. Recalculate the answer independently if needed
+
+Think step by step:
+- Are the numbers from the problem used correctly?
+- Is the mathematical approach valid?
+- Are there any calculation errors?
+- Does the final answer match your calculation?
+
+After your analysis, respond with ONE word only:
+- CORRECT (if solution is right)
+- INCORRECT (if you find any error)
+
+You must choose one. If unsure, carefully recalculate and decide.
+
+Your verdict:"""
 
 
 def parse_checker_verdict(response: str) -> str:
     """
-    Parse checker verdict from response (BALANCED VERSION V5).
-    
-    OPTIMIZATION V5: 
-    - Detect when model is re-solving instead of verifying
-    - Handle short affirmative responses better
-    - Better balance for degraded case prevention
+    Parse checker verdict from response.
+    Only accepts explicit verdict patterns, not casual mentions.
     
     Returns:
-        "CORRECT" or "INCORRECT"
+        "CORRECT" or "INCORRECT" (defaults to INCORRECT if unclear)
     """
-    if not response or len(response.strip()) < 2:
+    upper = response.upper()
+    
+    # Try explicit "YOUR VERDICT: XXX" or "VERDICT: XXX" pattern (most specific)
+    match = re.search(r'(YOUR\s+)?VERDICT\s*:\s*(CORRECT|INCORRECT)', upper)
+    if match:
+        return match.group(2).upper()
+    
+    # Look for verdict at END of response (after substantial reasoning)
+    # Must be on its own line or after conclusion markers
+    lines = upper.strip().split('\n')
+    if len(lines) > 0:
+        last_line = lines[-1].strip()
+        # Check if last line is just the verdict
+        if last_line in ['CORRECT', 'INCORRECT']:
+            return last_line
+        # Check if last line is "VERDICT: XXX"
+        if re.match(r'^(YOUR\s+)?(VERDICT|CONCLUSION)\s*:\s*(CORRECT|INCORRECT)\s*$', last_line):
+            verdict_match = re.search(r'(CORRECT|INCORRECT)', last_line)
+            if verdict_match:
+                return verdict_match.group(1)
+    
+    # Look for standalone CORRECT or INCORRECT in the response
+    if 'INCORRECT' in upper:
         return "INCORRECT"
-    
-    upper = response.strip().upper()
-    original = response.strip()
-    
-    # Primary: Check if response STARTS with verdict
-    if upper.startswith('CORRECT'):
-        if not re.search(r'^CORRECT\s*(BUT|HOWEVER|IS\s+NOT|WRONG)', upper):
-            return "CORRECT"
-    if upper.startswith('INCORRECT'):
-        return "INCORRECT"
-    
-    # OPTIMIZATION: Detect "re-solving" pattern
-    # If checker starts with "To determine...", "Let's...", "First...", it's re-solving
-    # These responses are unreliable - default to trusting the original answer
-    resolving_patterns = [
-        r'^TO\s+DETERMINE',
-        r'^LET\'?S',
-        r'^FIRST',
-        r'^WE\s+NEED',
-        r'^STEP\s+1',
-        r'^TO\s+CHECK',
-        r'^TO\s+VERIFY',
-    ]
-    for pattern in resolving_patterns:
-        if re.search(pattern, upper):
-            # Model is re-solving, not verifying - unreliable
-            # Check if it eventually says something clear
-            if re.search(r'\bINCORRECT\b|\bWRONG\b', upper[-100:]):
-                return "INCORRECT"
-            if re.search(r'\bCORRECT\b', upper[-50:]):
-                return "CORRECT"
-            # Otherwise, trust the original answer (lean CORRECT)
-            return "CORRECT"
-    
-    # Secondary: Look for INCORRECT indicators
-    incorrect_patterns = [
-        r'\bINCORRECT\b',
-        r'\bWRONG\b',
-        r'\bERROR\b',
-        r'\bINVALID\b',
-        r'\bMISTAKE\b',
-        r'NOT\s+CORRECT',
-        r'IS\s+NOT\s+RIGHT',
-    ]
-    for pattern in incorrect_patterns:
-        if re.search(pattern, upper):
-            return "INCORRECT"
-    
-    # Third: Look for CORRECT indicators
-    correct_patterns = [
-        r'\bCORRECT\b',
-        r'\bRIGHT\b',
-        r'^YES\b',
-        r'LOOKS?\s+(RIGHT|CORRECT|GOOD)',
-        r'IS\s+CORRECT',
-    ]
-    for pattern in correct_patterns:
-        if re.search(pattern, upper):
-            if not re.search(r'NOT\s+' + pattern, upper):
-                return "CORRECT"
-    
-    # Fourth: Short response handling
-    if len(original) < 30:
-        # Very short - likely partial output or just agreement
-        # Lean toward CORRECT for short unclear responses
+    if 'CORRECT' in upper:
         return "CORRECT"
     
-    # Long unclear response - default INCORRECT
+    # If no clear verdict found, default to INCORRECT (conservative)
     return "INCORRECT"
 
 
@@ -236,14 +206,7 @@ def parse_checker_tip(response: str) -> str:
 
 
 class StopAfterCheckerConclusion(StoppingCriteria):
-    """
-    Stop checker generation once VERDICT is found (OPTIMIZED V7).
-    
-    OPTIMIZATIONS V7:
-    - Simple prompt = allow early verdict (after 5 chars)
-    - Stop on clear CORRECT/INCORRECT
-    - Longer max to capture verdict if model is verbose
-    """
+    """Stop checker generation once VERDICT is found"""
     
     def __init__(self, tokenizer, prompt_token_len: int):
         self.tokenizer = tokenizer
@@ -255,52 +218,51 @@ class StopAfterCheckerConclusion(StoppingCriteria):
             return False
         
         text = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
-        stripped = text.strip().upper()
+        upper = text.upper()
         
-        # Minimum 5 chars to avoid stopping on partial tokens
-        if len(stripped) < 5:
+        # Only stop if we have substantial reasoning AND then a verdict
+        # Require at least 50 chars before looking for verdict
+        if len(text.strip()) < 50:
             return False
         
-        # Stop if output starts with CORRECT or INCORRECT
-        if stripped.startswith('CORRECT') or stripped.startswith('INCORRECT'):
+        # Check for explicit "Your verdict:" pattern followed by verdict
+        verdict_pattern = r'(YOUR VERDICT|VERDICT)\s*:\s*(CORRECT|INCORRECT)'
+        if re.search(verdict_pattern, upper):
             return True
         
-        # Stop on any clear verdict pattern in first 50 chars
-        first_part = stripped[:50]
-        if re.search(r'\b(CORRECT|INCORRECT)\b', first_part):
-            return True
+        # Check for standalone verdict at the END after reasoning
+        # Must have newline or "verdict:" before it
+        if len(text.strip()) > 100:
+            if re.search(r'(VERDICT|CONCLUSION)\s*:\s*(CORRECT|INCORRECT)(\s|$)', upper):
+                return True
         
-        # Stop if generating too much (200 chars max to give model more room)
-        if len(text) > 200:
+        # Stop if too long
+        if len(text) > 400:
             return True
         
         return False
 
 
 def generate_response_checker(model, tokenizer, prompt: str, detailed: bool = False):
-    """
-    Generate response for checker (OPTIMIZED V4).
-    
-    OPTIMIZATIONS V4:
-    - Use dedicated checker generation, NOT StopOnBoxedAnswer
-    - Use StopAfterCheckerConclusion for proper stopping
-    - Shorter max tokens since checker only needs to verify
-    """
+    """Generate response for checker with reasoning space"""
     import torch
-    from transformers import TextStreamer
     
-    # Apply chat template if available
-    if hasattr(tokenizer, 'chat_template') and tokenizer.chat_template:
-        messages = [{"role": "user", "content": prompt}]
-        formatted_prompt = tokenizer.apply_chat_template(
-            messages, 
-            tokenize=False, 
-            add_generation_prompt=True
+    # Check if model is an inference engine
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (from load_inference_engine_wrapper)
+        response = model.generate_single(
+            prompt,
+            max_new_tokens=CHECKER_MAX_TOKENS,
+            temperature=CHECKER_TEMPERATURE,
+            do_sample=DO_SAMPLE,
+            top_p=CHECKER_TOP_P,
+            repetition_penalty=CHECKER_REPETITION_PENALTY,
+            detailed=detailed
         )
-    else:
-        formatted_prompt = prompt
+        return response
     
-    inputs = tokenizer(formatted_prompt, return_tensors="pt", truncation=True, max_length=2048)
+    # Using standard model (from load_model)
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
     
     prompt_length = inputs['input_ids'].shape[1]
@@ -310,25 +272,23 @@ def generate_response_checker(model, tokenizer, prompt: str, detailed: bool = Fa
     else:
         streamer = None
     
-    # Use checker-specific stopping criteria
-    stopping_criteria = StoppingCriteriaList([
-        StopAfterCheckerConclusion(tokenizer, prompt_length)
-    ])
+    stopping_criteria = StoppingCriteriaList([StopAfterCheckerConclusion(tokenizer, prompt_length)])
     
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=200,  # Checker needs less tokens
-            temperature=0.1,
-            do_sample=False,
+            max_new_tokens=CHECKER_MAX_TOKENS,
+            temperature=CHECKER_TEMPERATURE,
+            do_sample=DO_SAMPLE,
+            top_p=CHECKER_TOP_P,
             pad_token_id=tokenizer.eos_token_id,
-            repetition_penalty=1.2,
+            repetition_penalty=CHECKER_REPETITION_PENALTY,
             stopping_criteria=stopping_criteria,
             streamer=streamer
         )
     
-    response_ids = outputs[0][prompt_length:]
-    response = tokenizer.decode(response_ids, skip_special_tokens=True).strip()
+    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response = generated_text[len(prompt):].strip()
     
     return response
 

@@ -20,6 +20,9 @@ sympy>=1.12
 # Parameter-Efficient Fine-Tuning (for training)
 peft>=0.5.0
 
+# Reinforcement Learning (for RL training)
+trl>=0.7.0
+
 # Optional: Quantization (for QLoRA training)
 bitsandbytes>=0.41.0  # Uncomment if using QLoRA
 

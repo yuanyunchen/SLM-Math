@@ -5,14 +5,14 @@ Solver-Checker with Tools Multi-Agent Workflow
 STATELESS MODE + TOOL EXECUTION
 - 基于stateless架构（稳定、无幻觉）
 - Solver可以生成并执行Python代码
-- Checker使用代码独立验证答案
+- Checker可以验证代码和结果
 - 自动代码执行提升准确性
 
 工作流程：
 1. Solver生成reasoning + code
-2. 自动执行Solver的代码，提取答案
-3. Checker独立计算并验证
-4. 比较结果决定verdict
+2. 自动执行Solver的代码
+3. Solver看到执行结果继续推理
+4. Checker验证代码逻辑和执行结果
 5. 基于反馈迭代改进
 
 适用场景：
@@ -22,148 +22,15 @@ STATELESS MODE + TOOL EXECUTION
 """
 
 import sys
-import re
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from typing import Dict, List, Optional
 import torch
-
-
-# Simple tool instruction - compatible with Qwen2.5-Math's default system prompt
-SOLVER_TOOL_INSTRUCTION = """
-
-Use Python code in ```python``` blocks for calculations. The code will be executed and results shown."""
-
-
-def extract_answer_from_code_output(exec_results: list) -> str:
-    """Extract numerical answer from code execution results."""
-    if not exec_results:
-        return None
-    
-    for result in reversed(exec_results):
-        if result['success'] and result['output']:
-            output_text = result['output'].strip()
-            lines = output_text.strip().split('\n')
-            for line in reversed(lines):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    num = float(line)
-                    return str(num)
-                except ValueError:
-                    pass
-                numbers = re.findall(r'[+-]?\d+\.?\d*(?:[eE][+-]?\d+)?', line)
-                if numbers:
-                    return numbers[-1]
-    return None
-
-
-def compare_numerical_answers(ans1: str, ans2: str) -> bool:
-    """
-    Compare two numerical answers with tolerance for floating-point precision.
-    Returns True if answers match (or are numerically equivalent).
-    """
-    if not ans1 or not ans2:
-        return False
-    
-    # Clean answers
-    ans1 = str(ans1).strip().replace(',', '')
-    ans2 = str(ans2).strip().replace(',', '')
-    
-    # Direct string match
-    if ans1 == ans2:
-        return True
-    
-    # Try numerical comparison
-    try:
-        num1 = float(ans1)
-        num2 = float(ans2)
-        
-        # Exact match (for integers)
-        if num1 == num2:
-            return True
-        
-        # Relative tolerance for floats
-        if abs(num1) > 1e-10:
-            rel_diff = abs(num1 - num2) / abs(num1)
-            if rel_diff < 0.001:  # 0.1% tolerance
-                return True
-        
-        # Absolute tolerance for small numbers
-        if abs(num1 - num2) < 0.01:
-            return True
-            
-    except (ValueError, TypeError):
-        pass
-    
-    # Fallback to check_answer
-    from utils.prompt_utils import check_answer
-    return check_answer(ans1, ans2)
-
-
-def run_checker_with_code(
-    question: str,
-    solver_answer: str,
-    model,
-    tokenizer,
-    detailed: bool = False
-) -> Dict:
-    """
-    Run checker that independently solves the problem with code and compares.
-    
-    Returns verdict, checker_answer, and whether code was executed.
-    Verdict is CORRECT if answers match, INCORRECT otherwise.
-    """
-    from models.inference import generate_response
-    from utils.python_code_execution import process_text_with_code_execution
-    
-    # Simple prompt - let model solve independently
-    checker_prompt = f"""{question}
-
-Use Python code in ```python``` blocks to solve this. Print the final numerical answer."""
-    
-    # Generate checker's independent solution
-    response = generate_response(
-        model, tokenizer, checker_prompt, "standard", detailed,
-        temperature=0.0, do_sample=False, top_p=1.0
-    )
-    
-    # Execute code
-    response_with_output, exec_results = process_text_with_code_execution(
-        response, share_variables=True
-    )
-    
-    # Extract checker's answer from code output
-    checker_answer = extract_answer_from_code_output(exec_results)
-    code_executed = len(exec_results) > 0 if exec_results else False
-    
-    # If no code output, try boxed answer
-    if not checker_answer:
-        from utils.prompt_utils import extract_answer
-        checker_answer = extract_answer(response)
-    
-    # Compare answers
-    verdict = "INCORRECT"
-    if checker_answer and solver_answer:
-        if compare_numerical_answers(checker_answer, solver_answer):
-            verdict = "CORRECT"
-    elif not checker_answer:
-        # Checker failed to produce answer - trust solver
-        verdict = "CORRECT"
-    
-    if detailed:
-        print(f"  Checker's answer: {checker_answer}")
-        print(f"  Solver's answer: {solver_answer}")
-        print(f"  Verdict: {verdict}")
-    
-    return {
-        "verdict": verdict,
-        "checker_answer": checker_answer,
-        "response": response_with_output if exec_results else response,
-        "code_executed": code_executed
-    }
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
 
 
 def run_solver_checker_with_tools_workflow(
@@ -198,18 +65,23 @@ def run_solver_checker_with_tools_workflow(
     Returns:
         Dict with workflow results
     """
-    from utils.prompt_utils import extract_answer, check_answer
+    from utils.prompt_utils import extract_answer, check_answer, format_prompt_standard
     from models.inference import generate_response
+    from agent.utils import (
+        format_prompt_checker,
+        parse_checker_verdict,
+        parse_checker_tip,
+        generate_response_checker
+    )
     from utils.python_code_execution import process_text_with_code_execution
-    from agent.unified_config import FIRST_ROUND_SOLVER_CONFIG
     
     if detailed:
         print(f"\n{'='*80}")
         print(f"SOLVER-CHECKER WITH TOOLS WORKFLOW")
         print(f"{'='*80}")
         print(f"Question: {question[:100]}...")
-        print(f"Solver Tools: {'enabled' if enable_solver_tools else 'disabled'}")
-        print(f"Checker Tools: {'enabled' if enable_checker_tools else 'disabled'}")
+        print(f"Solver Tools: {'✓' if enable_solver_tools else '✗'}")
+        print(f"Checker Tools: {'✓' if enable_checker_tools else '✗'}")
         print(f"{'='*80}\n")
     
     iterations = []
@@ -231,64 +103,71 @@ def run_solver_checker_with_tools_workflow(
         
         # ========== SOLVER TURN ==========
         if iteration_num == 1:
-            # First iteration: simple prompt (Qwen2.5-Math has default system prompt)
-            solver_prompt = question
+            # First iteration: standard prompt
+            solver_prompt = format_prompt_standard(question, dataset_name)
+            
+            # Add tool usage instruction
             if enable_solver_tools:
-                solver_prompt += SOLVER_TOOL_INSTRUCTION
-            
-            if detailed:
-                print(f"\n[Solver Turn - First Round]")
-            
-            # Use unified config for first round
-            solver_response = generate_response(
-                solver_model, solver_tokenizer, solver_prompt, "standard", detailed,
-                temperature=FIRST_ROUND_SOLVER_CONFIG['temperature'],
-                do_sample=FIRST_ROUND_SOLVER_CONFIG['do_sample'],
-                top_p=FIRST_ROUND_SOLVER_CONFIG['top_p']
-            )
+                solver_prompt += "\n\nYou can write Python code in ```python``` blocks to help with calculations. The code will be executed automatically and you'll see the results."
         else:
             # Subsequent iterations: incorporate feedback
-            solver_prompt = f"""{question}
-
-Previous attempt was incorrect. {checker_feedback}
-
-Please solve again carefully."""
+            solver_prompt = format_prompt_standard(question, dataset_name)
+            solver_prompt += f"\n\nPrevious attempt feedback:\n{checker_feedback}\n\nPlease address the issues and provide an improved solution."
+            
             if enable_solver_tools:
-                solver_prompt += SOLVER_TOOL_INSTRUCTION
-            
-            if detailed:
-                print(f"\n[Solver Turn - Retry]")
-            
+                solver_prompt += "\n\nYou can write Python code in ```python``` blocks for calculations."
+        
+        if detailed:
+            print(f"\n[Solver Turn]")
+        
+        # Generate solver response - check if model is an inference engine or raw model
+        if hasattr(solver_model, 'generate_single'):
+            # Using inference engine (from load_inference_engine_wrapper)
+            solver_response = solver_model.generate_single(
+                solver_prompt,
+                max_new_tokens=MAX_NEW_TOKENS,
+                temperature=TEMPERATURE,
+                do_sample=DO_SAMPLE,
+                top_p=TOP_P,
+                repetition_penalty=REPETITION_PENALTY,
+                detailed=detailed
+            )
+        else:
+            # Using standard model (from load_model)
             solver_response = generate_response(
-                solver_model, solver_tokenizer, solver_prompt, "standard", detailed,
-                temperature=0.3, do_sample=True, top_p=0.9
+                solver_model,
+                solver_tokenizer,
+                solver_prompt,
+                "standard",
+                detailed
             )
         
-        # Execute code in solver response
-        solver_exec_results = []
-        if enable_solver_tools and "```python" in solver_response:
-            solver_response_with_output, solver_exec_results = process_text_with_code_execution(
-                solver_response, share_variables=True
+        # Execute code in solver response if enabled
+        if enable_solver_tools:
+            solver_response_with_output, exec_results = process_text_with_code_execution(
+                solver_response,
+                share_variables=True
             )
             
-            if solver_exec_results:
+            if exec_results:
                 if detailed:
-                    print(f"\n[Solver Code Execution]")
-                    for i, result in enumerate(solver_exec_results, 1):
+                    print(f"\n[Code Execution]")
+                    for i, result in enumerate(exec_results, 1):
                         if result['success']:
-                            output_preview = result['output'][:80] if result['output'] else "(no output)"
-                            print(f"  Block {i}: SUCCESS -> {output_preview}")
+                            print(f"  Block {i}: ✓ Output: {result['output'][:50]}")
                         else:
-                            print(f"  Block {i}: ERROR -> {result['error'][:60]}")
+                            print(f"  Block {i}: ✗ Error: {result['error'][:50]}")
+                
+                # Use response with execution results
                 solver_response = solver_response_with_output
+                
+                # Check if any execution failed and add note for checker
+                failed_blocks = [r for r in exec_results if not r['success']]
+                if failed_blocks:
+                    error_note = f"\n\n[Note: {len(failed_blocks)} code block(s) failed to execute properly]"
+                    solver_response += error_note
         
-        # Extract solver answer - prioritize code output
-        solver_answer = None
-        if solver_exec_results:
-            solver_answer = extract_answer_from_code_output(solver_exec_results)
-        if not solver_answer:
-            solver_answer = extract_answer(solver_response)
-        
+        solver_answer = extract_answer(solver_response)
         solver_responses.append(solver_response)
         if solver_answer:
             solver_answers.append(solver_answer)
@@ -300,46 +179,87 @@ Please solve again carefully."""
         if detailed:
             print(f"\n[Checker Turn]")
         
-        if enable_checker_tools:
-            # Checker independently solves and compares
-            checker_result = run_checker_with_code(
-                question, solver_answer,
-                checker_model, checker_tokenizer, detailed
-            )
-            checker_response = checker_result['response']
-            checker_verdict = checker_result['verdict']
-            checker_answer = checker_result['checker_answer']
-            checker_tools_used = checker_result['code_executed']
-            
-            # Generate feedback if INCORRECT
-            if checker_verdict == "INCORRECT" and checker_answer:
-                checker_feedback = f"Your answer {solver_answer} differs from verified answer {checker_answer}. Please recalculate."
-            else:
-                checker_feedback = "The solution appears incorrect. Please check your reasoning."
-        else:
-            # Simple text-based checking (fallback)
-            from agent.utils import format_prompt_checker, parse_checker_verdict, generate_response_checker
-            checker_prompt = format_prompt_checker(question, solver_response, dataset_name)
-            checker_response = generate_response_checker(
-                checker_model, checker_tokenizer, checker_prompt, detailed
-            )
-            checker_verdict = parse_checker_verdict(checker_response)
-            checker_answer = None
-            checker_tools_used = False
-            checker_feedback = "The previous solution may be incorrect. Please reconsider."
+        # Build checker prompt with tool support
+        checker_prompt = format_prompt_checker(
+            question,
+            solver_response,
+            dataset_name
+        )
         
-        if checker_verdict not in ["CORRECT", "INCORRECT"]:
-            checker_verdict = "INCORRECT"
+        if enable_checker_tools:
+            checker_prompt += "\n\nYou can write Python code in ```python``` blocks to verify calculations or test the solution."
+        
+        # Generate checker response - check if model is an inference engine or raw model
+        if hasattr(checker_model, 'generate_single'):
+            # Using inference engine (from load_inference_engine_wrapper)
+            checker_response = checker_model.generate_single(
+                checker_prompt,
+                max_new_tokens=CHECKER_MAX_TOKENS,
+                temperature=CHECKER_TEMPERATURE,
+                do_sample=DO_SAMPLE,
+                top_p=CHECKER_TOP_P,
+                repetition_penalty=CHECKER_REPETITION_PENALTY,
+                detailed=detailed
+            )
+        else:
+            # Using standard model (from load_model)
+            checker_response = generate_response_checker(
+                checker_model,
+                checker_tokenizer,
+                checker_prompt,
+                detailed
+            )
+        
+        # Execute code in checker response if enabled
+        if enable_checker_tools:
+            checker_response_with_output, checker_exec_results = process_text_with_code_execution(
+                checker_response,
+                share_variables=True
+            )
+            
+            if checker_exec_results:
+                if detailed:
+                    print(f"\n[Checker Code Execution]")
+                    for i, result in enumerate(checker_exec_results, 1):
+                        if result['success']:
+                            print(f"  Block {i}: ✓ {result['output'][:50]}")
+                        else:
+                            print(f"  Block {i}: ✗ {result['error'][:50]}")
+                
+                # Use response with execution results
+                checker_response = checker_response_with_output
+                
+                # Check if any checker execution failed
+                checker_failed_blocks = [r for r in checker_exec_results if not r['success']]
+                if checker_failed_blocks:
+                    # Checker's verification code failed - this affects reliability of verdict
+                    if detailed:
+                        print(f"  [Warning: Checker's verification code had {len(checker_failed_blocks)} error(s)]")
         
         checker_responses.append(checker_response)
+        checker_verdict = parse_checker_verdict(checker_response)
+        
+        if checker_verdict not in ["CORRECT", "INCORRECT"]:
+            checker_verdict = "INCORRECT"  # Default to INCORRECT
+        
         checker_verdicts.append(checker_verdict)
+        
+        # Extract feedback for next iteration
+        if checker_verdict == "INCORRECT":
+            checker_feedback = parse_checker_tip(checker_response)
+            if not checker_feedback:
+                checker_feedback = "The previous solution was incorrect. Please reconsider the problem."
+        elif checker_verdict == "UNCLEAR":
+            checker_feedback = "The previous solution was unclear. Please provide clearer reasoning."
+        else:
+            checker_feedback = ""
         
         if detailed:
             print(f"\n[Checker Verdict]: {checker_verdict}")
+            if checker_feedback:
+                print(f"[Feedback]: {checker_feedback[:100]}...")
         
         # Store iteration data
-        is_actually_correct = check_answer(solver_answer, ground_truth) if solver_answer else False
-        
         iteration_data = {
             "iteration": iteration_num,
             "solver_response": solver_response,
@@ -348,11 +268,14 @@ Please solve again carefully."""
             "checker_verdict": checker_verdict,
             "checker_feedback": checker_feedback,
             "solver_tools_used": enable_solver_tools and "```python" in solver_response,
-            "checker_tools_used": checker_tools_used,
-            "is_actually_correct": is_actually_correct
+            "checker_tools_used": enable_checker_tools and "```python" in checker_response
         }
-        if enable_checker_tools:
-            iteration_data["checker_answer"] = checker_answer
+        
+        # Check actual correctness
+        is_actually_correct = False
+        if solver_answer:
+            is_actually_correct = check_answer(solver_answer, ground_truth)
+        iteration_data["is_actually_correct"] = is_actually_correct
         
         iterations.append(iteration_data)
         
@@ -362,55 +285,49 @@ Please solve again carefully."""
                 predicted_answer = solver_answer
                 final_verdict = "CORRECT"
                 if detailed:
-                    print(f"\n[Checker confirmed CORRECT]")
+                    print(f"\n✓ Checker confirmed CORRECT, breaking")
                 break
         
+        # Max iterations check
         if iteration_num >= max_iterations:
             if detailed:
                 print(f"\nReached max iterations ({max_iterations})")
             break
     
-    # If no CORRECT verdict, prefer FIRST answer (to avoid degradation)
-    # The first try has 82% accuracy, so trust it over later iterations
+    # If no CORRECT verdict, use last valid answer
     if predicted_answer is None:
-        # First choice: use first valid answer
-        first_answer_found = None
-        for i in range(len(iterations)):
+        for i in range(len(iterations) - 1, -1, -1):
             iter_answer = iterations[i]['solver_answer']
             if iter_answer and iter_answer.strip():
-                first_answer_found = iter_answer
+                predicted_answer = iter_answer
+                final_verdict = f"LAST_VALID_ITER_{iterations[i]['iteration']}"
                 break
         
-        if first_answer_found:
-            predicted_answer = first_answer_found
-            final_verdict = "FIRST_ANSWER_FALLBACK"
-        else:
-            # Fallback: any valid answer
-            for i in range(len(iterations) - 1, -1, -1):
-                iter_answer = iterations[i]['solver_answer']
-                if iter_answer and iter_answer.strip():
-                    predicted_answer = iter_answer
-                    final_verdict = f"LAST_VALID_ITER_{iterations[i]['iteration']}"
-                    break
-            if predicted_answer is None:
-                final_verdict = "NO_VALID_ANSWER"
+        if predicted_answer is None:
+            final_verdict = "NO_VALID_ANSWER"
     
     # Check final correctness
-    final_correct = check_answer(predicted_answer, ground_truth) if predicted_answer else False
+    final_correct = False
+    if predicted_answer:
+        final_correct = check_answer(predicted_answer, ground_truth)
     
     # Determine case type
     first_answer = solver_answers[0] if solver_answers else None
     first_correct = check_answer(first_answer, ground_truth) if first_answer else False
     
-    if first_correct and final_correct:
+    case_type = None
+    if first_correct and final_correct and len(iterations) == 1:
         case_type = "FIRST_TRY_SUCCESS"
     elif not first_correct and final_correct:
         case_type = "IMPROVED"
     elif first_correct and not final_correct:
         case_type = "DEGRADED"
-    else:
+    elif not first_correct and not final_correct:
         case_type = "FAILED"
+    else:
+        case_type = "OTHER"
     
+    # Compile results
     return {
         "question": question,
         "ground_truth": ground_truth,

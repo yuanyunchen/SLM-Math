@@ -1,0 +1,200 @@
+# ==============================================================================
+# GRPO RL Training Configuration
+# Group Relative Policy Optimization for Mathematical Reasoning
+# ==============================================================================
+
+# ==============================================================================
+# Model Configuration
+# ==============================================================================
+model:
+  # Base model path (SFT checkpoint)
+  # Replace with your actual SFT checkpoint path
+  name: "Qwen2.5-Math-1.5B"
+  path: "checkpoints/sft_20251124_131423"  # Your SFT checkpoint
+  trust_remote_code: true
+  load_in_8bit: false  # Set to true if using 8-bit quantization
+  load_in_4bit: false  # Set to true if using 4-bit quantization
+
+# ==============================================================================
+# LoRA Configuration (Parameter-Efficient Fine-Tuning)
+# ==============================================================================
+lora:
+  enabled: true
+  r: 16  # LoRA rank
+  alpha: 32  # LoRA alpha (scaling factor)
+  dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# ==============================================================================
+# Data Configuration
+# ==============================================================================
+data:
+  train_file: "data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json"
+  max_samples: -1  # -1 for all data, set to small number for testing
+  train_split_ratio: 0.95  # 95% for training, 5% for validation
+  shuffle: true
+  seed: 42
+
+# ==============================================================================
+# GRPO Algorithm Configuration
+# ==============================================================================
+grpo:
+  # Number of response samples per prompt
+  # Higher = more diverse but slower
+  num_return_sequences: 2  # Generate 2 responses per prompt for comparison
+  
+  # Reward computation
+  reward_correct: 1.0  # Reward for correct answer
+  reward_wrong: -1.0  # Penalty for wrong answer
+  reward_no_answer: -0.5  # Penalty for no valid answer
+  
+  # KL divergence penalty (prevents policy from deviating too far from reference)
+  # NOTE: Current implementation KL has no gradient, so it only adds compute cost
+  # Set to 0 to disable and save ~3x speed + ~3GB VRAM
+  kl_coef: 0.0  # Set to 0 to disable (recommended until KL is properly implemented)
+  
+  # Advantage normalization
+  whiten_rewards: true  # Normalize rewards within batch
+  
+  # Clipping (similar to PPO)
+  clip_range: 0.2  # Clip ratio for policy gradient
+  
+  # Value function (if using baseline)
+  use_value_baseline: false  # GRPO typically doesn't use value network
+
+# ==============================================================================
+# Generation Configuration
+# ==============================================================================
+generation:
+  max_new_tokens: 2048
+  temperature: 0.7  # Higher = more diverse, Lower = more focused
+  top_p: 0.9  # Nucleus sampling
+  top_k: 50  # Top-k sampling
+  do_sample: true  # Must be true for diverse generation
+  repetition_penalty: 1.1
+  pad_token_id: null  # Will be set to eos_token_id if null
+
+# ==============================================================================
+# Training Configuration
+# ==============================================================================
+training:
+  # Epochs and steps
+  num_epochs: 3
+  max_steps: -1  # -1 for epoch-based training
+  
+  # Batch sizes
+  per_device_train_batch_size: 4  # Batch size per GPU
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4  # Effective batch = 4 * 4 = 16
+  
+  # Optimizer
+  learning_rate: 5.0e-6  # Lower than SFT
+  weight_decay: 0.01
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-8
+  max_grad_norm: 1.0  # Gradient clipping
+  
+  # Learning rate schedule
+  lr_scheduler_type: "cosine"  # cosine, linear, constant
+  warmup_ratio: 0.1  # 10% warmup
+  warmup_steps: 0  # 0 to use warmup_ratio
+  
+  # Precision
+  fp16: false  # Set to true if GPU supports FP16
+  bf16: false  # Set to true if GPU supports BF16
+  
+  # Gradient checkpointing (saves memory)
+  gradient_checkpointing: true
+  
+  # Evaluation
+  evaluation_strategy: "steps"  # steps, epoch, no
+  eval_steps: 100  # Evaluate accuracy every 50 steps
+  save_strategy: "steps"
+  save_steps: 300  # Save checkpoint every N steps
+  save_total_limit: 3  # Keep only last 3 checkpoints
+  load_best_model_at_end: true
+  metric_for_best_model: "reward"
+  greater_is_better: true
+  
+  # Logging
+  logging_dir: "logs/rl_grpo"
+  logging_strategy: "steps"
+  logging_steps: 5  # Record loss every 5 steps
+  log_level: "info"
+  report_to: []  # ["tensorboard", "wandb"] to enable tracking
+  
+  # Output
+  output_dir: "results/rl_grpo_checkpoints"
+  run_name: "grpo_qwen25math_1.5b"
+  
+  # Other
+  dataloader_num_workers: 4
+  dataloader_pin_memory: true
+  remove_unused_columns: false  # Keep all columns for reward computation
+  
+  # Reproducibility
+  seed: 42
+
+# ==============================================================================
+# System Configuration
+# ==============================================================================
+system:
+  # GPU settings
+  cuda_visible_devices: "0"  # Which GPUs to use
+  
+  # DeepSpeed (optional, for multi-GPU or memory optimization)
+  use_deepspeed: false
+  deepspeed_config: null  # Path to DeepSpeed config if use_deepspeed=true
+  
+  # Distributed training
+  local_rank: -1  # Set by distributed launcher
+
+# ==============================================================================
+# Monitoring and Debugging
+# ==============================================================================
+debug:
+  # Enable debug mode (smaller data, more logging)
+  enabled: false
+  max_debug_samples: 100
+  
+  # Sample generation (for monitoring)
+  save_sample_generations: true
+  num_samples_to_save: 10
+  sample_generation_steps: 100
+
+# ==============================================================================
+# Notes
+# ==============================================================================
+# 
+# Memory Usage Estimation:
+# - Qwen2.5-Math-1.5B: ~3GB (fp16)
+# - + LoRA adapters: ~0.5GB
+# - + Reference model: ~3GB
+# - + Activations (batch=4): ~4-6GB
+# - Total: ~10-13GB per GPU
+#
+# Recommended GPU: 
+# - A100 (40GB/80GB)
+# - A6000 (48GB)
+# - RTX 3090/4090 (24GB) - reduce batch size
+#
+# Training Time Estimation:
+# - 18946 samples * 2 generations = 37892 samples
+# - Batch size 16 (4*4) → ~2370 steps per epoch
+# - 3 epochs → ~7110 steps
+# - ~2-3 seconds per step → ~4-6 hours on A100
+#
+# Logging and Evaluation Frequency:
+# - Loss logging: every 5 steps (~1422 times total)
+# - Accuracy evaluation: every 100 steps (~71 times total)
+# - Checkpoint saving: every 200 steps (~35 times total)
+#
+
+

@@ -34,8 +34,10 @@ from agent.plan_and_reflection import run_plan_and_reflection_workflow
 def parse_args():
     parser = argparse.ArgumentParser(description='Agent evaluation script')
     parser.add_argument('--model', type=str, required=True, help='Model name')
+    parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint (LoRA adapter or fine-tuned model). Can be relative to project root or absolute path.')
     parser.add_argument('--checker_model', type=str, default=None, help='Checker model name (for solver_checker only, default: same as solver)')
-    parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'agent_with_python_tools', 'majority_vote', 'plan_and_reflection'], help='Agent method')
+    parser.add_argument('--checker_checkpoint', type=str, default=None, help='Path to checker checkpoint (optional, for solver_checker only)')
+    parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'agent_with_python_tools', 'majority_vote', 'plan_and_reflection'], help='Agent method')
     parser.add_argument('--round', type=str, required=True, help='Test round name')
     parser.add_argument('--dataset', type=str, required=True, help='Dataset name')
     parser.add_argument('--split', type=str, default=None, help='Dataset split')
@@ -76,25 +78,30 @@ def run_evaluation(args):
         split_name = 'test'
     
     print(f"Model: {args.model}")
+    if args.checkpoint:
+        print(f"Checkpoint: {args.checkpoint}")
     print(f"Agent Method: {args.agent}")
-    if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
-        if args.agent in ['solver_checker', 'solver_checker_stateless']:
-            if args.checker_model:
-                print(f"Checker Model: {args.checker_model}")
-            else:
-                print(f"Checker Model: {args.model} (same as solver)")
-            if args.agent == 'solver_checker_stateless':
-                print(f"Using stateless mode (independent prompts per iteration)")
+    if args.agent in ['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
+        if args.agent == 'solver_checker' and args.checker_model:
+            print(f"Checker Model: {args.checker_model}")
+            if args.checker_checkpoint:
+                print(f"Checker Checkpoint: {args.checker_checkpoint}")
+        elif args.agent == 'solver_checker':
+            print(f"Checker Model: {args.model} (same as solver)")
         elif args.agent == 'solver_checker_chat':
             print(f"Using shared model for both solver and checker (optimized chat mode)")
         elif args.agent == 'solver_checker_trivial_chat':
             print(f"Using shared model for both solver and checker (trivial chat mode)")
         elif args.agent == 'solver_checker_with_tools':
             print(f"Checker Model: {args.checker_model if args.checker_model else args.model}")
+            if args.checker_checkpoint:
+                print(f"Checker Checkpoint: {args.checker_checkpoint}")
             print(f"Solver Tools: {args.enable_solver_tools}")
             print(f"Checker Tools: {args.enable_checker_tools}")
         elif args.agent == 'solver_checker_summarizer':
             print(f"Checker Model: {args.checker_model if args.checker_model else args.model}")
+            if args.checker_checkpoint:
+                print(f"Checker Checkpoint: {args.checker_checkpoint}")
             print(f"Summarizer: Enabled (Stateless mode)")
         elif args.agent == 'solver_checker_summarizer_chat':
             print(f"Using shared model for solver, checker, and summarizer (Chat mode)")
@@ -130,13 +137,17 @@ def run_evaluation(args):
         if use_batch_inference:
             # Use inference engine for batch processing
             (model, tokenizer), solver_engine = load_inference_engine_wrapper(
-                args.model, base_path, backend=args.inference_backend
+                args.model, base_path, backend=args.inference_backend, checkpoint_path=args.checkpoint
             )
             
-            if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_with_tools', 'solver_checker_summarizer']:
+            # Adjust use_batch_inference if engine is None (checkpoint fallback)
+            if solver_engine is None and args.batch_size == 1:
+                use_batch_inference = False
+            
+            if args.agent in ['solver_checker', 'solver_checker_with_tools', 'solver_checker_summarizer']:
                 if args.checker_model and args.checker_model != args.model:
                     (checker_model, checker_tokenizer), checker_engine = load_inference_engine_wrapper(
-                        args.checker_model, base_path, backend=args.inference_backend
+                        args.checker_model, base_path, backend=args.inference_backend, checkpoint_path=args.checker_checkpoint
                     )
                 else:
                     checker_model, checker_tokenizer = model, tokenizer
@@ -146,10 +157,10 @@ def run_evaluation(args):
                 checker_engine = solver_engine
         else:
             # Use original load_model for backward compatibility
-            model, tokenizer = load_model(args.model, base_path)
-            if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_with_tools', 'solver_checker_summarizer']:
+            model, tokenizer = load_model(args.model, base_path, checkpoint_path=args.checkpoint)
+            if args.agent in ['solver_checker', 'solver_checker_with_tools', 'solver_checker_summarizer']:
                 if args.checker_model and args.checker_model != args.model:
-                    checker_model, checker_tokenizer = load_model(args.checker_model, base_path)
+                    checker_model, checker_tokenizer = load_model(args.checker_model, base_path, checkpoint_path=args.checker_checkpoint)
                 else:
                     checker_model, checker_tokenizer = model, tokenizer
             elif args.agent in ['solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_summarizer_chat']:
@@ -296,7 +307,7 @@ def run_evaluation(args):
             sample_start_time = time.time()
             
             # Run agent workflow based on method
-            if args.agent in ['solver_checker', 'solver_checker_stateless']:
+            if args.agent == 'solver_checker':
                 workflow_result = run_solver_checker_workflow(
                     question=question,
                     ground_truth=ground_truth,
@@ -316,10 +327,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'solver_checker_chat':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_solver_checker_chat_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     max_iterations=args.max_iterations,
                     detailed=detailed,
@@ -333,10 +346,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'solver_checker_trivial_chat':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_solver_checker_trivial_chat_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     max_iterations=args.max_iterations,
                     detailed=detailed,
@@ -394,10 +409,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'solver_checker_summarizer_chat':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_solver_checker_summarizer_chat_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     max_iterations=args.max_iterations,
                     detailed=detailed,
@@ -411,10 +428,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'plan_and_reflection':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_plan_and_reflection_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     max_iterations=args.max_iterations,
                     max_subproblems=args.max_subproblems,
@@ -429,10 +448,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'agent_with_python_tools':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_agent_with_python_tools(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     detailed=detailed,
                     dataset_name=dataset_name,
@@ -446,10 +467,12 @@ def run_evaluation(args):
                 runs = None
                 num_runs = None
             elif args.agent == 'majority_vote':
+                # Use solver_engine if batch inference is enabled
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_majority_vote_workflow(
                     question=question,
                     ground_truth=ground_truth,
-                    model=model,
+                    model=model_to_use,
                     tokenizer=tokenizer,
                     num_runs=args.num_runs,
                     temperature=args.temperature,
@@ -470,16 +493,12 @@ def run_evaluation(args):
             # Update statistics
             stats['total'] += 1
             
-            # Count first_try_correct (first solver generation correct)
-            # This should be consistent across ALL agents:
-            # - first_correct comes from workflow_result, which is the FIRST solver answer
-            if workflow_result['first_correct']:
-                stats['first_try_correct'] += 1
-            
-            # Agent-specific statistics
-            if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 'solver_checker_summarizer', 
+            if args.agent in ['solver_checker', 'solver_checker_chat', 'solver_checker_summarizer', 
                               'solver_checker_summarizer_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools']:
                 stats['total_iterations'] += total_iterations
+                
+                if workflow_result['first_correct'] and total_iterations == 1:
+                    stats['first_try_correct'] += 1
                 
                 # Analyze checker verdicts
                 for iter_data in iterations:
@@ -497,23 +516,20 @@ def run_evaluation(args):
                             stats['false_negatives'] += 1
             elif args.agent == 'plan_and_reflection':
                 stats['total_iterations'] += total_iterations
-            # majority_vote and agent_with_python_tools don't have iterations to count
+                if workflow_result['first_correct'] and total_iterations == 1:
+                    stats['first_try_correct'] += 1
+            elif args.agent == 'majority_vote':
+                if workflow_result['first_correct']:
+                    stats['first_try_correct'] += 1
             
             if final_correct:
                 stats['correct'] += 1
             
-            # Case type classification (mutually exclusive categories)
-            if case_type == "FIRST_TRY_SUCCESS" or case_type == "FIRST_RUN_SUCCESS":
-                # First solver output was correct AND final is correct
-                stats['other_cases'] += 1  # First try success, no change
-            elif case_type == "IMPROVED" or case_type == "MAJORITY_IMPROVED":
-                # First solver output was WRONG but final is CORRECT
+            if case_type == "IMPROVED" or case_type == "MAJORITY_IMPROVED":
                 stats['improved_cases'] += 1
             elif case_type == "DEGRADED" or case_type == "MAJORITY_DEGRADED":
-                # First solver output was CORRECT but final is WRONG
                 stats['degraded_cases'] += 1
             elif case_type == "FAILED" or case_type == "MAJORITY_FAILED":
-                # First solver output was WRONG and final is still WRONG
                 stats['failed_cases'] += 1
             else:
                 stats['other_cases'] += 1
@@ -532,7 +548,7 @@ def run_evaluation(args):
                 "sample_time": sample_time
             }
             
-            if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
+            if args.agent in ['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
                 prediction_entry.update({
                     "total_iterations": total_iterations,
                     "iterations": iterations,
@@ -547,15 +563,6 @@ def run_evaluation(args):
                 prediction_entry.update({
                     "total_iterations": total_iterations,
                     "iterations": iterations,
-                    "answers_collected": workflow_result.get('answers_collected', []),
-                    "answer_counts": workflow_result.get('answer_counts', {}),
-                })
-            elif args.agent == 'agent_with_python_tools':
-                prediction_entry.update({
-                    "response": workflow_result.get('response', ''),
-                    "code_executed": workflow_result.get('code_executed', False),
-                    "num_code_blocks": workflow_result.get('num_code_blocks', 0),
-                    "exec_results": workflow_result.get('exec_results', [])
                 })
             elif args.agent == 'majority_vote':
                 prediction_entry.update({
@@ -570,7 +577,7 @@ def run_evaluation(args):
             # Log detailed info
             with open(log_file, 'a', encoding='utf-8') as f:
                 f.write(f"\n{'─'*40}\n")
-                if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
+                if args.agent in ['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
                     f.write(f"Total Iterations: {total_iterations}\n")
                     for iter_data in iterations:
                         f.write(f"\n--- Iteration {iter_data['iteration']} ---\n")
@@ -598,19 +605,6 @@ def run_evaluation(args):
                         f.write(f"Reflect Verdict: {reflect_info.get('verdict', 'N/A')}\n")
                         f.write(f"Final Answer: {iter_data.get('answer', 'N/A')}\n")
                         f.write(f"Correct: {iter_data.get('is_correct', False)}\n")
-                elif args.agent == 'agent_with_python_tools':
-                    f.write(f"Code Executed: {workflow_result.get('code_executed', False)}\n")
-                    f.write(f"Number of Code Blocks: {workflow_result.get('num_code_blocks', 0)}\n")
-                    if workflow_result.get('exec_results'):
-                        f.write(f"\nCode Execution Results:\n")
-                        for i, result in enumerate(workflow_result['exec_results'], 1):
-                            status = '✓' if result['success'] else '✗'
-                            f.write(f"  Block {i}: {status}\n")
-                            if result['success']:
-                                f.write(f"    Output: {result.get('output', '')[:100]}\n")
-                            else:
-                                f.write(f"    Error: {result.get('error', '')[:100]}\n")
-                    f.write(f"\nModel Response:\n{workflow_result.get('response', '')[:1000]}\n")
                 elif args.agent == 'majority_vote':
                     f.write(f"Total Runs: {num_runs}\n")
                     for run_data in runs:
@@ -626,38 +620,27 @@ def run_evaluation(args):
                 f.write(f"Time: {sample_time:.2f}s\n")
                 f.write(f"{'='*80}\n")
             
-            # Calculate running scores
+            # Print progress
             current_accuracy = stats['correct'] / stats['total']
             first_try_accuracy = stats['first_try_correct'] / stats['total'] if stats['total'] > 0 else 0
-            # Calculate improved/degraded rates based on samples that could potentially improve/degrade
-            # improved_rate: among first-wrong samples, how many became correct
-            first_wrong_count = stats['total'] - stats['first_try_correct']
-            improved_rate = stats['improved_cases'] / first_wrong_count if first_wrong_count > 0 else 0
-            # degraded_rate: among first-correct samples, how many became wrong
-            degraded_rate = stats['degraded_cases'] / stats['first_try_correct'] if stats['first_try_correct'] > 0 else 0
             
-            status_symbol = "+" if final_correct else "-"
-            first_status = "+" if workflow_result['first_correct'] else "-"
+            status_symbol = "✓" if final_correct else "✗"
             
             if detailed:
-                print(f"\n{status_symbol} Final: {predicted_answer} (GT: {ground_truth}) | First: {first_status}")
-                if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 
-                                  'solver_checker_trivial_chat', 'solver_checker_summarizer', 
-                                  'solver_checker_summarizer_chat', 'solver_checker_with_tools']:
+                print(f"\n{status_symbol} Final Answer: {predicted_answer} (Expected: {ground_truth})")
+                if args.agent in ['solver_checker', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
                     print(f"Case Type: {case_type} | Iterations: {total_iterations}")
                 elif args.agent == 'majority_vote':
                     print(f"Case Type: {case_type} | Runs: {num_runs}")
-                elif args.agent == 'plan_and_reflection':
-                    print(f"Case Type: {case_type} | Iterations: {total_iterations}")
-                print(f"[Running] Acc: {current_accuracy*100:.1f}% | First: {first_try_accuracy*100:.1f}%")
-                print(f"[Running] Improved: {stats['improved_cases']} ({improved_rate*100:.1f}%) | Degraded: {stats['degraded_cases']} ({degraded_rate*100:.1f}%)")
+                print(f"Overall Accuracy: {current_accuracy*100:.1f}% | First Try: {first_try_accuracy*100:.1f}%")
+                print(f"Improved: {stats['improved_cases']} | Degraded: {stats['degraded_cases']}")
                 print("="*80)
             else:
                 progress_bar.set_postfix({
                     'Acc': f'{current_accuracy*100:.1f}%',
                     'First': f'{first_try_accuracy*100:.1f}%',
-                    'Imp': f'{stats["improved_cases"]}({improved_rate*100:.0f}%)',
-                    'Deg': f'{stats["degraded_cases"]}({degraded_rate*100:.0f}%)'
+                    'Imp': stats['improved_cases'],
+                    'Deg': stats['degraded_cases']
                 })
                 progress_bar.update(1)
             
@@ -694,18 +677,6 @@ def run_evaluation(args):
     results["accuracy"] = stats['correct'] / stats['total'] if stats['total'] > 0 else 0
     results["correct"] = stats['correct']
     results["total"] = stats['total']
-    # Calculate rates
-    first_wrong_count = stats['total'] - stats['first_try_correct']
-    improved_rate = stats['improved_cases'] / first_wrong_count if first_wrong_count > 0 else 0
-    degraded_rate = stats['degraded_cases'] / stats['first_try_correct'] if stats['first_try_correct'] > 0 else 0
-    
-    # Check if agent uses iterations
-    has_iterations = args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 
-                                     'solver_checker_trivial_chat', 'solver_checker_summarizer', 
-                                     'solver_checker_summarizer_chat', 'solver_checker_with_tools', 
-                                     'plan_and_reflection']
-    avg_iterations = stats['total_iterations'] / stats['total'] if stats['total'] > 0 and has_iterations else 0
-    
     results["stats"] = {
         "total": stats['total'],
         "correct": stats['correct'],
@@ -713,12 +684,10 @@ def run_evaluation(args):
         "first_try_correct": stats['first_try_correct'],
         "first_try_accuracy": stats['first_try_correct'] / stats['total'] if stats['total'] > 0 else 0,
         "improved_cases": stats['improved_cases'],
-        "improved_rate": improved_rate,
         "degraded_cases": stats['degraded_cases'],
-        "degraded_rate": degraded_rate,
         "failed_cases": stats['failed_cases'],
         "other_cases": stats['other_cases'],
-        "avg_iterations": avg_iterations,
+        "avg_iterations": stats['total_iterations'] / stats['total'] if stats['total'] > 0 and args.agent == 'solver_checker' else 0,
         "checker_verdicts": dict(stats['checker_verdicts']),
         "false_positives": stats['false_positives'],
         "false_negatives": stats['false_negatives']
@@ -735,30 +704,15 @@ def run_evaluation(args):
     
     # Print summary
     print(f"\n{'='*80}")
-    print("EVALUATION SUMMARY")
-    print(f"{'='*80}")
-    print(f"\n[Basic Metrics]")
-    print(f"  Total Samples:        {stats['total']}")
-    print(f"  Accuracy:             {results['accuracy']*100:.2f}% ({stats['correct']}/{stats['total']})")
-    print(f"  First Try Accuracy:   {results['stats']['first_try_accuracy']*100:.2f}% ({stats['first_try_correct']}/{stats['total']})")
-    
-    print(f"\n[Case Analysis] (First -> Final)")
-    print(f"  First Correct -> Final Correct (unchanged): {stats['other_cases']}")
-    print(f"  First Wrong -> Final Correct (IMPROVED):    {stats['improved_cases']} ({improved_rate*100:.1f}% of first-wrong)")
-    print(f"  First Correct -> Final Wrong (DEGRADED):    {stats['degraded_cases']} ({degraded_rate*100:.1f}% of first-correct)")
-    print(f"  First Wrong -> Final Wrong (FAILED):        {stats['failed_cases']}")
-    
-    if has_iterations:
-        print(f"\n[Iteration Stats]")
-        print(f"  Average Iterations:   {avg_iterations:.2f}")
-    
-    if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 
-                      'solver_checker_trivial_chat', 'solver_checker_summarizer', 
-                      'solver_checker_summarizer_chat', 'solver_checker_with_tools']:
-        print(f"\n[Checker Accuracy]")
-        print(f"  False Positives:      {stats['false_positives']} (said CORRECT but wrong)")
-        print(f"  False Negatives:      {stats['false_negatives']} (said INCORRECT but correct)")
-    
+    print("Evaluation Summary:")
+    print(f"  Total Samples: {stats['total']}")
+    print(f"  Overall Accuracy: {results['accuracy']*100:.2f}% ({stats['correct']}/{stats['total']})")
+    print(f"  First Try Accuracy: {results['stats']['first_try_accuracy']*100:.2f}% ({stats['first_try_correct']}/{stats['total']})")
+    print(f"  Improved Cases: {stats['improved_cases']}")
+    print(f"  Degraded Cases: {stats['degraded_cases']}")
+    print(f"  Avg Iterations: {results['stats']['avg_iterations']:.2f}")
+    print(f"  False Positives: {stats['false_positives']}")
+    print(f"  False Negatives: {stats['false_negatives']}")
     print(f"{'='*80}\n")
     
     print(f"Results saved to: {answer_file}")
@@ -766,7 +720,7 @@ def run_evaluation(args):
     
     # Cleanup
     del model
-    if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_summarizer'] and args.checker_model and args.checker_model != args.model:
+    if args.agent in ['solver_checker', 'solver_checker_summarizer'] and args.checker_model and args.checker_model != args.model:
         del checker_model
     torch.cuda.empty_cache()
     
@@ -779,11 +733,6 @@ def save_metrics_csv(results, stats, results_dir, args):
     
     metrics_csv = results_dir / "metrics.csv"
     
-    # Calculate rates
-    first_wrong_count = stats['total'] - stats['first_try_correct']
-    improved_rate = stats['improved_cases'] / first_wrong_count if first_wrong_count > 0 else 0
-    degraded_rate = stats['degraded_cases'] / stats['first_try_correct'] if stats['first_try_correct'] > 0 else 0
-    
     # Build unified metrics (common across all agent types)
     metrics_data = {
         'model': [args.model],
@@ -795,9 +744,7 @@ def save_metrics_csv(results, stats, results_dir, args):
         'first_try_correct': [stats.get('first_try_correct', 0)],
         'first_try_accuracy': [stats['first_try_correct'] / stats['total'] if stats['total'] > 0 else 0],
         'improved_cases': [stats.get('improved_cases', 0)],
-        'improved_rate': [improved_rate],
         'degraded_cases': [stats.get('degraded_cases', 0)],
-        'degraded_rate': [degraded_rate],
         'failed_cases': [stats.get('failed_cases', 0)],
         'avg_time_per_sample': [results['avg_time_per_sample']],
         'total_time': [results['total_time']],
@@ -805,13 +752,13 @@ def save_metrics_csv(results, stats, results_dir, args):
     }
     
     # Add agent-specific metrics
-    if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_chat', 'solver_checker_trivial_chat', 
+    if args.agent in ['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 
                       'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
         metrics_data['avg_iterations'] = [stats['total_iterations'] / stats['total'] if stats['total'] > 0 else 0]
         metrics_data['max_iterations'] = [args.max_iterations]
         
         # Checker model info
-        if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_summarizer', 'solver_checker_with_tools']:
+        if args.agent in ['solver_checker', 'solver_checker_summarizer', 'solver_checker_with_tools']:
             metrics_data['checker_model'] = [args.checker_model if args.checker_model else args.model]
         else:
             metrics_data['checker_model'] = [args.model]  # Shared model
@@ -864,7 +811,7 @@ def create_empty_results(args, num_samples, start_index):
         "predictions": []
     }
     
-    if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_summarizer']:
+    if args.agent in ['solver_checker', 'solver_checker_summarizer']:
         result["checker_model"] = args.checker_model or args.model
         result["max_iterations"] = args.max_iterations
         if 'summarizer' in args.agent:
@@ -895,11 +842,9 @@ def generate_analysis_report(results, stats, results_dir, args):
         f.write("-"*80 + "\n")
         f.write(f"Model: {args.model}\n")
         f.write(f"Agent Method: {args.agent}\n")
-        if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_summarizer']:
+        if args.agent in ['solver_checker', 'solver_checker_summarizer']:
             f.write(f"Checker Model: {args.checker_model or args.model}\n")
             f.write(f"Max Iterations: {args.max_iterations}\n")
-            if args.agent == 'solver_checker_stateless':
-                f.write(f"Mode: Stateless (independent prompts per iteration)\n")
             if 'summarizer' in args.agent:
                 f.write(f"Use Summarizer: Yes\n")
         elif args.agent in ['solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_summarizer_chat']:
@@ -934,7 +879,7 @@ def generate_analysis_report(results, stats, results_dir, args):
         f.write(f"Other Cases: {stats['other_cases']}\n\n")
         
         # Checker performance (for solver_checker variants)
-        if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
+        if args.agent in ['solver_checker', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
             f.write("Checker Performance:\n")
             f.write("-"*80 + "\n")
             total_verdicts = sum(stats['checker_verdicts'].values())
@@ -962,7 +907,7 @@ def generate_analysis_report(results, stats, results_dir, args):
             f.write("\n")
         
         # Answer change analysis (for solver_checker variants)
-        if args.agent in ['solver_checker', 'solver_checker_stateless', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
+        if args.agent in ['solver_checker', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
             f.write("Answer Change Analysis:\n")
             f.write("-"*80 + "\n")
             answer_changes = 0

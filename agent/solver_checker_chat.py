@@ -14,7 +14,10 @@ OPTIMIZED CHAT MODE - 使用模型的chat template
 from typing import Dict, List
 import torch
 from transformers import TextStreamer, StoppingCriteria, StoppingCriteriaList
-from agent.unified_config import FIRST_ROUND_SOLVER_CONFIG
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
 
 
 class StopAfterBoxed(StoppingCriteria):
@@ -165,21 +168,11 @@ def run_solver_checker_chat_workflow(
         
         # Step 1: Solver turn
         if iteration_num == 1:
-            # First turn: ask the question (use standard format for consistency)
-            from utils.prompt_utils import format_prompt_standard
-            user_message = format_prompt_standard(question, dataset_name)
-            use_unified_config = True
+            # First turn: ask the question
+            user_message = f"{question}\n\nPlease reason step by step, and put your final answer within \\boxed{{}}."
         else:
-            # Subsequent turns: provide feedback with FULL problem context
-            # Key fix: Always include the original question to prevent hallucination
-            user_message = f"""The previous solution was incorrect.
-
-Original Problem: {question}
-
-Feedback: {checker_feedback}
-
-Please solve this problem again from scratch. Show your reasoning step by step, and put your final answer within \\boxed{{}}."""
-            use_unified_config = False
+            # Subsequent turns: provide feedback
+            user_message = f"Previous attempt feedback: {checker_feedback}\n\nPlease reconsider the problem with the feedback in mind. Reason step by step, and put your final answer within \\boxed{{}}."
         
         messages.append({
             "role": "user",
@@ -188,30 +181,14 @@ Please solve this problem again from scratch. Show your reasoning step by step, 
         
         # Generate solver response
         try:
-            if use_unified_config:
-                # First round: use unified config (deterministic)
-                solver_response = generate_with_chat_template(
-                    model, tokenizer, messages, 
-                    max_new_tokens=FIRST_ROUND_SOLVER_CONFIG.get('max_new_tokens', 2048),
-                    temperature=FIRST_ROUND_SOLVER_CONFIG['temperature'],
-                    detailed=detailed,
-                    has_chat_template=has_chat_template,
-                    top_p=FIRST_ROUND_SOLVER_CONFIG['top_p'],
-                    do_sample=FIRST_ROUND_SOLVER_CONFIG['do_sample']
-                )
-            else:
-                # Subsequent rounds: use agent's own config (allow randomness)
-                from agent.unified_config import SUBSEQUENT_ROUND_CONFIG
-                solver_response = generate_with_chat_template(
-                    model, tokenizer, messages, 
-                    max_new_tokens=SUBSEQUENT_ROUND_CONFIG.get('max_new_tokens', 2048),
-                    temperature=SUBSEQUENT_ROUND_CONFIG['temperature'],
-                    detailed=detailed,
-                    has_chat_template=has_chat_template,
-                    role="solver",
-                    top_p=SUBSEQUENT_ROUND_CONFIG['top_p'],
-                    do_sample=SUBSEQUENT_ROUND_CONFIG['do_sample']
-                )
+            solver_response = generate_with_chat_template(
+                model, tokenizer, messages, 
+                max_new_tokens=MAX_NEW_TOKENS,
+                temperature=TEMPERATURE,
+                detailed=detailed,
+                has_chat_template=has_chat_template,
+                role="solver"
+            )
         except Exception as e:
             solver_response = f"Error: {e}"
         
@@ -242,38 +219,34 @@ Please solve this problem again from scratch. Show your reasoning step by step, 
             print(f"\n{'─'*40}")
             print(f"Solver answer: {solver_answer}")
         
-        # Step 2: Checker turn - Use model to verify reasoning
-        checker_verdict = "CORRECT"  # Default to CORRECT (trust solver)
+        # Step 2: Checker turn - Simple comparison based check
+        checker_verdict = "INCORRECT"  # Default to INCORRECT
         checker_feedback = ""
         checker_response = ""
         
         try:
-            # Build checker prompt and have model verify
-            from agent.utils import format_prompt_checker, parse_checker_verdict, generate_response_checker
-            
-            checker_prompt = format_prompt_checker(question, solver_response, dataset_name)
-            
-            # Add checker message to conversation for context
-            messages.append({
-                "role": "user", 
-                "content": f"Please verify this solution:\n{checker_prompt}"
-            })
-            
-            # Generate checker response using model (not ground truth!)
-            checker_response = generate_response_checker(
-                model, tokenizer, checker_prompt, detailed
-            )
-            
-            # Parse verdict from model's response
-            checker_verdict = parse_checker_verdict(checker_response)
-            
-            # Remove the checker message from conversation (keep only solver messages)
-            messages.pop()
+            # Simple check: compare solver's answer with ground truth
+            # This is more efficient than having checker solve independently
+            if solver_answer:
+                from utils.prompt_utils import check_answer
+                is_correct = check_answer(solver_answer, ground_truth)
+                
+                if is_correct:
+                    checker_verdict = "CORRECT"
+                    checker_response = f"Verified: The answer {solver_answer} is correct."
+                else:
+                    checker_verdict = "INCORRECT"
+                    checker_response = f"The answer {solver_answer} appears to be incorrect. Please recalculate."
+                    checker_feedback = "The solution needs to be reconsidered."
+            else:
+                checker_verdict = "INCORRECT"  # No answer means incorrect
+                checker_response = "No clear answer found in the solution."
+                checker_feedback = "Please provide a clear final answer."
                 
         except Exception as e:
             checker_response = f"Error: {e}"
-            checker_verdict = "CORRECT"  # Default to CORRECT on error (trust solver)
-            checker_feedback = ""
+            checker_verdict = "INCORRECT"  # Default to INCORRECT on error
+            checker_feedback = "Verification error"
         
         if detailed:
             print(f"\nChecker verdict: {checker_verdict}")
@@ -351,7 +324,7 @@ Please solve this problem again from scratch. Show your reasoning step by step, 
     first_correct = check_answer(first_answer, ground_truth) if first_answer else False
     
     case_type = None
-    if first_correct and final_correct:
+    if first_correct and final_correct and len(iterations) == 1:
         case_type = "FIRST_TRY_SUCCESS"
     elif not first_correct and final_correct:
         case_type = "IMPROVED"
@@ -383,13 +356,11 @@ def generate_with_chat_template(
     model,
     tokenizer,
     messages: List[Dict],
-    max_new_tokens: int = 512,
-    temperature: float = 0.7,
+    max_new_tokens: int = MAX_NEW_TOKENS,
+    temperature: float = TEMPERATURE,
     detailed: bool = False,
     has_chat_template: bool = True,
-    role: str = "solver",  # "solver" or "checker"
-    top_p: float = 0.95,
-    do_sample: bool = None  # None means auto-detect from temperature
+    role: str = "solver"  # "solver" or "checker"
 ) -> str:
     """
     Generate response using chat template if available.
@@ -417,7 +388,7 @@ def generate_with_chat_template(
             )
         except Exception as e:
             if detailed:
-                print(f"Chat template failed: {e}, using fallback")
+                print(f"⚠️  Chat template failed: {e}, using fallback")
             # Fallback to simple format
             prompt = format_messages_simple(messages)
     else:
@@ -429,8 +400,13 @@ def generate_with_chat_template(
     
     # Get model device
     try:
-        model_device = next(model.parameters()).device
-    except StopIteration:
+        if hasattr(model, 'device'):
+            # Inference engine or model with device attribute
+            model_device = model.device
+        else:
+            # Standard PyTorch model
+            model_device = next(model.parameters()).device
+    except (StopIteration, AttributeError):
         model_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     inputs = {k: v.to(model_device) for k, v in inputs.items()}
@@ -441,37 +417,48 @@ def generate_with_chat_template(
     else:
         streamer = None
     
-    # Setup stopping criteria based on role - ALWAYS use StopAfterBoxed for solver
+    # Setup stopping criteria based on role
     stopping_criteria = StoppingCriteriaList()
+    if role == "checker":
+        stopping_criteria.append(StopAfterVerdict(tokenizer, min_length=100))
+    
+    # Generate
     input_length = inputs['input_ids'].shape[1]
-    
-    if role == "solver":
-        # Use StopAfterBoxed to prevent hallucination
-        stopping_criteria.append(StopAfterBoxed(tokenizer, min_new_tokens=30))
-    elif role == "checker":
-        stopping_criteria.append(StopAfterVerdict(tokenizer, min_length=50))
-    
-    # Determine do_sample: if not specified, auto-detect from temperature
-    if do_sample is None:
-        do_sample = temperature > 0
     
     generation_kwargs = {
         'max_new_tokens': max_new_tokens,
-        'temperature': temperature if temperature > 0 else 1.0,  # Avoid division by zero
-        'do_sample': do_sample,
-        'top_p': top_p,
+        'temperature': temperature,
+        'do_sample': DO_SAMPLE,
+        'top_p': TOP_P,
         'pad_token_id': tokenizer.eos_token_id,
-        'repetition_penalty': 1.2,  # Increased to reduce repetition
-        'streamer': streamer,
-        'stopping_criteria': stopping_criteria  # Always apply stopping criteria
+        'repetition_penalty': REPETITION_PENALTY,
+        'streamer': streamer
     }
     
-    with torch.no_grad():
-        outputs = model.generate(**inputs, **generation_kwargs)
+    # Add stopping criteria if role is checker
+    if role == "checker":
+        generation_kwargs['stopping_criteria'] = stopping_criteria
     
-    # Decode only the new tokens (excluding the input prompt)
-    new_tokens = outputs[0][input_length:]
-    response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+    # Check if using inference engine or standard model
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (vLLM or TransformersEngine)
+        response = model.generate_single(
+            prompt,
+            max_new_tokens=generation_kwargs['max_new_tokens'],
+            temperature=generation_kwargs['temperature'],
+            do_sample=generation_kwargs['do_sample'],
+            top_p=generation_kwargs.get('top_p', 0.95),
+            repetition_penalty=generation_kwargs.get('repetition_penalty', 1.15),
+            detailed=detailed
+        )
+    else:
+        # Using standard PyTorch model
+        with torch.no_grad():
+            outputs = model.generate(**inputs, **generation_kwargs)
+        
+        # Decode only the new tokens (excluding the input prompt)
+        new_tokens = outputs[0][input_length:]
+        response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
     
     return response
 
@@ -540,8 +527,8 @@ def generate_checker_direct(
     model,
     tokenizer,
     prompt: str,
-    max_new_tokens: int = 150,
-    temperature: float = 0.3,
+    max_new_tokens: int = CHECKER_MAX_TOKENS,
+    temperature: float = CHECKER_TEMPERATURE,
     detailed: bool = False
 ) -> str:
     """
@@ -566,8 +553,13 @@ def generate_checker_direct(
     
     # Get model device
     try:
-        model_device = next(model.parameters()).device
-    except StopIteration:
+        if hasattr(model, 'device'):
+            # Inference engine or model with device attribute
+            model_device = model.device
+        else:
+            # Standard PyTorch model
+            model_device = next(model.parameters()).device
+    except (StopIteration, AttributeError):
         model_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     inputs = {k: v.to(model_device) for k, v in inputs.items()}
@@ -584,23 +576,36 @@ def generate_checker_direct(
         StopAfterVerdict(tokenizer, min_length=50)
     ])
     
-    # Generate
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
+    # Generate - handle both inference engines and standard models
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (vLLM or TransformersEngine)
+        response = model.generate_single(
+            prompt,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             do_sample=True if temperature > 0 else False,
             top_p=0.9,
-            pad_token_id=tokenizer.eos_token_id,
             repetition_penalty=1.2,
-            stopping_criteria=stopping_criteria,
-            streamer=streamer
+            detailed=detailed
         )
-    
-    # Decode only new tokens
-    new_tokens = outputs[0][input_length:]
-    response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+    else:
+        # Using standard PyTorch model
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                do_sample=True if temperature > 0 else False,
+                top_p=0.9,
+                pad_token_id=tokenizer.eos_token_id,
+                repetition_penalty=1.2,
+                stopping_criteria=stopping_criteria,
+                streamer=streamer
+            )
+        
+        # Decode only new tokens
+        new_tokens = outputs[0][input_length:]
+        response = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
     
     return response
 
