@@ -1,87 +1,133 @@
-# Large data directories (exclude from git)
+# ==============================================================================
+# SLM-Math Project .gitignore
+# ==============================================================================
 
-# Exclude all pretrained model checkpoints (too large for git)
-pretrained_models/*
-!pretrained_models/.gitkeep
-# Keep Qwen3-0.6B model (small enough for git)
-!pretrained_models/Qwen3-0.6B/
-!pretrained_models/Qwen3-0.6B/**
+# ------------------------------------------------------------------------------
+# Large Model & Data Directories
+# ------------------------------------------------------------------------------
 
-# Allow models/ directory Python files (inference.py, __init__.py)
-models/*
-!models/*.py
+# Pretrained model checkpoints (all models excluded)
+pretrained_models/
 
-# Exclude cache directory
-cache/
-
-# Exclude all dataset files and directories
-data/
-
-# Exclude all results (timestamped evaluation outputs)
-results/
-
-# Exclude training checkpoints
+# Training checkpoints
 checkpoints/
 
-# Exclude Weights & Biases logs
-wandb/
+# Dataset files
+data/
+docs/
 
-# Exclude milestone results
-milestone/
+# Evaluation results
+results/
 
-# Exclude large backup/archive files
+# Cache directories
+cache/
+
+# ------------------------------------------------------------------------------
+# Large Files & Archives
+# ------------------------------------------------------------------------------
+
+# Compressed archives
 *.tar.gz
 *.tar
 *.zip
+*.rar
+*.7z
 
-# Exclude documentation and logs
-docs/
+# Model files
+*.bin
+*.safetensors
+*.gguf
+*.ggml
+
+# ------------------------------------------------------------------------------
+# Training & Experiment Logs
+# ------------------------------------------------------------------------------
+
+# Weights & Biases
+wandb/
+
+# Log files
 logs/
+*.log
 
-# Exclude rStar-Math directory
-rStar-Math/
-
-
-# ---------------------------------------------------------------------------------------------------------------------------------------------------
-
+# ------------------------------------------------------------------------------
 # Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
+# ------------------------------------------------------------------------------
 
-# Virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Unit test / coverage
+.coverage
+.pytest_cache/
+
+# ------------------------------------------------------------------------------
+# Virtual Environments
+# ------------------------------------------------------------------------------
+
 venv/
-.venv
+.venv/
 env/
 ENV/
 .conda/
 
-# IDEs
+# ------------------------------------------------------------------------------
+# IDEs and Editors
+# ------------------------------------------------------------------------------
+
+# VSCode
 .vscode/
+
+# PyCharm / JetBrains
 .idea/
+
+# Vim
 *.swp
 *.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.log
-*.bak
 
 # Jupyter Notebook
-.ipynb_checkpoints
+.ipynb_checkpoints/
 
-# Environment variables
+# ------------------------------------------------------------------------------
+# Operating System
+# ------------------------------------------------------------------------------
+
+# macOS
+.DS_Store
+._*
+
+# Windows
+Thumbs.db
+[Dd]esktop.ini
+
+# ------------------------------------------------------------------------------
+# Temporary & Backup Files
+# ------------------------------------------------------------------------------
+
+*.tmp
+*.temp
+*.bak
+*~
+
+# ------------------------------------------------------------------------------
+# Environment Variables
+# ------------------------------------------------------------------------------
+
 .env
 .env.local
+
+# ------------------------------------------------------------------------------
+# Misc
+# ------------------------------------------------------------------------------
+
+# Secrets
+*.pem
+*.key
