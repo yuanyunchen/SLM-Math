@@ -11,6 +11,10 @@ STATELESS MODE - 每轮使用独立的prompt，不维护对话历史
 """
 
 from typing import Dict
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
 
 
 def run_solver_checker_workflow(
@@ -76,7 +80,20 @@ def run_solver_checker_workflow(
             solver_prompt = format_prompt_solver(question, checker_feedback, dataset_name)
         
         try:
-            solver_response = generate_response(solver_model, solver_tokenizer, solver_prompt, "standard", detailed)
+            # Check if model is an inference engine or raw model
+            if hasattr(solver_model, 'generate_single'):
+                # Using inference engine
+                solver_response = solver_model.generate_single(
+                    solver_prompt,
+                    max_new_tokens=4096,
+                    temperature=0.1,
+                    do_sample=False,
+                    repetition_penalty=1.2,
+                    detailed=detailed
+                )
+            else:
+                # Using standard model
+                solver_response = generate_response(solver_model, solver_tokenizer, solver_prompt, "standard", detailed)
         except Exception as e:
             solver_response = f"Error: {e}"
         
@@ -84,7 +101,17 @@ def run_solver_checker_workflow(
         if not solver_response.strip():
             fallback_prompt = format_prompt_standard(question, dataset_name)
             try:
-                solver_response = generate_response(solver_model, solver_tokenizer, fallback_prompt, "standard", detailed)
+                if hasattr(solver_model, 'generate_single'):
+                    solver_response = solver_model.generate_single(
+                        fallback_prompt,
+                        max_new_tokens=4096,
+                        temperature=0.1,
+                        do_sample=False,
+                        repetition_penalty=1.2,
+                        detailed=detailed
+                    )
+                else:
+                    solver_response = generate_response(solver_model, solver_tokenizer, fallback_prompt, "standard", detailed)
             except Exception as e:
                 solver_response = f"Error: {e}"
         
@@ -97,7 +124,21 @@ def run_solver_checker_workflow(
         checker_prompt = format_prompt_checker(question, solver_response, dataset_name)
         
         try:
-            checker_response = generate_response_checker(checker_model, checker_tokenizer, checker_prompt, detailed)
+            # Check if model is an inference engine or raw model
+            if hasattr(checker_model, 'generate_single'):
+                # Using inference engine
+                checker_response = checker_model.generate_single(
+                    checker_prompt,
+                    max_new_tokens=256,
+                    temperature=0.3,
+                    do_sample=True,
+                    top_p=0.9,
+                    repetition_penalty=1.3,
+                    detailed=detailed
+                )
+            else:
+                # Using standard model
+                checker_response = generate_response_checker(checker_model, checker_tokenizer, checker_prompt, detailed)
         except Exception as e:
             checker_response = f"Error: {e}"
         
@@ -105,7 +146,18 @@ def run_solver_checker_workflow(
         if not checker_response.strip():
             simple_prompt = f"Q: {question}\nA: {solver_answer}\n\nVERDICT:"
             try:
-                checker_response = generate_response_checker(checker_model, checker_tokenizer, simple_prompt, detailed)
+                if hasattr(checker_model, 'generate_single'):
+                    checker_response = checker_model.generate_single(
+                        simple_prompt,
+                        max_new_tokens=256,
+                        temperature=0.3,
+                        do_sample=True,
+                        top_p=0.9,
+                        repetition_penalty=1.3,
+                        detailed=detailed
+                    )
+                else:
+                    checker_response = generate_response_checker(checker_model, checker_tokenizer, simple_prompt, detailed)
             except Exception as e:
                 checker_response = "VERDICT: UNCLEAR"
         

@@ -14,6 +14,10 @@ OPTIMIZED CHAT MODE - 使用模型的chat template
 from typing import Dict, List
 import torch
 from transformers import TextStreamer, StoppingCriteria, StoppingCriteriaList
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
 
 
 class StopAfterBoxed(StoppingCriteria):
@@ -179,8 +183,8 @@ def run_solver_checker_chat_workflow(
         try:
             solver_response = generate_with_chat_template(
                 model, tokenizer, messages, 
-                max_new_tokens=512,
-                temperature=0.7,
+                max_new_tokens=MAX_NEW_TOKENS,
+                temperature=TEMPERATURE,
                 detailed=detailed,
                 has_chat_template=has_chat_template,
                 role="solver"
@@ -352,8 +356,8 @@ def generate_with_chat_template(
     model,
     tokenizer,
     messages: List[Dict],
-    max_new_tokens: int = 512,
-    temperature: float = 0.7,
+    max_new_tokens: int = MAX_NEW_TOKENS,
+    temperature: float = TEMPERATURE,
     detailed: bool = False,
     has_chat_template: bool = True,
     role: str = "solver"  # "solver" or "checker"
@@ -424,10 +428,10 @@ def generate_with_chat_template(
     generation_kwargs = {
         'max_new_tokens': max_new_tokens,
         'temperature': temperature,
-        'do_sample': True if temperature > 0 else False,
-        'top_p': 0.95,
+        'do_sample': DO_SAMPLE,
+        'top_p': TOP_P,
         'pad_token_id': tokenizer.eos_token_id,
-        'repetition_penalty': 1.15,
+        'repetition_penalty': REPETITION_PENALTY,
         'streamer': streamer
     }
     
@@ -523,8 +527,8 @@ def generate_checker_direct(
     model,
     tokenizer,
     prompt: str,
-    max_new_tokens: int = 150,
-    temperature: float = 0.3,
+    max_new_tokens: int = CHECKER_MAX_TOKENS,
+    temperature: float = CHECKER_TEMPERATURE,
     detailed: bool = False
 ) -> str:
     """

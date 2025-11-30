@@ -8,7 +8,7 @@
 set -e  # Exit on error
 
 # Set GPU
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=0
 
 ################################################################################
 # Configuration Variables
@@ -23,7 +23,7 @@ ROUND_NAME="gpu0_qwen25_base"
 MODE="standard"
 
 # Detailed output
-DETAILED="false"
+DETAILED="true"
 
 # Resume from existing results directory (leave empty to start fresh)
 RESUME_DIR=""
@@ -51,39 +51,39 @@ echo "✓ GPU: 0 (CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES)"
 echo ""
 
 # ################################################################################
-# # Run Evaluation - GSM8K (500 samples)
+# Run Evaluation - GSM8K (500 samples)
 
-# echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-# echo "Dataset 1: GSM8K (500 samples)"
-# echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-# echo "  Model: $MODEL"
-# echo "  Round: ${ROUND_NAME}_gsm8k"
-# echo "  Dataset: gsm8k"
-# echo "  Count: 500"
-# echo "  Mode: $MODE"
-# echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-# echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Dataset 1: GSM8K (500 samples)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Model: $MODEL"
+echo "  Round: ${ROUND_NAME}_gsm8k"
+echo "  Dataset: gsm8k"
+echo "  Count: 500"
+echo "  Mode: $MODE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
 
-# CMD="python -m evaluation.eval \
-#     --model \"$MODEL\" \
-#     --round \"${ROUND_NAME}_gsm8k\" \
-#     --dataset \"gsm8k\" \
-#     --count 500 \
-#     --mode \"$MODE\" \
-#     --detailed \"$DETAILED\" \
-#     --save_interval \"$SAVE_INTERVAL\""
+CMD="python -m evaluation.eval \
+    --model \"$MODEL\" \
+    --round \"${ROUND_NAME}_gsm8k\" \
+    --dataset \"gsm8k-train\" \
+    --count 500 \
+    --mode \"$MODE\" \
+    --detailed \"$DETAILED\" \
+    --save_interval \"$SAVE_INTERVAL\""
 
-# if [ -n "$RESUME_DIR" ]; then
-#     CMD="$CMD --resume \"$RESUME_DIR\""
-# fi
+if [ -n "$RESUME_DIR" ]; then
+    CMD="$CMD --resume \"$RESUME_DIR\""
+fi
 
-# eval $CMD
+eval $CMD
 
-# echo ""
-# echo "✓ GSM8K evaluation complete!"
-# echo ""
+echo ""
+echo "✓ GSM8K evaluation complete!"
+echo ""
 
-################################################################################
+# ###############################################################################
 # Run Evaluation - MATH500
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

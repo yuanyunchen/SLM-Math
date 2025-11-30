@@ -23,6 +23,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from typing import Dict, List, Optional
 import torch
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    SUMMARY_MAX_TOKENS, SUMMARY_TEMPERATURE, CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE
+)
 
 
 def run_solver_checker_summarizer_chat_workflow(
@@ -51,6 +55,44 @@ def run_solver_checker_summarizer_chat_workflow(
     """
     from utils.prompt_utils import extract_answer, check_answer, format_prompt_standard
     from models.inference import generate_response
+    
+    def _generate_with_inference_check(prompt_text, max_new_tokens, temperature=0.7, do_sample=True):
+        """Helper function to handle both inference engines and standard models"""
+        if hasattr(model, 'generate_single'):
+            # Using inference engine
+            return model.generate_single(
+                prompt_text,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                do_sample=do_sample,
+                repetition_penalty=1.2,
+                detailed=False
+            )
+        else:
+            # Using standard model
+            inputs = tokenizer(prompt_text, return_tensors="pt", truncation=True, max_length=2048)
+            # Get device
+            if hasattr(model, 'device'):
+                device = model.device
+            else:
+                try:
+                    device = next(model.parameters()).device
+                except (StopIteration, AttributeError):
+                    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+            
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=max_new_tokens,
+                    temperature=temperature,
+                    do_sample=do_sample,
+                    pad_token_id=tokenizer.eos_token_id
+                )
+            
+            full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            response = full_output[len(prompt_text):].strip()
+            return response
     
     if detailed:
         print(f"\n{'='*80}")
@@ -103,28 +145,12 @@ def run_solver_checker_summarizer_chat_workflow(
         conversation_text += "[SOLVER]: "
         
         # Generate solver response
-        inputs = tokenizer(conversation_text, return_tensors="pt", truncation=True, max_length=2048)
-        # Get device - handle both inference engines and standard models
-        if hasattr(model, 'device'):
-            device = model.device
-        else:
-            try:
-                device = next(model.parameters()).device
-            except (StopIteration, AttributeError):
-                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
-        
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=512,
-                temperature=0.7,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        
-        full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        solver_response = full_output[len(conversation_text):].strip()
+        solver_response = _generate_with_inference_check(
+            conversation_text, 
+            max_new_tokens=512, 
+            temperature=0.7, 
+            do_sample=True
+        )
         
         if detailed:
             print(solver_response[:200] + "...")
@@ -154,20 +180,12 @@ def run_solver_checker_summarizer_chat_workflow(
         
         conversation_text += "[SUMMARIZER]: Now I'll create a concise summary of the solver's solution for the checker to evaluate:\n\n"
         
-        inputs = tokenizer(conversation_text, return_tensors="pt", truncation=True, max_length=2048)
-        inputs = {k: v.to(device) for k, v in inputs.items()}
-        
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=150,
-                temperature=0.5,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        
-        full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        solver_summary = full_output[len(conversation_text):].strip()
+        solver_summary = _generate_with_inference_check(
+            conversation_text, 
+            max_new_tokens=150, 
+            temperature=0.5, 
+            do_sample=True
+        )
         
         if detailed:
             print(f"[Summary]: {solver_summary[:150]}...")
@@ -189,20 +207,12 @@ def run_solver_checker_summarizer_chat_workflow(
         
         conversation_text += "[CHECKER]: Based on the summary, my evaluation is:\n\n"
         
-        inputs = tokenizer(conversation_text, return_tensors="pt", truncation=True, max_length=2048)
-        inputs = {k: v.to(device) for k, v in inputs.items()}
-        
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=200,
-                temperature=0.3,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        
-        full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        checker_response = full_output[len(conversation_text):].strip()
+        checker_response = _generate_with_inference_check(
+            conversation_text, 
+            max_new_tokens=200, 
+            temperature=0.3, 
+            do_sample=True
+        )
         
         if detailed:
             print(checker_response[:200] + "...")
@@ -239,20 +249,12 @@ def run_solver_checker_summarizer_chat_workflow(
             
             conversation_text += "[SUMMARIZER]: Let me summarize the checker's feedback concisely for the solver:\n\n"
             
-            inputs = tokenizer(conversation_text, return_tensors="pt", truncation=True, max_length=2048)
-            inputs = {k: v.to(device) for k, v in inputs.items()}
-            
-            with torch.no_grad():
-                outputs = model.generate(
-                    **inputs,
-                    max_new_tokens=100,
-                    temperature=0.5,
-                    do_sample=True,
-                    pad_token_id=tokenizer.eos_token_id
-                )
-            
-            full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
-            checker_summary = full_output[len(conversation_text):].strip()
+            checker_summary = _generate_with_inference_check(
+                conversation_text, 
+                max_new_tokens=100, 
+                temperature=0.5, 
+                do_sample=True
+            )
             
             if detailed:
                 print(f"[Feedback Summary]: {checker_summary[:100]}...")

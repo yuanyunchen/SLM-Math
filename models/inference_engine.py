@@ -8,6 +8,9 @@ import torch
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Union
 from abc import ABC, abstractmethod
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY
+)
 
 
 class BaseInferenceEngine(ABC):
@@ -100,11 +103,12 @@ class TransformersEngine(BaseInferenceEngine):
         if not prompts:
             return []
         
-        # Extract parameters
-        max_new_tokens = kwargs.get('max_new_tokens', 4096)
-        temperature = kwargs.get('temperature', 0.1)
-        do_sample = kwargs.get('do_sample', False)
-        repetition_penalty = kwargs.get('repetition_penalty', 1.2)
+        # Extract parameters with standardized defaults
+        max_new_tokens = kwargs.get('max_new_tokens', MAX_NEW_TOKENS)
+        temperature = kwargs.get('temperature', TEMPERATURE)
+        do_sample = kwargs.get('do_sample', DO_SAMPLE)
+        top_p = kwargs.get('top_p', TOP_P)
+        repetition_penalty = kwargs.get('repetition_penalty', REPETITION_PENALTY)
         detailed = kwargs.get('detailed', False)
         
         # Tokenize all prompts with padding
@@ -126,6 +130,7 @@ class TransformersEngine(BaseInferenceEngine):
                 max_new_tokens=max_new_tokens,
                 temperature=temperature,
                 do_sample=do_sample,
+                top_p=top_p,
                 pad_token_id=self.tokenizer.eos_token_id,
                 repetition_penalty=repetition_penalty,
                 # Note: Batch stopping criteria is complex, handled post-generation
@@ -160,6 +165,7 @@ class VLLMEngine(BaseInferenceEngine):
         super().__init__(model_name, base_path, **kwargs)
         self.llm = None
         self.tokenizer = None
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tensor_parallel_size = kwargs.get('tensor_parallel_size', 1)
         self.gpu_memory_utilization = kwargs.get('gpu_memory_utilization', 0.9)
         self.load()
@@ -199,12 +205,12 @@ class VLLMEngine(BaseInferenceEngine):
         if not prompts:
             return []
         
-        # Extract parameters
-        max_tokens = kwargs.get('max_new_tokens', 4096)
-        temperature = kwargs.get('temperature', 0.1)
-        do_sample = kwargs.get('do_sample', False)
-        top_p = kwargs.get('top_p', 1.0)
-        repetition_penalty = kwargs.get('repetition_penalty', 1.2)
+        # Extract parameters with standardized defaults
+        max_tokens = kwargs.get('max_new_tokens', MAX_NEW_TOKENS)
+        temperature = kwargs.get('temperature', TEMPERATURE)
+        do_sample = kwargs.get('do_sample', DO_SAMPLE)
+        top_p = kwargs.get('top_p', TOP_P)
+        repetition_penalty = kwargs.get('repetition_penalty', REPETITION_PENALTY)
         
         # For greedy decoding (do_sample=False), use temperature=0
         # This matches transformers' behavior

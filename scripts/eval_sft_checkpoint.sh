@@ -1,132 +1,92 @@
 #!/bin/bash
 
 ################################################################################
-# GPU 3: Solver-Checker Stateless Agent Evaluation
-# Dataset: GSM8K (500 samples)
+# Evaluation Script for SFT Checkpoint
+# Example: Evaluate SFT fine-tuned model on GSM8K
 ################################################################################
 
-set -e  # Exit on error
+set -e
 
-# Set GPU
-export CUDA_VISIBLE_DEVICES=2
+
+export CUDA_VISIBLE_DEVICES=0
 
 ################################################################################
 # Configuration Variables
 
-# Model
+# Model name (can be any name for reference, not used for loading)
 MODEL="Qwen2.5-Math-1.5B"
 
-# Agent method: solver_checker (stateless)
-AGENT="solver_checker"
-
-# For solver_checker: Checker model (leave empty to use same as solver)
-CHECKER_MODEL=""
-
-# For solver_checker: Max iterations per problem
-MAX_ITERATIONS=5
+# SFT checkpoint path
+# Use the latest checkpoint or best performing checkpoint
+CHECKPOINT="checkpoints/full_sft_1124/checkpoint-1485"
 
 # Test round name
-ROUND_NAME="gpu3_solver_checker_stateless"
+ROUND_NAME="eval_sft_final_model"
 
-# Dataset
+# Dataset: "gsm8k", "math", "math500"
 DATASET="gsm8k"
 
-# Number of test cases
+# Number of test cases (0 = full dataset)
 COUNT=500
+
+# Evaluation mode: "standard"
+MODE="standard"
 
 # Detailed output
 DETAILED="false"
 
-# Resume from existing results (leave empty to start fresh)
-RESUME_DIR=""
-
-# Save interval
+# Save interval: save intermediate results every N samples
 SAVE_INTERVAL=10
 
 ################################################################################
 # Pre-flight Checks
 
 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
-echo "║     GPU 3: Solver-Checker Stateless Agent Evaluation                        ║"
+echo "║             SFT Checkpoint Evaluation Script                                 ║"
 echo "╚══════════════════════════════════════════════════════════════════════════════╝"
 echo ""
 
-# Check model
-MODEL_PATH="pretrained_models/${MODEL}"
-if [ ! -d "$MODEL_PATH" ]; then
-    echo "✗ Error: Model not found at $MODEL_PATH"
+# Check SFT checkpoint
+if [ ! -d "$CHECKPOINT" ]; then
+    echo "✗ Error: SFT checkpoint not found at $CHECKPOINT"
     exit 1
 fi
-echo "✓ Model: $MODEL_PATH"
 
-if [ "$AGENT" = "solver_checker" ] && [ -n "$CHECKER_MODEL" ]; then
-    CHECKER_PATH="pretrained_models/${CHECKER_MODEL}"
-    if [ ! -d "$CHECKER_PATH" ]; then
-        echo "✗ Error: Checker model not found at $CHECKER_PATH"
-        exit 1
-    fi
-    echo "✓ Checker Model: $CHECKER_PATH"
-elif [ "$AGENT" = "solver_checker" ]; then
-    echo "✓ Checker Model: Same as solver (shared model)"
+if [ ! -f "$CHECKPOINT/config.json" ]; then
+    echo "✗ Error: Not a valid SFT checkpoint (missing config.json)"
+    exit 1
 fi
+echo "✓ SFT Checkpoint: $CHECKPOINT"
 
-echo "✓ GPU: 3 (CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES)"
 echo ""
-
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Evaluation Configuration:"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  Model: $MODEL"
-echo "  Agent Method: $AGENT (stateless)"
-if [ "$AGENT" = "solver_checker" ]; then
-    if [ -n "$CHECKER_MODEL" ]; then
-        echo "  Checker Model: $CHECKER_MODEL"
-    else
-        echo "  Checker Model: Same as solver"
-    fi
-    echo "  Max Iterations: $MAX_ITERATIONS"
-fi
+echo "  Model: $MODEL (using checkpoint)"
+echo "  SFT Checkpoint: $CHECKPOINT"
 echo "  Round: $ROUND_NAME"
 echo "  Dataset: $DATASET"
 echo "  Count: $COUNT"
+echo "  Mode: $MODE"
 echo "  Detailed Output: $DETAILED"
-if [ -n "$RESUME_DIR" ]; then
-    echo "  Resume: $RESUME_DIR"
-fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 ################################################################################
 # Run Evaluation
 
-echo "Starting agent evaluation..."
+echo "Starting evaluation with SFT checkpoint..."
 echo ""
 
-# Build command
-CMD="python -m evaluation.eval_agent \
-    --model \"$MODEL\" \
-    --agent \"$AGENT\" \
-    --round \"$ROUND_NAME\" \
-    --dataset \"$DATASET\" \
-    --count \"$COUNT\" \
-    --detailed \"$DETAILED\" \
-    --save_interval \"$SAVE_INTERVAL\""
-
-# Add agent-specific parameters
-if [ "$AGENT" = "solver_checker" ]; then
-    CMD="$CMD --max_iterations \"$MAX_ITERATIONS\""
-    if [ -n "$CHECKER_MODEL" ]; then
-        CMD="$CMD --checker_model \"$CHECKER_MODEL\""
-    fi
-fi
-
-# Add resume if specified
-if [ -n "$RESUME_DIR" ]; then
-    CMD="$CMD --resume \"$RESUME_DIR\""
-fi
-
-# Execute command
-eval $CMD
+python -m evaluation.eval \
+    --model "$MODEL" \
+    --checkpoint "$CHECKPOINT" \
+    --round "$ROUND_NAME" \
+    --dataset "$DATASET" \
+    --count "$COUNT" \
+    --mode "$MODE" \
+    --detailed "$DETAILED" \
+    --save_interval "$SAVE_INTERVAL"
 
 ################################################################################
 # Complete
@@ -135,8 +95,5 @@ echo ""
 echo "╔══════════════════════════════════════════════════════════════════════════════╗"
 echo "║                         Evaluation Complete!                                 ║"
 echo "╚══════════════════════════════════════════════════════════════════════════════╝"
-echo ""
-echo "Results saved to: results/${ROUND_NAME}_${MODEL}_${DATASET}_*"
-echo "Analysis report: results/${ROUND_NAME}_${MODEL}_${DATASET}_*/analysis_report.txt"
 echo ""
 

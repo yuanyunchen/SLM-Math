@@ -6,6 +6,7 @@ Majority Vote Agent Workflow
 import torch
 from typing import Dict, List
 from collections import Counter
+from models.generation_config import MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY
 
 
 def generate_response_with_seed(
@@ -13,8 +14,8 @@ def generate_response_with_seed(
     tokenizer,
     prompt: str,
     seed: int,
-    temperature: float = 0.7,
-    top_p: float = 0.95,
+    temperature: float = TEMPERATURE,
+    top_p: float = TOP_P,
     detailed: bool = False
 ):
     """
@@ -32,13 +33,27 @@ def generate_response_with_seed(
     Returns:
         Generated response string
     """
-    from transformers import TextStreamer, StoppingCriteriaList
-    from models.inference import StopOnBoxedAnswer
-    
     # Set random seed
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+    
+    # Check if using inference engine or standard model
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (vLLM or TransformersEngine)
+        return model.generate_single(
+            prompt,
+            max_new_tokens=MAX_NEW_TOKENS,
+            temperature=temperature,
+            do_sample=DO_SAMPLE,
+            top_p=top_p,
+            repetition_penalty=REPETITION_PENALTY,
+            detailed=detailed
+        )
+    
+    # Using standard PyTorch model
+    from transformers import TextStreamer, StoppingCriteriaList
+    from models.inference import StopOnBoxedAnswer
     
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
@@ -55,12 +70,12 @@ def generate_response_with_seed(
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=4096,
+            max_new_tokens=MAX_NEW_TOKENS,
             temperature=temperature,
-            do_sample=True,
+            do_sample=DO_SAMPLE,
             top_p=top_p,
             pad_token_id=tokenizer.eos_token_id,
-            repetition_penalty=1.2,
+            repetition_penalty=REPETITION_PENALTY,
             stopping_criteria=stopping_criteria,
             streamer=streamer
         )

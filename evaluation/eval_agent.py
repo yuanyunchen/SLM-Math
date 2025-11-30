@@ -34,7 +34,9 @@ from agent.plan_and_reflection import run_plan_and_reflection_workflow
 def parse_args():
     parser = argparse.ArgumentParser(description='Agent evaluation script')
     parser.add_argument('--model', type=str, required=True, help='Model name')
+    parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint (LoRA adapter or fine-tuned model). Can be relative to project root or absolute path.')
     parser.add_argument('--checker_model', type=str, default=None, help='Checker model name (for solver_checker only, default: same as solver)')
+    parser.add_argument('--checker_checkpoint', type=str, default=None, help='Path to checker checkpoint (optional, for solver_checker only)')
     parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'agent_with_python_tools', 'majority_vote', 'plan_and_reflection'], help='Agent method')
     parser.add_argument('--round', type=str, required=True, help='Test round name')
     parser.add_argument('--dataset', type=str, required=True, help='Dataset name')
@@ -76,10 +78,14 @@ def run_evaluation(args):
         split_name = 'test'
     
     print(f"Model: {args.model}")
+    if args.checkpoint:
+        print(f"Checkpoint: {args.checkpoint}")
     print(f"Agent Method: {args.agent}")
     if args.agent in ['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_summarizer', 'solver_checker_summarizer_chat']:
         if args.agent == 'solver_checker' and args.checker_model:
             print(f"Checker Model: {args.checker_model}")
+            if args.checker_checkpoint:
+                print(f"Checker Checkpoint: {args.checker_checkpoint}")
         elif args.agent == 'solver_checker':
             print(f"Checker Model: {args.model} (same as solver)")
         elif args.agent == 'solver_checker_chat':
@@ -88,10 +94,14 @@ def run_evaluation(args):
             print(f"Using shared model for both solver and checker (trivial chat mode)")
         elif args.agent == 'solver_checker_with_tools':
             print(f"Checker Model: {args.checker_model if args.checker_model else args.model}")
+            if args.checker_checkpoint:
+                print(f"Checker Checkpoint: {args.checker_checkpoint}")
             print(f"Solver Tools: {args.enable_solver_tools}")
             print(f"Checker Tools: {args.enable_checker_tools}")
         elif args.agent == 'solver_checker_summarizer':
             print(f"Checker Model: {args.checker_model if args.checker_model else args.model}")
+            if args.checker_checkpoint:
+                print(f"Checker Checkpoint: {args.checker_checkpoint}")
             print(f"Summarizer: Enabled (Stateless mode)")
         elif args.agent == 'solver_checker_summarizer_chat':
             print(f"Using shared model for solver, checker, and summarizer (Chat mode)")
@@ -127,13 +137,17 @@ def run_evaluation(args):
         if use_batch_inference:
             # Use inference engine for batch processing
             (model, tokenizer), solver_engine = load_inference_engine_wrapper(
-                args.model, base_path, backend=args.inference_backend
+                args.model, base_path, backend=args.inference_backend, checkpoint_path=args.checkpoint
             )
+            
+            # Adjust use_batch_inference if engine is None (checkpoint fallback)
+            if solver_engine is None and args.batch_size == 1:
+                use_batch_inference = False
             
             if args.agent in ['solver_checker', 'solver_checker_with_tools', 'solver_checker_summarizer']:
                 if args.checker_model and args.checker_model != args.model:
                     (checker_model, checker_tokenizer), checker_engine = load_inference_engine_wrapper(
-                        args.checker_model, base_path, backend=args.inference_backend
+                        args.checker_model, base_path, backend=args.inference_backend, checkpoint_path=args.checker_checkpoint
                     )
                 else:
                     checker_model, checker_tokenizer = model, tokenizer
@@ -143,10 +157,10 @@ def run_evaluation(args):
                 checker_engine = solver_engine
         else:
             # Use original load_model for backward compatibility
-            model, tokenizer = load_model(args.model, base_path)
+            model, tokenizer = load_model(args.model, base_path, checkpoint_path=args.checkpoint)
             if args.agent in ['solver_checker', 'solver_checker_with_tools', 'solver_checker_summarizer']:
                 if args.checker_model and args.checker_model != args.model:
-                    checker_model, checker_tokenizer = load_model(args.checker_model, base_path)
+                    checker_model, checker_tokenizer = load_model(args.checker_model, base_path, checkpoint_path=args.checker_checkpoint)
                 else:
                     checker_model, checker_tokenizer = model, tokenizer
             elif args.agent in ['solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_summarizer_chat']:

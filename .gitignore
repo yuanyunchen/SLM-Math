@@ -7,7 +7,6 @@ pretrained_models/*
 !pretrained_models/Qwen3-0.6B/
 !pretrained_models/Qwen3-0.6B/**
 
-
 # Allow models/ directory Python files (inference.py, __init__.py)
 models/*
 !models/*.py
@@ -16,10 +15,19 @@ models/*
 cache/
 
 # Exclude all dataset files and directories
-# data/
+data/
 
 # Exclude all results (timestamped evaluation outputs)
 results/
+
+# Exclude training checkpoints
+checkpoints/
+
+# Exclude Weights & Biases logs
+wandb/
+
+# Exclude milestone results
+milestone/
 
 # Exclude documentation and logs
 docs/

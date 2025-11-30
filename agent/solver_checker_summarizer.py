@@ -39,6 +39,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from typing import Dict, List, Optional
 import torch
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    SUMMARY_MAX_TOKENS, SUMMARY_TEMPERATURE, CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE
+)
 
 
 def summarize_solver_output(
@@ -84,13 +88,24 @@ Summary:"""
     if detailed:
         print("\n[Summarizing Solver Output for Checker]")
     
-    summary = generate_response(
-        model,
-        tokenizer,
-        prompt,
-        "standard",
-        detailed=False  # Don't show streaming for summarization
-    )
+    # Check if model is an inference engine or raw model
+    if hasattr(model, 'generate_single'):
+        summary = model.generate_single(
+            prompt,
+            max_new_tokens=512,
+            temperature=0.1,
+            do_sample=False,
+            repetition_penalty=1.2,
+            detailed=False
+        )
+    else:
+        summary = generate_response(
+            model,
+            tokenizer,
+            prompt,
+            "standard",
+            detailed=False  # Don't show streaming for summarization
+        )
     
     # Ensure summary includes the answer
     if solver_answer and solver_answer not in summary:
@@ -151,13 +166,24 @@ Summary for Solver:"""
     if detailed:
         print("\n[Summarizing Checker Feedback for Solver]")
     
-    summary = generate_response(
-        model,
-        tokenizer,
-        prompt,
-        "standard",
-        detailed=False
-    )
+    # Check if model is an inference engine or raw model
+    if hasattr(model, 'generate_single'):
+        summary = model.generate_single(
+            prompt,
+            max_new_tokens=512,
+            temperature=0.1,
+            do_sample=False,
+            repetition_penalty=1.2,
+            detailed=False
+        )
+    else:
+        summary = generate_response(
+            model,
+            tokenizer,
+            prompt,
+            "standard",
+            detailed=False
+        )
     
     # Ensure verdict is clear
     if checker_verdict not in summary:
@@ -251,13 +277,24 @@ def run_solver_checker_summarizer_workflow(
         if detailed:
             print(f"\n[Solver Turn]")
         
-        solver_response = generate_response(
-            solver_model,
-            solver_tokenizer,
-            solver_prompt,
-            "standard",
-            detailed
-        )
+        # Check if model is an inference engine or raw model
+        if hasattr(solver_model, 'generate_single'):
+            solver_response = solver_model.generate_single(
+                solver_prompt,
+                max_new_tokens=4096,
+                temperature=0.1,
+                do_sample=False,
+                repetition_penalty=1.2,
+                detailed=detailed
+            )
+        else:
+            solver_response = generate_response(
+                solver_model,
+                solver_tokenizer,
+                solver_prompt,
+                "standard",
+                detailed
+            )
         
         solver_answer = extract_answer(solver_response)
         solver_responses.append(solver_response)

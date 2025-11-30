@@ -13,6 +13,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from transformers import TextStreamer, StoppingCriteria, StoppingCriteriaList
 from models.inference import StopOnBoxedAnswer
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
 
 
 def format_prompt_solver(question: str, checker_feedback: str = "", dataset_name: str = "") -> str:
@@ -242,6 +246,22 @@ class StopAfterCheckerConclusion(StoppingCriteria):
 def generate_response_checker(model, tokenizer, prompt: str, detailed: bool = False):
     """Generate response for checker with reasoning space"""
     import torch
+    
+    # Check if model is an inference engine
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (from load_inference_engine_wrapper)
+        response = model.generate_single(
+            prompt,
+            max_new_tokens=CHECKER_MAX_TOKENS,
+            temperature=CHECKER_TEMPERATURE,
+            do_sample=DO_SAMPLE,
+            top_p=CHECKER_TOP_P,
+            repetition_penalty=CHECKER_REPETITION_PENALTY,
+            detailed=detailed
+        )
+        return response
+    
+    # Using standard model (from load_model)
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
     
@@ -257,12 +277,12 @@ def generate_response_checker(model, tokenizer, prompt: str, detailed: bool = Fa
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=256,  # Increased for better reasoning
-            temperature=0.3,
-            do_sample=True,
-            top_p=0.9,
+            max_new_tokens=CHECKER_MAX_TOKENS,
+            temperature=CHECKER_TEMPERATURE,
+            do_sample=DO_SAMPLE,
+            top_p=CHECKER_TOP_P,
             pad_token_id=tokenizer.eos_token_id,
-            repetition_penalty=1.3,
+            repetition_penalty=CHECKER_REPETITION_PENALTY,
             stopping_criteria=stopping_criteria,
             streamer=streamer
         )

@@ -15,6 +15,10 @@ from typing import Dict, List, Tuple
 import re
 import torch
 from transformers import TextStreamer, StoppingCriteria, StoppingCriteriaList
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE
+)
 
 
 class StopOnBoxedAnswerOrVerdict(StoppingCriteria):
@@ -232,35 +236,52 @@ def generate_chat_response(
     Returns:
         Generated response text
     """
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
-    inputs = {k: v.to(model.device) for k, v in inputs.items()}
-    
-    prompt_length = inputs['input_ids'].shape[1]
-    
-    if detailed:
-        streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-    else:
-        streamer = None
-    
-    stopping_criteria = StoppingCriteriaList([
-        StopOnBoxedAnswerOrVerdict(tokenizer, prompt_length, role)
-    ])
-    
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
+    # Handle both inference engines and standard models
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (vLLM or TransformersEngine)
+        temperature = 0.7 if role == "solver" else 0.3
+        top_p = 0.95 if role == "solver" else 0.9
+        
+        response = model.generate_single(
+            prompt,
             max_new_tokens=max_new_tokens,
-            temperature=0.7 if role == "solver" else 0.3,
+            temperature=temperature,
             do_sample=True,
-            top_p=0.95 if role == "solver" else 0.9,
-            pad_token_id=tokenizer.eos_token_id,
+            top_p=top_p,
             repetition_penalty=1.2,
-            stopping_criteria=stopping_criteria,
-            streamer=streamer
+            detailed=detailed
         )
-    
-    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    response = generated_text[len(prompt):].strip()
+    else:
+        # Using standard PyTorch model
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
+        inputs = {k: v.to(model.device) for k, v in inputs.items()}
+        
+        prompt_length = inputs['input_ids'].shape[1]
+        
+        if detailed:
+            streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+        else:
+            streamer = None
+        
+        stopping_criteria = StoppingCriteriaList([
+            StopOnBoxedAnswerOrVerdict(tokenizer, prompt_length, role)
+        ])
+        
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                temperature=0.7 if role == "solver" else 0.3,
+                do_sample=True,
+                top_p=0.95 if role == "solver" else 0.9,
+                pad_token_id=tokenizer.eos_token_id,
+                repetition_penalty=1.2,
+                stopping_criteria=stopping_criteria,
+                streamer=streamer
+            )
+        
+        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        response = generated_text[len(prompt):].strip()
     
     return response
 

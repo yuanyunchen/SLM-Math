@@ -55,6 +55,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from typing import Dict, List, Optional, Tuple
 import re
 import torch
+from models.generation_config import MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY
 
 
 class PlanAndReflectionWorkflow:
@@ -93,6 +94,40 @@ class PlanAndReflectionWorkflow:
         self.extract_answer = extract_answer
         self.check_answer = check_answer
         self.generate_response = generate_response
+    
+    def _generate(self, prompt: str, max_new_tokens: int = 4096) -> str:
+        """
+        Generate response with automatic inference engine detection
+        
+        Args:
+            prompt: Input prompt
+            max_new_tokens: Maximum tokens to generate
+        
+        Returns:
+            Generated response
+        """
+        # Check if model is an inference engine or raw model
+        if hasattr(self.model, 'generate_single'):
+            # Using inference engine (from load_inference_engine_wrapper)
+            response = self.model.generate_single(
+                prompt,
+                max_new_tokens=max_new_tokens,
+                temperature=TEMPERATURE,
+                do_sample=DO_SAMPLE,
+                top_p=TOP_P,
+                repetition_penalty=REPETITION_PENALTY,
+                detailed=self.detailed
+            )
+        else:
+            # Using standard model (from load_model)
+            response = self.generate_response(
+                self.model,
+                self.tokenizer,
+                prompt,
+                "standard",
+                self.detailed
+            )
+        return response
     
     def run(self, question: str, ground_truth: str) -> Dict:
         """
@@ -207,13 +242,7 @@ class PlanAndReflectionWorkflow:
         prompt = self._build_planner_prompt(question, previous_iterations)
         
         # Generate plan
-        plan_response = self.generate_response(
-            self.model,
-            self.tokenizer,
-            prompt,
-            "standard",
-            self.detailed
-        )
+        plan_response = self._generate(prompt)
         
         # Parse plan
         subproblems = self._parse_subproblems(plan_response)
@@ -256,13 +285,7 @@ class PlanAndReflectionWorkflow:
             prompt = self._build_executor_prompt(question, subproblem, i)
             
             # Generate solution
-            solution_response = self.generate_response(
-                self.model,
-                self.tokenizer,
-                prompt,
-                "standard",
-                self.detailed
-            )
+            solution_response = self._generate(prompt)
             
             # Extract answer from solution
             solution_answer = self.extract_answer(solution_response)
@@ -306,13 +329,7 @@ class PlanAndReflectionWorkflow:
         )
         
         # Generate reflection
-        reflection_response = self.generate_response(
-            self.model,
-            self.tokenizer,
-            prompt,
-            "standard",
-            self.detailed
-        )
+        reflection_response = self._generate(prompt)
         
         # Parse reflection
         verdict = self._parse_reflection_verdict(reflection_response)
@@ -357,13 +374,7 @@ class PlanAndReflectionWorkflow:
         )
         
         # Generate integrated solution
-        integration_response = self.generate_response(
-            self.model,
-            self.tokenizer,
-            prompt,
-            "standard",
-            self.detailed
-        )
+        integration_response = self._generate(prompt)
         
         # Extract final answer
         final_answer = self.extract_answer(integration_response)

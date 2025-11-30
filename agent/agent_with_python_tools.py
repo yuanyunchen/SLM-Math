@@ -27,6 +27,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from typing import Dict
+from models.generation_config import MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY
 
 
 def run_agent_with_python_tools(
@@ -79,10 +80,11 @@ def run_agent_with_python_tools(
         # Using inference engine (from load_inference_engine_wrapper)
         response = model.generate_single(
             prompt,
-            max_new_tokens=4096,
-            temperature=0.1,
-            do_sample=False,
-            repetition_penalty=1.2,
+            max_new_tokens=MAX_NEW_TOKENS,
+            temperature=TEMPERATURE,
+            do_sample=DO_SAMPLE,
+            top_p=TOP_P,
+            repetition_penalty=REPETITION_PENALTY,
             detailed=detailed
         )
     else:

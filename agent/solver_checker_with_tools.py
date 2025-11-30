@@ -27,6 +27,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from typing import Dict, List, Optional
 import torch
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
 
 
 def run_solver_checker_with_tools_workflow(
@@ -116,14 +120,27 @@ def run_solver_checker_with_tools_workflow(
         if detailed:
             print(f"\n[Solver Turn]")
         
-        # Generate solver response
-        solver_response = generate_response(
-            solver_model,
-            solver_tokenizer,
-            solver_prompt,
-            "standard",
-            detailed
-        )
+        # Generate solver response - check if model is an inference engine or raw model
+        if hasattr(solver_model, 'generate_single'):
+            # Using inference engine (from load_inference_engine_wrapper)
+            solver_response = solver_model.generate_single(
+                solver_prompt,
+                max_new_tokens=MAX_NEW_TOKENS,
+                temperature=TEMPERATURE,
+                do_sample=DO_SAMPLE,
+                top_p=TOP_P,
+                repetition_penalty=REPETITION_PENALTY,
+                detailed=detailed
+            )
+        else:
+            # Using standard model (from load_model)
+            solver_response = generate_response(
+                solver_model,
+                solver_tokenizer,
+                solver_prompt,
+                "standard",
+                detailed
+            )
         
         # Execute code in solver response if enabled
         if enable_solver_tools:
@@ -143,6 +160,12 @@ def run_solver_checker_with_tools_workflow(
                 
                 # Use response with execution results
                 solver_response = solver_response_with_output
+                
+                # Check if any execution failed and add note for checker
+                failed_blocks = [r for r in exec_results if not r['success']]
+                if failed_blocks:
+                    error_note = f"\n\n[Note: {len(failed_blocks)} code block(s) failed to execute properly]"
+                    solver_response += error_note
         
         solver_answer = extract_answer(solver_response)
         solver_responses.append(solver_response)
@@ -166,13 +189,26 @@ def run_solver_checker_with_tools_workflow(
         if enable_checker_tools:
             checker_prompt += "\n\nYou can write Python code in ```python``` blocks to verify calculations or test the solution."
         
-        # Generate checker response
-        checker_response = generate_response_checker(
-            checker_model,
-            checker_tokenizer,
-            checker_prompt,
-            detailed
-        )
+        # Generate checker response - check if model is an inference engine or raw model
+        if hasattr(checker_model, 'generate_single'):
+            # Using inference engine (from load_inference_engine_wrapper)
+            checker_response = checker_model.generate_single(
+                checker_prompt,
+                max_new_tokens=CHECKER_MAX_TOKENS,
+                temperature=CHECKER_TEMPERATURE,
+                do_sample=DO_SAMPLE,
+                top_p=CHECKER_TOP_P,
+                repetition_penalty=CHECKER_REPETITION_PENALTY,
+                detailed=detailed
+            )
+        else:
+            # Using standard model (from load_model)
+            checker_response = generate_response_checker(
+                checker_model,
+                checker_tokenizer,
+                checker_prompt,
+                detailed
+            )
         
         # Execute code in checker response if enabled
         if enable_checker_tools:
@@ -192,6 +228,13 @@ def run_solver_checker_with_tools_workflow(
                 
                 # Use response with execution results
                 checker_response = checker_response_with_output
+                
+                # Check if any checker execution failed
+                checker_failed_blocks = [r for r in checker_exec_results if not r['success']]
+                if checker_failed_blocks:
+                    # Checker's verification code failed - this affects reliability of verdict
+                    if detailed:
+                        print(f"  [Warning: Checker's verification code had {len(checker_failed_blocks)} error(s)]")
         
         checker_responses.append(checker_response)
         checker_verdict = parse_checker_verdict(checker_response)

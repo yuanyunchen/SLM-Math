@@ -16,6 +16,10 @@ from transformers import (
     StoppingCriteriaList,
 )
 from collections import Counter
+from models.generation_config import (
+    MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
+    CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
 
 
 # ============================================================================
@@ -134,6 +138,35 @@ def load_model(model_name: str, base_path: Path):
 
 def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool = False):
     """Generate response from model given a prompt."""
+    
+    # Check if using inference engine
+    if hasattr(model, 'generate_single'):
+        # Using inference engine (vLLM or TransformersEngine)
+        # Set parameters based on mode
+        if mode == "checker":
+            max_new_tokens = CHECKER_MAX_TOKENS
+            temperature = CHECKER_TEMPERATURE
+            do_sample = DO_SAMPLE
+            top_p = CHECKER_TOP_P
+            repetition_penalty = CHECKER_REPETITION_PENALTY
+        else:
+            max_new_tokens = MAX_NEW_TOKENS
+            temperature = TEMPERATURE
+            do_sample = DO_SAMPLE
+            top_p = TOP_P
+            repetition_penalty = REPETITION_PENALTY
+        
+        return model.generate_single(
+            prompt,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            do_sample=do_sample,
+            top_p=top_p,
+            repetition_penalty=repetition_penalty,
+            detailed=detailed
+        )
+    
+    # Using standard PyTorch model
     inputs = tokenizer(prompt, return_tensors="pt", truncation=False)
     
     # Get model device - handle both inference engines and standard models
@@ -175,12 +208,12 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
         gen_kwargs["stopping_criteria"] = stopping_criteria
     elif mode == "checker":
         stopping_criteria.append(StopAfterCheckerConclusion(tokenizer, prompt_length))
-        gen_kwargs["max_new_tokens"] = min(100, available_for_generation)
+        gen_kwargs["max_new_tokens"] = min(CHECKER_MAX_TOKENS, available_for_generation)
         gen_kwargs["stopping_criteria"] = stopping_criteria
-        gen_kwargs["temperature"] = 0.3
-        gen_kwargs["do_sample"] = True
-        gen_kwargs["top_p"] = 0.9
-        gen_kwargs["repetition_penalty"] = 1.5
+        gen_kwargs["temperature"] = CHECKER_TEMPERATURE
+        gen_kwargs["do_sample"] = DO_SAMPLE
+        gen_kwargs["top_p"] = CHECKER_TOP_P
+        gen_kwargs["repetition_penalty"] = CHECKER_REPETITION_PENALTY
     else:
         gen_kwargs["max_new_tokens"] = available_for_generation
     
