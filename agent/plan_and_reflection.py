@@ -1,51 +1,14 @@
 """
-Plan-and-Reflection Multi-Agent Workflow
-规划-执行-反思智能体工作流
+Plan-and-Reflection Multi-Agent Workflow (Simplified Version)
+Optimized for math-focused models like Qwen2.5-Math
 
-ARCHITECTURE:
-┌─────────────────────────────────────────────────────┐
-│                  Main Controller                    │
-│            (Orchestrates the workflow)              │
-└─────────────────────────────────────────────────────┘
-                         │
-        ┌────────────────┼────────────────┐
-        ▼                ▼                ▼
-   ┌────────┐      ┌──────────┐     ┌──────────┐
-   │ Planner│ ───> │ Executor │ ──> │Reflector │
-   └────────┘      └──────────┘     └──────────┘
-        │                │                │
-        │                │                │
-        └────────────────┴────────────────┘
-                         │
-                    ┌─────────┐
-                    │Integrator│
-                    └─────────┘
+SIMPLIFIED ARCHITECTURE:
+- Phase 1: Solve directly with step-by-step reasoning
+- Phase 2: Verify by re-solving with different approach hint  
+- Phase 3: If disagreement, solve once more and take majority
 
-WORKFLOW:
-1. PLAN Phase
-   - Analyze problem
-   - Decompose into sub-problems
-   - Create execution plan
-
-2. EXECUTE Phase
-   - Solve each sub-problem
-   - Collect partial results
-   - Monitor progress
-
-3. REFLECT Phase
-   - Evaluate solution quality
-   - Identify errors/gaps
-   - Decide: accept or re-plan
-
-4. INTEGRATE Phase
-   - Combine sub-solutions
-   - Generate final answer
-   - Verify consistency
-
-适用场景：
-- 复杂的多步推理问题
-- 需要分解的大问题
-- 需要自我修正的场景
+This approach works better with math-specialized models that don't handle
+abstract planning/reflection prompts well.
 """
 
 import sys
@@ -58,7 +21,7 @@ import torch
 
 
 class PlanAndReflectionWorkflow:
-    """Plan-and-Reflection Agent Workflow"""
+    """Simplified Plan-and-Reflection Agent Workflow for Math Models"""
     
     def __init__(
         self,
@@ -75,8 +38,8 @@ class PlanAndReflectionWorkflow:
         Args:
             model: Language model
             tokenizer: Tokenizer
-            max_iterations: Maximum plan-execute-reflect iterations
-            max_subproblems: Maximum number of sub-problems
+            max_iterations: Maximum solve-verify iterations
+            max_subproblems: Not used in simplified version
             detailed: Verbose output
             dataset_name: Dataset name for prompting
         """
@@ -90,13 +53,19 @@ class PlanAndReflectionWorkflow:
         # Import utilities
         from utils.prompt_utils import extract_answer, check_answer
         from models.inference import generate_response
+        from agent.unified_config import FIRST_ROUND_SOLVER_CONFIG, SUBSEQUENT_ROUND_CONFIG
         self.extract_answer = extract_answer
         self.check_answer = check_answer
         self.generate_response = generate_response
+        self.first_round_config = FIRST_ROUND_SOLVER_CONFIG
+        self.subsequent_round_config = SUBSEQUENT_ROUND_CONFIG
+        
+        # Track if first answer has been generated (for unified config)
+        self._first_answer_generated = False
     
     def run(self, question: str, ground_truth: str) -> Dict:
         """
-        Execute the complete workflow
+        Execute the simplified solve-verify workflow
         
         Args:
             question: Problem to solve
@@ -105,78 +74,269 @@ class PlanAndReflectionWorkflow:
         Returns:
             Dict with results
         """
+        # Reset first answer flag for each new problem
+        self._first_answer_generated = False
+        
         if self.detailed:
             print(f"\n{'='*80}")
-            print(f"PLAN-AND-REFLECTION WORKFLOW")
+            print(f"PLAN-AND-REFLECTION WORKFLOW (SIMPLIFIED)")
             print(f"{'='*80}")
             print(f"Question: {question[:100]}...")
             print(f"Ground Truth: {ground_truth}")
             print(f"{'='*80}\n")
         
         iterations = []
-        final_answer = None
-        final_correct = False
+        answers_collected = []
         
-        for iteration in range(1, self.max_iterations + 1):
+        # Phase 1: Initial solve with standard prompt
+        if self.detailed:
+            print(f"\n{'='*80}")
+            print(f"ITERATION 1/{self.max_iterations}: INITIAL SOLVE")
+            print(f"{'='*80}\n")
+        
+        result1 = self._solve_standard(question)
+        answer1 = result1['answer']
+        is_correct1 = self.check_answer(answer1, ground_truth) if answer1 else False
+        
+        iterations.append({
+            'iteration': 1,
+            'phase': 'initial_solve',
+            'prompt': result1['prompt'],
+            'response': result1['response'],
+            'answer': answer1,
+            'is_correct': is_correct1,
+            'plan': {'prompt': '', 'response': 'Direct solve', 'reasoning': 'Step-by-step solution', 'subproblems': [], 'num_subproblems': 0},
+            'execute': {'solutions': [{'subproblem': question, 'response': result1['response'], 'answer': answer1}], 'num_solved': 1},
+            'reflect': {'prompt': '', 'response': '', 'verdict': 'PENDING', 'reasoning': '', 'suggestions': ''},
+            'integrate': {'prompt': result1['prompt'], 'response': result1['response'], 'final_answer': answer1, 'is_correct': is_correct1}
+        })
+        answers_collected.append(answer1)
+        
+        if self.detailed:
+            print(f"\n[Initial Answer]: {answer1}")
+            print(f"[Correct]: {is_correct1}")
+        
+        # If max_iterations is 1, return now
+        if self.max_iterations <= 1:
+            return self._compile_results(question, ground_truth, iterations, answers_collected)
+        
+        # Phase 2: Verify by re-solving with verification prompt
+        if self.detailed:
+            print(f"\n{'='*80}")
+            print(f"ITERATION 2/{self.max_iterations}: VERIFICATION SOLVE")
+            print(f"{'='*80}\n")
+        
+        result2 = self._solve_with_verification(question, answer1)
+        answer2 = result2['answer']
+        is_correct2 = self.check_answer(answer2, ground_truth) if answer2 else False
+        
+        iterations.append({
+            'iteration': 2,
+            'phase': 'verification_solve',
+            'prompt': result2['prompt'],
+            'response': result2['response'],
+            'answer': answer2,
+            'is_correct': is_correct2,
+            'plan': {'prompt': '', 'response': 'Verification solve', 'reasoning': 'Re-solve to verify', 'subproblems': [], 'num_subproblems': 0},
+            'execute': {'solutions': [{'subproblem': question, 'response': result2['response'], 'answer': answer2}], 'num_solved': 1},
+            'reflect': {'prompt': '', 'response': '', 'verdict': 'ACCEPT' if answer1 == answer2 else 'REJECT', 'reasoning': f'First answer: {answer1}, Second answer: {answer2}', 'suggestions': ''},
+            'integrate': {'prompt': result2['prompt'], 'response': result2['response'], 'final_answer': answer2, 'is_correct': is_correct2}
+        })
+        answers_collected.append(answer2)
+        
+        if self.detailed:
+            print(f"\n[Verification Answer]: {answer2}")
+            print(f"[Correct]: {is_correct2}")
+            print(f"[Agreement]: {'YES' if answer1 == answer2 else 'NO'}")
+        
+        # If answers agree, we're done
+        if answer1 == answer2:
             if self.detailed:
-                print(f"\n{'='*80}")
-                print(f"ITERATION {iteration}/{self.max_iterations}")
-                print(f"{'='*80}\n")
-            
-            # Phase 1: PLAN
-            plan_result = self._plan_phase(question, iterations)
-            
-            # Phase 2: EXECUTE
-            execute_result = self._execute_phase(question, plan_result)
-            
-            # Phase 3: REFLECT
-            reflect_result = self._reflect_phase(
-                question, 
-                plan_result, 
-                execute_result,
-                ground_truth
-            )
-            
-            # Phase 4: INTEGRATE
-            integrate_result = self._integrate_phase(
-                question,
-                plan_result,
-                execute_result,
-                reflect_result
-            )
-            
-            # Store iteration data
-            iteration_data = {
-                'iteration': iteration,
-                'plan': plan_result,
-                'execute': execute_result,
-                'reflect': reflect_result,
-                'integrate': integrate_result,
-                'answer': integrate_result['final_answer'],
-                'is_correct': integrate_result['is_correct']
-            }
-            iterations.append(iteration_data)
-            
-            # Check if we should continue
-            if reflect_result['verdict'] == 'ACCEPT':
-                if self.detailed:
-                    print(f"\n✓ Solution accepted at iteration {iteration}")
-                final_answer = integrate_result['final_answer']
-                final_correct = integrate_result['is_correct']
-                break
-            elif iteration >= self.max_iterations:
-                if self.detailed:
-                    print(f"\n⚠ Reached max iterations")
-                final_answer = integrate_result['final_answer']
-                final_correct = integrate_result['is_correct']
-                break
-            else:
-                if self.detailed:
-                    print(f"\n↻ Re-planning needed: {reflect_result['reason']}")
+                print(f"\n[CONSENSUS REACHED] Both attempts agree on: {answer1}")
+            return self._compile_results(question, ground_truth, iterations, answers_collected)
         
-        # Compile final results
+        # If max_iterations is 2, return best answer
+        if self.max_iterations <= 2:
+            return self._compile_results(question, ground_truth, iterations, answers_collected)
+        
+        # Phase 3: Tiebreaker - solve once more with careful reasoning prompt
+        if self.detailed:
+            print(f"\n{'='*80}")
+            print(f"ITERATION 3/{self.max_iterations}: TIEBREAKER SOLVE")
+            print(f"{'='*80}\n")
+        
+        result3 = self._solve_careful(question, answer1, answer2)
+        answer3 = result3['answer']
+        is_correct3 = self.check_answer(answer3, ground_truth) if answer3 else False
+        
+        iterations.append({
+            'iteration': 3,
+            'phase': 'tiebreaker_solve',
+            'prompt': result3['prompt'],
+            'response': result3['response'],
+            'answer': answer3,
+            'is_correct': is_correct3,
+            'plan': {'prompt': '', 'response': 'Tiebreaker solve', 'reasoning': 'Careful re-solve', 'subproblems': [], 'num_subproblems': 0},
+            'execute': {'solutions': [{'subproblem': question, 'response': result3['response'], 'answer': answer3}], 'num_solved': 1},
+            'reflect': {'prompt': '', 'response': '', 'verdict': 'ACCEPT', 'reasoning': 'Final decision', 'suggestions': ''},
+            'integrate': {'prompt': result3['prompt'], 'response': result3['response'], 'final_answer': answer3, 'is_correct': is_correct3}
+        })
+        answers_collected.append(answer3)
+        
+        if self.detailed:
+            print(f"\n[Tiebreaker Answer]: {answer3}")
+            print(f"[Correct]: {is_correct3}")
+        
+        return self._compile_results(question, ground_truth, iterations, answers_collected)
+    
+    def _solve_standard(self, question: str) -> Dict:
+        """Solve with standard step-by-step prompt (same as baseline)"""
+        # Use the same prompt as format_prompt_standard for fair comparison
+        prompt = f"""{question}
+Please reason step by step, and put your final answer within \\boxed{{}}."""
+        
+        if self.detailed:
+            print(f"{'─'*80}")
+            print(f"SOLVING (Standard Prompt)")
+            print(f"{'─'*80}")
+        
+        # Use unified config for first answer
+        response = self.generate_response(
+            self.model,
+            self.tokenizer,
+            prompt,
+            "standard",
+            self.detailed,
+            temperature=self.first_round_config['temperature'],
+            do_sample=self.first_round_config['do_sample'],
+            top_p=self.first_round_config['top_p']
+        )
+        self._first_answer_generated = True
+        
+        answer = self.extract_answer(response)
+        
+        return {
+            'prompt': prompt,
+            'response': response,
+            'answer': answer
+        }
+    
+    def _solve_with_verification(self, question: str, previous_answer: str) -> Dict:
+        """Solve again to verify the first answer"""
+        prompt = f"""{question}
+Please solve this carefully step by step, and put your final answer within \\boxed{{}}."""
+        
+        if self.detailed:
+            print(f"{'─'*80}")
+            print(f"SOLVING (Verification Prompt)")
+            print(f"{'─'*80}")
+        
+        # Use subsequent round config (with some randomness for diversity)
+        response = self.generate_response(
+            self.model,
+            self.tokenizer,
+            prompt,
+            "standard",
+            self.detailed,
+            temperature=self.subsequent_round_config['temperature'],
+            do_sample=self.subsequent_round_config['do_sample'],
+            top_p=self.subsequent_round_config['top_p']
+        )
+        
+        answer = self.extract_answer(response)
+        
+        return {
+            'prompt': prompt,
+            'response': response,
+            'answer': answer
+        }
+    
+    def _solve_careful(self, question: str, answer1: str, answer2: str) -> Dict:
+        """Solve once more with extra care when previous answers disagree"""
+        prompt = f"""{question}
+Let me solve this step by step very carefully, and put my final answer within \\boxed{{}}."""
+        
+        if self.detailed:
+            print(f"{'─'*80}")
+            print(f"SOLVING (Careful Prompt - Tiebreaker)")
+            print(f"{'─'*80}")
+        
+        # Use lower temperature for more careful reasoning
+        response = self.generate_response(
+            self.model,
+            self.tokenizer,
+            prompt,
+            "standard",
+            self.detailed,
+            temperature=0.3,
+            do_sample=True,
+            top_p=0.9
+        )
+        
+        answer = self.extract_answer(response)
+        
+        return {
+            'prompt': prompt,
+            'response': response,
+            'answer': answer
+        }
+    
+    def _compile_results(
+        self, 
+        question: str, 
+        ground_truth: str, 
+        iterations: List[Dict],
+        answers_collected: List[str]
+    ) -> Dict:
+        """Compile final results using smart answer selection
+        
+        Strategy (prioritized):
+        1. If two or more answers agree, use the majority answer
+        2. If first answer appears again later (even once), use first (confirmed)
+        3. Otherwise, use FIRST answer (trust initial deterministic reasoning)
+        
+        This protects against degradation while still allowing improvement
+        when later attempts reach consensus.
+        """
+        from collections import Counter
+        valid_answers = [a for a in answers_collected if a]
+        answer_counts = Counter(valid_answers)
+        
+        if not answer_counts:
+            final_answer = None
+        elif len(answer_counts) == 1:
+            # All answers agree
+            final_answer = valid_answers[0]
+        else:
+            # Multiple different answers
+            most_common = answer_counts.most_common(1)[0]
+            if most_common[1] >= 2:
+                # True majority (2+ agree) - use it
+                final_answer = most_common[0]
+            else:
+                # No majority (all different)
+                # Use FIRST answer (trust deterministic initial reasoning)
+                final_answer = valid_answers[0] if valid_answers else None
+        
+        final_correct = self.check_answer(final_answer, ground_truth) if final_answer else False
+        
+        # First answer info
         first_answer = iterations[0]['answer'] if iterations else None
         first_correct = iterations[0]['is_correct'] if iterations else False
+        
+        # Determine case type
+        case_type = self._determine_case_type(first_correct, final_correct, len(iterations))
+        
+        if self.detailed:
+            print(f"\n{'='*80}")
+            print(f"FINAL RESULT")
+            print(f"{'='*80}")
+            print(f"Answers collected: {answers_collected}")
+            print(f"Final Answer (majority): {final_answer}")
+            print(f"Ground Truth: {ground_truth}")
+            print(f"Correct: {final_correct}")
+            print(f"Case Type: {case_type}")
+            print(f"{'='*80}\n")
         
         return {
             'question': question,
@@ -187,414 +347,15 @@ class PlanAndReflectionWorkflow:
             'first_correct': first_correct,
             'total_iterations': len(iterations),
             'iterations': iterations,
-            'case_type': self._determine_case_type(first_correct, final_correct, len(iterations))
+            'case_type': case_type,
+            'final_verdict': 'CORRECT' if final_correct else 'INCORRECT',
+            'answers_collected': answers_collected,
+            'answer_counts': dict(answer_counts)
         }
-    
-    def _plan_phase(self, question: str, previous_iterations: List[Dict]) -> Dict:
-        """
-        Phase 1: Planning
-        Analyze and decompose the problem
-        """
-        if self.detailed:
-            print(f"{'─'*80}")
-            print(f"PHASE 1: PLANNING")
-            print(f"{'─'*80}")
-        
-        # Build planner prompt
-        prompt = self._build_planner_prompt(question, previous_iterations)
-        
-        # Generate plan
-        plan_response = self.generate_response(
-            self.model,
-            self.tokenizer,
-            prompt,
-            "standard",
-            self.detailed
-        )
-        
-        # Parse plan
-        subproblems = self._parse_subproblems(plan_response)
-        reasoning = self._extract_planning_reasoning(plan_response)
-        
-        if self.detailed:
-            print(f"\n[Planning Reasoning]")
-            print(f"{reasoning[:200]}...")
-            print(f"\n[Sub-problems identified: {len(subproblems)}]")
-            for i, sp in enumerate(subproblems, 1):
-                print(f"  {i}. {sp[:80]}...")
-        
-        return {
-            'prompt': prompt,
-            'response': plan_response,
-            'reasoning': reasoning,
-            'subproblems': subproblems,
-            'num_subproblems': len(subproblems)
-        }
-    
-    def _execute_phase(self, question: str, plan_result: Dict) -> Dict:
-        """
-        Phase 2: Execution
-        Solve each sub-problem
-        """
-        if self.detailed:
-            print(f"\n{'─'*80}")
-            print(f"PHASE 2: EXECUTION")
-            print(f"{'─'*80}")
-        
-        subproblems = plan_result['subproblems']
-        solutions = []
-        
-        for i, subproblem in enumerate(subproblems, 1):
-            if self.detailed:
-                print(f"\n[Sub-problem {i}/{len(subproblems)}]")
-                print(f"  {subproblem[:100]}...")
-            
-            # Build executor prompt
-            prompt = self._build_executor_prompt(question, subproblem, i)
-            
-            # Generate solution
-            solution_response = self.generate_response(
-                self.model,
-                self.tokenizer,
-                prompt,
-                "standard",
-                self.detailed
-            )
-            
-            # Extract answer from solution
-            solution_answer = self.extract_answer(solution_response)
-            
-            if self.detailed:
-                print(f"  → Solution: {solution_answer}")
-            
-            solutions.append({
-                'subproblem': subproblem,
-                'prompt': prompt,
-                'response': solution_response,
-                'answer': solution_answer
-            })
-        
-        return {
-            'solutions': solutions,
-            'num_solved': len(solutions)
-        }
-    
-    def _reflect_phase(
-        self,
-        question: str,
-        plan_result: Dict,
-        execute_result: Dict,
-        ground_truth: str
-    ) -> Dict:
-        """
-        Phase 3: Reflection
-        Evaluate solution quality and decide next action
-        """
-        if self.detailed:
-            print(f"\n{'─'*80}")
-            print(f"PHASE 3: REFLECTION")
-            print(f"{'─'*80}")
-        
-        # Build reflector prompt
-        prompt = self._build_reflector_prompt(
-            question,
-            plan_result,
-            execute_result
-        )
-        
-        # Generate reflection
-        reflection_response = self.generate_response(
-            self.model,
-            self.tokenizer,
-            prompt,
-            "standard",
-            self.detailed
-        )
-        
-        # Parse reflection
-        verdict = self._parse_reflection_verdict(reflection_response)
-        reasoning = self._extract_reflection_reasoning(reflection_response)
-        suggestions = self._extract_reflection_suggestions(reflection_response)
-        
-        if self.detailed:
-            print(f"\n[Reflection Verdict]: {verdict}")
-            print(f"[Reasoning]: {reasoning[:150]}...")
-            if suggestions:
-                print(f"[Suggestions]: {suggestions[:150]}...")
-        
-        return {
-            'prompt': prompt,
-            'response': reflection_response,
-            'verdict': verdict,
-            'reasoning': reasoning,
-            'suggestions': suggestions
-        }
-    
-    def _integrate_phase(
-        self,
-        question: str,
-        plan_result: Dict,
-        execute_result: Dict,
-        reflect_result: Dict
-    ) -> Dict:
-        """
-        Phase 4: Integration
-        Combine sub-solutions into final answer
-        """
-        if self.detailed:
-            print(f"\n{'─'*80}")
-            print(f"PHASE 4: INTEGRATION")
-            print(f"{'─'*80}")
-        
-        # Build integrator prompt
-        prompt = self._build_integrator_prompt(
-            question,
-            plan_result,
-            execute_result
-        )
-        
-        # Generate integrated solution
-        integration_response = self.generate_response(
-            self.model,
-            self.tokenizer,
-            prompt,
-            "standard",
-            self.detailed
-        )
-        
-        # Extract final answer
-        final_answer = self.extract_answer(integration_response)
-        
-        # Check correctness
-        is_correct = False
-        if final_answer:
-            is_correct = self.check_answer(final_answer, question)  # Will be checked against ground truth in caller
-        
-        if self.detailed:
-            print(f"\n[Final Answer]: {final_answer}")
-            print(f"[Reasoning]: {integration_response[:200]}...")
-        
-        return {
-            'prompt': prompt,
-            'response': integration_response,
-            'final_answer': final_answer,
-            'is_correct': is_correct
-        }
-    
-    # ========== PROMPT BUILDERS ==========
-    
-    def _build_planner_prompt(self, question: str, previous_iterations: List[Dict]) -> str:
-        """Build prompt for planner agent"""
-        prompt = f"""You are a planning agent. Analyze the problem and break it down into sub-problems.
-
-Problem: {question}
-
-Your task:
-1. Understand what the problem is asking
-2. Identify the key information and unknowns
-3. Break the problem into 2-{self.max_subproblems} clear sub-problems
-4. Each sub-problem should be independently solvable
-
-"""
-        
-        if previous_iterations:
-            last_iter = previous_iterations[-1]
-            prompt += f"""Previous attempt failed. Issues identified:
-{last_iter['reflect']['reasoning']}
-
-Suggestions for improvement:
-{last_iter['reflect']['suggestions']}
-
-"""
-        
-        prompt += """Format your response as:
-
-ANALYSIS:
-[Your analysis of the problem]
-
-SUB-PROBLEMS:
-1. [First sub-problem]
-2. [Second sub-problem]
-...
-
-PLAN:
-[How solving these sub-problems will lead to the final answer]
-"""
-        
-        return prompt
-    
-    def _build_executor_prompt(self, question: str, subproblem: str, index: int) -> str:
-        """Build prompt for executor agent"""
-        prompt = f"""You are solving a sub-problem as part of a larger problem.
-
-Main Problem: {question}
-
-Sub-problem {index}: {subproblem}
-
-Solve this sub-problem step by step. Show your work and put your final answer in \\boxed{{}}.
-
-Solution:"""
-        
-        return prompt
-    
-    def _build_reflector_prompt(
-        self,
-        question: str,
-        plan_result: Dict,
-        execute_result: Dict
-    ) -> str:
-        """Build prompt for reflector agent"""
-        # Compile solutions
-        solutions_text = ""
-        for i, sol in enumerate(execute_result['solutions'], 1):
-            solutions_text += f"\nSub-problem {i}: {sol['subproblem']}\n"
-            solutions_text += f"Solution: {sol['answer']}\n"
-        
-        prompt = f"""You are a reflection agent. Evaluate the quality of the problem-solving approach.
-
-Original Problem: {question}
-
-Plan:
-{plan_result['reasoning']}
-
-Sub-problems:
-{chr(10).join(f"{i}. {sp}" for i, sp in enumerate(plan_result['subproblems'], 1))}
-
-Execution Results:
-{solutions_text}
-
-Your task:
-1. Check if the sub-problems are appropriate
-2. Check if the solutions are correct
-3. Identify any gaps or errors
-4. Decide: ACCEPT (solution is good) or REJECT (needs revision)
-
-Format your response as:
-
-EVALUATION:
-[Your evaluation]
-
-VERDICT: [ACCEPT or REJECT]
-
-REASON:
-[Why you accept or reject]
-
-SUGGESTIONS (if REJECT):
-[How to improve]
-"""
-        
-        return prompt
-    
-    def _build_integrator_prompt(
-        self,
-        question: str,
-        plan_result: Dict,
-        execute_result: Dict
-    ) -> str:
-        """Build prompt for integrator agent"""
-        # Compile solutions
-        solutions_text = ""
-        for i, sol in enumerate(execute_result['solutions'], 1):
-            solutions_text += f"\nSub-problem {i}: {sol['subproblem']}\n"
-            solutions_text += f"Answer: {sol['answer']}\n"
-            solutions_text += f"Reasoning: {sol['response'][:200]}...\n"
-        
-        prompt = f"""You are an integration agent. Combine the sub-solutions to answer the original problem.
-
-Original Problem: {question}
-
-Sub-solutions:
-{solutions_text}
-
-Your task:
-1. Combine the sub-solutions logically
-2. Derive the final answer to the original problem
-3. Verify the answer makes sense
-
-Show your reasoning and put the final answer in \\boxed{{}}.
-
-Final Solution:"""
-        
-        return prompt
-    
-    # ========== PARSERS ==========
-    
-    def _parse_subproblems(self, plan_response: str) -> List[str]:
-        """Extract sub-problems from plan"""
-        subproblems = []
-        
-        # Look for numbered list
-        pattern = r'(?:SUB-PROBLEMS?:|SUBPROBLEMS?:)?\s*\n\s*(\d+[\.\)]\s*.+?)(?=\n\d+[\.\)]|\nPLAN:|\nAPPROACH:|\Z)'
-        matches = re.findall(pattern, plan_response, re.IGNORECASE | re.DOTALL)
-        
-        if matches:
-            for match in matches:
-                # Clean up
-                subproblem = re.sub(r'^\d+[\.\)]\s*', '', match.strip())
-                if len(subproblem) > 10:  # Valid subproblem
-                    subproblems.append(subproblem)
-        
-        # Fallback: look for any numbered list
-        if not subproblems:
-            pattern = r'^\s*\d+[\.\)]\s*(.+)$'
-            for line in plan_response.split('\n'):
-                match = re.match(pattern, line)
-                if match and len(match.group(1)) > 10:
-                    subproblems.append(match.group(1).strip())
-        
-        # Limit to max_subproblems
-        return subproblems[:self.max_subproblems]
-    
-    def _extract_planning_reasoning(self, plan_response: str) -> str:
-        """Extract planning reasoning"""
-        # Look for ANALYSIS section
-        match = re.search(r'ANALYSIS:\s*\n(.+?)(?=\nSUB-PROBLEMS?:|\n\d+[\.\)]|\Z)', 
-                         plan_response, re.IGNORECASE | re.DOTALL)
-        if match:
-            return match.group(1).strip()
-        
-        # Fallback: first paragraph
-        paragraphs = [p.strip() for p in plan_response.split('\n\n') if len(p.strip()) > 20]
-        return paragraphs[0] if paragraphs else plan_response[:200]
-    
-    def _parse_reflection_verdict(self, reflection_response: str) -> str:
-        """Extract verdict from reflection"""
-        match = re.search(r'VERDICT:\s*(ACCEPT|REJECT)', reflection_response, re.IGNORECASE)
-        if match:
-            return match.group(1).upper()
-        
-        # Heuristic: look for accept/reject keywords
-        if 'accept' in reflection_response.lower() and 'reject' not in reflection_response.lower():
-            return 'ACCEPT'
-        else:
-            return 'REJECT'
-    
-    def _extract_reflection_reasoning(self, reflection_response: str) -> str:
-        """Extract reasoning from reflection"""
-        match = re.search(r'REASON:\s*\n(.+?)(?=\nSUGGESTIONS?:|\Z)', 
-                         reflection_response, re.IGNORECASE | re.DOTALL)
-        if match:
-            return match.group(1).strip()
-        
-        # Fallback
-        match = re.search(r'EVALUATION:\s*\n(.+?)(?=\nVERDICT:|\Z)',
-                         reflection_response, re.IGNORECASE | re.DOTALL)
-        if match:
-            return match.group(1).strip()
-        
-        return reflection_response[:200]
-    
-    def _extract_reflection_suggestions(self, reflection_response: str) -> str:
-        """Extract suggestions from reflection"""
-        match = re.search(r'SUGGESTIONS?.*?:\s*\n(.+?)$',
-                         reflection_response, re.IGNORECASE | re.DOTALL)
-        if match:
-            return match.group(1).strip()
-        return ""
     
     def _determine_case_type(self, first_correct: bool, final_correct: bool, num_iterations: int) -> str:
         """Determine the type of case"""
-        if first_correct and num_iterations == 1:
+        if first_correct and final_correct:
             return "FIRST_TRY_SUCCESS"
         elif not first_correct and final_correct:
             return "IMPROVED"
@@ -617,15 +378,15 @@ def run_plan_and_reflection_workflow(
     dataset_name: str = ""
 ) -> Dict:
     """
-    Run Plan-and-Reflection workflow
+    Run simplified Plan-and-Reflection workflow
     
     Args:
         question: Problem to solve
         ground_truth: Ground truth answer
         model: Language model
         tokenizer: Tokenizer
-        max_iterations: Maximum plan-execute-reflect cycles
-        max_subproblems: Maximum sub-problems per plan
+        max_iterations: Maximum solve-verify cycles (1-3)
+        max_subproblems: Not used in simplified version
         detailed: Verbose output
         dataset_name: Dataset name
     
@@ -643,28 +404,12 @@ def run_plan_and_reflection_workflow(
     
     result = workflow.run(question, ground_truth)
     
-    # Fix is_correct to use ground_truth
-    if result['predicted_answer']:
-        from utils.prompt_utils import check_answer
-        result['final_correct'] = check_answer(result['predicted_answer'], ground_truth)
-        
-        # Also fix first_answer
-        if result['first_answer']:
-            result['first_correct'] = check_answer(result['first_answer'], ground_truth)
-        
-        # Recompute case_type
-        result['case_type'] = workflow._determine_case_type(
-            result['first_correct'],
-            result['final_correct'],
-            result['total_iterations']
-        )
-    
     return result
 
 
 # For testing
 if __name__ == "__main__":
-    print("Plan-and-Reflection Workflow - Quick Test")
+    print("Plan-and-Reflection Workflow (Simplified) - Quick Test")
     print("=" * 80)
     
     test_question = "A bakery sells 3 types of bread. Type A costs $2, Type B costs $3, and Type C costs $5. If someone buys 2 of Type A, 1 of Type B, and 1 of Type C, how much do they spend?"
@@ -679,7 +424,7 @@ if __name__ == "__main__":
         from models.inference import load_model
         model, tokenizer = load_model(model_name, base_path)
         
-        print(f"\nRunning Plan-and-Reflection workflow...")
+        print(f"\nRunning simplified workflow...")
         print(f"Question: {test_question}")
         print(f"Ground Truth: {test_ground_truth}\n")
         
@@ -688,7 +433,7 @@ if __name__ == "__main__":
             ground_truth=test_ground_truth,
             model=model,
             tokenizer=tokenizer,
-            max_iterations=2,
+            max_iterations=3,
             max_subproblems=3,
             detailed=True,
             dataset_name="gsm8k"
@@ -708,4 +453,3 @@ if __name__ == "__main__":
         print(f"\nError: {e}")
         import traceback
         traceback.print_exc()
-

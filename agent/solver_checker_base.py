@@ -132,8 +132,31 @@ def load_model(model_name: str, base_path: Path):
     return model, tokenizer
 
 
-def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool = False):
-    """Generate response from model given a prompt."""
+def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool = False,
+                      temperature: float = None, do_sample: bool = None, top_p: float = None):
+    """Generate response from model given a prompt.
+    
+    Args:
+        model: Model to use
+        tokenizer: Tokenizer
+        prompt: Input prompt
+        mode: Generation mode
+        detailed: Show detailed output
+        temperature: Override temperature (None = use default 0.0)
+        do_sample: Override do_sample (None = use default False)
+        top_p: Override top_p (None = use default 1.0)
+    """
+    # Import unified config for defaults
+    from agent.unified_config import FIRST_ROUND_SOLVER_CONFIG
+    
+    # Use unified config defaults if not specified
+    if temperature is None:
+        temperature = FIRST_ROUND_SOLVER_CONFIG['temperature']
+    if do_sample is None:
+        do_sample = FIRST_ROUND_SOLVER_CONFIG['do_sample']
+    if top_p is None:
+        top_p = FIRST_ROUND_SOLVER_CONFIG['top_p']
+    
     inputs = tokenizer(prompt, return_tensors="pt", truncation=False)
     
     try:
@@ -152,8 +175,9 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
     stopping_criteria = StoppingCriteriaList()
     
     gen_kwargs = {
-        "temperature": 0.1,
-        "do_sample": False,
+        "temperature": temperature if temperature > 0 else 1.0,
+        "do_sample": do_sample,
+        "top_p": top_p,
         "pad_token_id": tokenizer.eos_token_id,
         "repetition_penalty": 1.2,
         "streamer": streamer,
@@ -171,12 +195,11 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
         gen_kwargs["stopping_criteria"] = stopping_criteria
     elif mode == "checker":
         stopping_criteria.append(StopAfterCheckerConclusion(tokenizer, prompt_length))
-        gen_kwargs["max_new_tokens"] = min(100, available_for_generation)
+        gen_kwargs["max_new_tokens"] = min(200, available_for_generation)  # Increased for reasoning
         gen_kwargs["stopping_criteria"] = stopping_criteria
-        gen_kwargs["temperature"] = 0.3
-        gen_kwargs["do_sample"] = True
-        gen_kwargs["top_p"] = 0.9
-        gen_kwargs["repetition_penalty"] = 1.5
+        gen_kwargs["temperature"] = 0.1  # Lower temp for more consistent verification
+        gen_kwargs["do_sample"] = False  # Deterministic for checker
+        gen_kwargs["repetition_penalty"] = 1.2
     else:
         gen_kwargs["max_new_tokens"] = available_for_generation
     
@@ -310,7 +333,7 @@ def extract_solver_cot(solver_response: str) -> str:
 
 
 def format_prompt_checker(question: str, solver_response: str, dataset_name: str = "") -> str:
-    """Format prompt for checker agent."""
+    """Format prompt for checker agent (verify reasoning, don't re-solve)."""
     solver_answer = extract_answer(solver_response)
     
     if not solver_answer:
@@ -321,22 +344,24 @@ def format_prompt_checker(question: str, solver_response: str, dataset_name: str
             solver_answer = "No answer found"
     
     solver_cot = extract_solver_cot(solver_response)
+    # Truncate if too long
+    if len(solver_cot) > 300:
+        solver_cot = solver_cot[:300] + "..."
     
     return f"""Problem: {question}
 
-Solution approach: {solver_cot}
+Solution reasoning: {solver_cot}
 Final answer: {solver_answer}
 
-Review checklist:
-1. Does the solution use the right numbers from the problem?
-2. Are the calculations logical?
-3. Does the final answer make sense?
+Quick check:
+1. Are the numbers from the problem used correctly?
+2. Does the calculation logic make sense?
+3. Is the final answer reasonable?
 
-If you see an error or something wrong, respond: INCORRECT
-If everything seems correct, respond: CORRECT
-If unsure, respond: UNCLEAR
+If the reasoning looks correct, output: CORRECT
+If you see a clear error, output: INCORRECT
 
-One word only:"""
+Your verdict:"""
 
 
 # ============================================================================
@@ -344,7 +369,7 @@ One word only:"""
 # ============================================================================
 
 def parse_checker_verdict(response: str) -> str:
-    """Parse checker verdict from response."""
+    """Parse checker verdict from response (defaults to CORRECT if unclear)."""
     upper = response.upper()
     
     match = re.search(r'VERDICT\s*:\s*(CORRECT|INCORRECT|UNCLEAR)', upper)
@@ -355,27 +380,22 @@ def parse_checker_verdict(response: str) -> str:
     if standalone_match:
         return standalone_match.group(2).upper()
     
-    if re.search(r'\bCORRE+CT\b', upper):
-        return "CORRECT"
-    if re.search(r'\bCOR+ECT\b', upper):
-        return "CORRECT"
+    # Look for clear INCORRECT signals first
     if re.search(r'\bINCORRE+CT\b', upper):
         return "INCORRECT"
     if re.search(r'\bINCOR+ECT\b', upper):
         return "INCORRECT"
-    if re.search(r'\bUNCLE+AR\b', upper):
-        return "UNCLEAR"
-    
-    head = upper[:200]
-    
-    if "INCORRECT" in head and "CORRECT" not in head:
+    if re.search(r'\bWRONG\b', upper) or re.search(r'\bERROR\b', upper):
         return "INCORRECT"
-    if "CORRECT" in head and "INCORRECT" not in head:
-        return "CORRECT"
-    if "UNCLEAR" in head:
-        return "UNCLEAR"
     
-    return "UNCLEAR"
+    # If CORRECT mentioned or unclear, trust solver
+    if re.search(r'\bCORRE+CT\b', upper):
+        return "CORRECT"
+    if re.search(r'\bCOR+ECT\b', upper):
+        return "CORRECT"
+    
+    # Default to CORRECT (trust solver)
+    return "CORRECT"
 
 
 def parse_checker_tip(response: str) -> str:
@@ -595,7 +615,7 @@ def run_solver_checker_workflow(
     first_correct = check_answer(first_answer, ground_truth) if first_answer else False
     
     case_type = None
-    if first_correct and final_correct and len(solver_responses) == 1:
+    if first_correct and final_correct:
         case_type = "FIRST_TRY_SUCCESS"
     elif not first_correct and final_correct:
         case_type = "IMPROVED"

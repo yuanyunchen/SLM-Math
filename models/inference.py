@@ -94,9 +94,46 @@ def load_model(model_name: str, base_path: Path):
     return model, tokenizer
 
 
-def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool = False):
-    """Generate response from model given a prompt"""
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
+def generate_response(
+    model, 
+    tokenizer, 
+    prompt: str, 
+    mode: str, 
+    detailed: bool = False,
+    temperature: float = 0.1,
+    do_sample: bool = False,
+    top_p: float = 0.9
+):
+    """Generate response from model given a prompt
+    
+    Args:
+        model: Model to use
+        tokenizer: Tokenizer
+        prompt: Input prompt
+        mode: Generation mode (not used currently)
+        detailed: Show detailed output
+        temperature: Sampling temperature (default 0.1 for backward compatibility)
+        do_sample: Whether to use sampling (default False for backward compatibility)
+        top_p: Nucleus sampling parameter
+    """
+    
+    # Check if tokenizer has chat template
+    if hasattr(tokenizer, 'chat_template') and tokenizer.chat_template:
+        # Use chat template for models like Qwen
+        # Note: Don't add system message here - prompt already contains instructions
+        messages = [
+            {"role": "user", "content": prompt}
+        ]
+        formatted_prompt = tokenizer.apply_chat_template(
+            messages, 
+            tokenize=False, 
+            add_generation_prompt=True
+        )
+    else:
+        # Use plain prompt for other models
+        formatted_prompt = prompt
+    
+    inputs = tokenizer(formatted_prompt, return_tensors="pt", truncation=True, max_length=2048)
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
     
     prompt_length = inputs['input_ids'].shape[1]
@@ -111,32 +148,29 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
     stopping_criteria = StoppingCriteriaList([StopOnBoxedAnswer(tokenizer, prompt_length)])
     
     with torch.no_grad():
-        outputs = model.generate(
-            # **inputs,
-            # max_new_tokens=MAX_TOKEN,
-            # temperature=0.2,
-            # top_p=0.3,
-            # top_k=10,
-            # do_sample=True,
-            # repetition_penalty=1.1,
-            # streamer=streamer,
-            # eos_token_id=tokenizer.eos_token_id,
-            # stopping_criteria=stopping_criteria,
-            
-            **inputs,
-            max_new_tokens=MAX_TOKEN,
-            temperature=0.1,
-            do_sample=False,
-            pad_token_id=tokenizer.eos_token_id,
-            # pad_token_id=tokenizer.pad_token_id,
-            # eos_token_id=tokenizer.eos_token_id,
-            repetition_penalty=1.2,
-            stopping_criteria=stopping_criteria,
-            streamer=streamer
-        )
+        # Build generation kwargs
+        gen_kwargs = {
+            'max_new_tokens': MAX_TOKEN,
+            'pad_token_id': tokenizer.eos_token_id,
+            'repetition_penalty': 1.2,
+            'stopping_criteria': stopping_criteria,
+            'streamer': streamer
+        }
+        
+        # Add sampling parameters
+        if do_sample:
+            gen_kwargs['temperature'] = temperature
+            gen_kwargs['do_sample'] = True
+            gen_kwargs['top_p'] = top_p
+        else:
+            gen_kwargs['temperature'] = temperature
+            gen_kwargs['do_sample'] = False
+        
+        outputs = model.generate(**inputs, **gen_kwargs)
     
-    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    response = generated_text[len(prompt):].strip()
+    # Decode only the new tokens (response part)
+    response_ids = outputs[0][prompt_length:]
+    response = tokenizer.decode(response_ids, skip_special_tokens=True).strip()
     
     return response
 

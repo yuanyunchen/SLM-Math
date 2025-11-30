@@ -23,7 +23,7 @@ def extract_question_and_answer(example: dict, dataset_name: str) -> tuple:
     if dataset_name == "gsm8k":
         question = example['question']
         ground_truth = example['answer'].split('####')[-1].strip()
-    elif dataset_name == "math":
+    elif dataset_name == "math" or dataset_name == "math500":
         question = example['problem']
         solution = example['solution']
         boxed_match = re.search(r'\\boxed\{([^}]+)\}', solution)

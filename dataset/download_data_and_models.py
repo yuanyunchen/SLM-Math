@@ -27,6 +27,7 @@ except ImportError:
 DATASET_CONFIGS = {
     "gsm8k": {
         "hf_path": "gsm8k",
+        "config_name": "main",  # GSM8K requires config name
         "local_path": "data/gsm8k",
         "splits": ["train", "test"],
         "description": "GSM8K grade school math problems"
@@ -38,10 +39,11 @@ DATASET_CONFIGS = {
         "description": "MATH competition math problems"
     },
     "math500": {
-        "hf_path": "lighteval/MATH",
+        "hf_path": "hendrycks/competition_math",
         "local_path": "data/math500",
         "splits": ["test"],
-        "description": "MATH-500 subset"
+        "description": "MATH-500 subset (first 500 samples from competition_math)",
+        "take_first_n": 500  # Special flag to take only first N samples
     }
 }
 
@@ -60,8 +62,13 @@ MODEL_CONFIGS = {
 }
 
 
-def download_dataset(dataset_name: str, base_path: Path, hf_token: Optional[str] = None):
+def download_dataset(dataset_name: str, base_path: Path, hf_token: Optional[str] = None, yes: bool = False):
     """Download a dataset from HuggingFace Hub"""
+    import os
+    # Set mirror endpoint if not already set
+    if "HF_ENDPOINT" not in os.environ:
+        os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+    
     if dataset_name not in DATASET_CONFIGS:
         print(f"ERROR: Unknown dataset '{dataset_name}'")
         print(f"Available datasets: {', '.join(DATASET_CONFIGS.keys())}")
@@ -75,26 +82,43 @@ def download_dataset(dataset_name: str, base_path: Path, hf_token: Optional[str]
     print(f"Description: {config['description']}")
     print(f"HuggingFace path: {config['hf_path']}")
     print(f"Local path: {local_path}")
+    print(f"Using endpoint: {os.environ.get('HF_ENDPOINT', 'https://huggingface.co')}")
     print(f"{'='*80}\n")
     
     # Check if already exists
     if local_path.exists():
         print(f"⚠️  Dataset already exists at {local_path}")
-        response = input("Do you want to re-download? (y/N): ").strip().lower()
-        if response != 'y':
-            print(f"✓ Skipping {dataset_name}")
-            return True
+        if not yes:
+            response = input("Do you want to re-download? (y/N): ").strip().lower()
+            if response != 'y':
+                print(f"✓ Skipping {dataset_name}")
+                return True
+        else:
+            print("Re-downloading (--yes flag set)...")
     
     try:
         # Download dataset splits
         for split in config["splits"]:
             print(f"Downloading {split} split...")
-            dataset = load_dataset(
-                config["hf_path"],
-                split=split,
-                token=hf_token,
-                cache_dir=str(base_path / "cache")
-            )
+            load_kwargs = {
+                "split": split,
+                "token": hf_token,
+                "cache_dir": str(base_path / "cache")
+            }
+            # Add config_name if specified
+            if "config_name" in config:
+                load_kwargs["name"] = config["config_name"]
+            
+            dataset = load_dataset(config["hf_path"], **load_kwargs)
+            
+            # If take_first_n is specified, take only first N samples
+            if "take_first_n" in config:
+                n_samples = config["take_first_n"]
+                if len(dataset) > n_samples:
+                    print(f"Taking first {n_samples} samples from {len(dataset)} total samples...")
+                    dataset = dataset.select(range(n_samples))
+                else:
+                    print(f"Dataset has {len(dataset)} samples (less than requested {n_samples})")
             
             # Save to disk in HuggingFace format
             split_path = local_path / split
@@ -119,7 +143,7 @@ def download_dataset(dataset_name: str, base_path: Path, hf_token: Optional[str]
         return False
 
 
-def download_model(model_name: str, base_path: Path, hf_token: Optional[str] = None):
+def download_model(model_name: str, base_path: Path, hf_token: Optional[str] = None, yes: bool = False):
     """Download a model from HuggingFace Hub"""
     if model_name not in MODEL_CONFIGS:
         print(f"ERROR: Unknown model '{model_name}'")
@@ -141,10 +165,13 @@ def download_model(model_name: str, base_path: Path, hf_token: Optional[str] = N
         model_files = list(local_path.glob("*.safetensors")) + list(local_path.glob("*.bin"))
         if model_files:
             print(f"⚠️  Model already exists at {local_path}")
-            response = input("Do you want to re-download? (y/N): ").strip().lower()
-            if response != 'y':
-                print(f"✓ Skipping {model_name}")
-                return True
+            if not yes:
+                response = input("Do you want to re-download? (y/N): ").strip().lower()
+                if response != 'y':
+                    print(f"✓ Skipping {model_name}")
+                    return True
+            else:
+                print("Re-downloading (--yes flag set)...")
     
     try:
         # Download model using snapshot_download
@@ -222,6 +249,12 @@ Examples:
         help="Skip downloading models"
     )
     
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Automatically answer yes to all prompts (non-interactive mode)"
+    )
+    
     args = parser.parse_args()
     
     # Get project root
@@ -252,7 +285,7 @@ Examples:
         print("DOWNLOADING DATASETS")
         print("="*80)
         for dataset_name in args.datasets:
-            success = download_dataset(dataset_name, base_path, args.hf_token)
+            success = download_dataset(dataset_name, base_path, args.hf_token, args.yes)
             if not success:
                 dataset_success = False
     else:
@@ -265,7 +298,7 @@ Examples:
         print("DOWNLOADING MODELS")
         print("="*80)
         for model_name in args.models:
-            success = download_model(model_name, base_path, args.hf_token)
+            success = download_model(model_name, base_path, args.hf_token, args.yes)
             if not success:
                 model_success = False
     else:

@@ -235,18 +235,27 @@ def process_text_with_code_execution(
         # Format result
         result_str = format_execution_result(exec_result)
         
-        # Check if there's already an output block right after
-        remaining_text = processed_text[end_pos:end_pos+100]
-        if remaining_text.strip().startswith('```output'):
-            # Skip if output already exists
-            continue
+        # Check if there's already an output block right after the code block
+        # Look for ```output...``` pattern immediately following
+        remaining_text = processed_text[end_pos:]
+        output_pattern = r'^\s*```output\s*\n(.*?)```'
+        output_match = re.match(output_pattern, remaining_text, re.DOTALL)
         
-        # Insert result after code block
-        processed_text = (
-            processed_text[:end_pos] + 
-            '\n' + result_str + 
-            processed_text[end_pos:]
-        )
+        if output_match:
+            # Found existing output block - replace it with real execution result
+            output_end = end_pos + output_match.end()
+            processed_text = (
+                processed_text[:end_pos] +
+                '\n' + result_str +
+                processed_text[output_end:]
+            )
+        else:
+            # No existing output block - insert result after code block
+            processed_text = (
+                processed_text[:end_pos] + 
+                '\n' + result_str + 
+                processed_text[end_pos:]
+            )
     
     return processed_text, execution_results
 
