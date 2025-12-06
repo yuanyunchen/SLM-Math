@@ -52,6 +52,10 @@ COUNT=10
 # Detailed output
 DETAILED="true"
 
+# Apply chat template to prompts (default: false)
+# Enable for chat-tuned models (e.g., Qwen2.5-Math, Qwen3)
+APPLY_CHAT_TEMPLATE="false"
+
 # Resume from existing results (leave empty to start fresh)
 RESUME_DIR=""
 
@@ -116,6 +120,7 @@ echo "  Round: $ROUND_NAME"
 echo "  Dataset: $DATASET"
 echo "  Count: $COUNT (0 = full dataset)"
 echo "  Detailed Output: $DETAILED"
+echo "  Apply Chat Template: $APPLY_CHAT_TEMPLATE"
 if [ -n "$RESUME_DIR" ]; then
     echo "  Resume: $RESUME_DIR"
 fi
@@ -136,6 +141,7 @@ CMD="python -m evaluation.eval_agent \
     --dataset \"$DATASET\" \
     --count \"$COUNT\" \
     --detailed \"$DETAILED\" \
+    --apply_chat_template \"$APPLY_CHAT_TEMPLATE\" \
     --save_interval \"$SAVE_INTERVAL\""
 
 # Add checkpoint parameter if specified

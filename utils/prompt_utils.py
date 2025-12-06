@@ -104,8 +104,9 @@ def normalize_answer(answer: str) -> str:
     is_latex = any(x in answer for x in latex_indicators)
     
     # Also check if it contains coordinate pairs or tuples with mathematical content
-    # e.g., (3, pi/2) or (3,frac{...})
-    has_math_tuple = bool(re.search(r'\([^)]*(?:frac|sqrt|pi)[^)]*\)', answer, re.IGNORECASE))
+    # e.g., (3, pi/2) or (3,frac{...}) or (3.0, 1.57...)
+    # Match tuples with commas: (number, number) or (expr, expr)
+    has_math_tuple = bool(re.search(r'\([^)]*(?:frac|sqrt|pi|,)[^)]*\)', answer, re.IGNORECASE))
     
     # Remove dollar signs (currency or math mode delimiters)
     answer = answer.replace('\\$', '').replace('$', '')

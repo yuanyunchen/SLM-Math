@@ -23,6 +23,28 @@ from utils.prompt_utils import (
 from dataset.dataloader import load_dataset_for_eval
 from models.inference import load_model, generate_response, generate_response_batch, load_inference_engine_wrapper
 
+
+def apply_chat_template_if_enabled(prompt: str, tokenizer, apply_chat_template: bool) -> str:
+    """Wrap prompt with chat template if enabled.
+    
+    Args:
+        prompt: The raw prompt string
+        tokenizer: The tokenizer with chat_template support
+        apply_chat_template: Whether to apply the chat template
+    
+    Returns:
+        The prompt (wrapped with chat template if enabled)
+    """
+    if not apply_chat_template:
+        return prompt
+    if hasattr(tokenizer, 'chat_template') and tokenizer.chat_template:
+        messages = [{"role": "user", "content": prompt}]
+        return tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    return prompt
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Batch evaluation script')
     parser.add_argument('--model', type=str, required=True, help='Model name (e.g., Qwen3-0.6B)')
@@ -40,6 +62,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size for inference (default: 1, recommended: 8-32)')
     parser.add_argument('--inference_backend', type=str, default='transformers', choices=['transformers', 'vllm'], help='Inference backend (default: transformers)')
     parser.add_argument('--greedy', type=str, default='true', choices=['true', 'false'], help='Use greedy decoding (default: true). When true, ignores temperature/top_p/etc.')
+    parser.add_argument('--apply_chat_template', type=str, default='false', choices=['true', 'false'], help='Apply chat template to prompts (default: false). Enable for chat-tuned models.')
     return parser.parse_args()
 
 def run_evaluation(args):
@@ -48,6 +71,7 @@ def run_evaluation(args):
     detailed = args.detailed.lower() == 'true'      # Streaming console output
     log_samples = args.log_samples.lower() == 'true'  # Log full sample details to file
     greedy = args.greedy.lower() == 'true'
+    use_chat_template = args.apply_chat_template.lower() == 'true'
     
     print(f"\n{'='*80}")
     print(f"SLM-Math Evaluation")
@@ -75,6 +99,7 @@ def run_evaluation(args):
     print(f"Batch Size: {args.batch_size}")
     print(f"Inference Backend: {args.inference_backend}")
     print(f"Greedy Decoding: {greedy}")
+    print(f"Apply Chat Template: {use_chat_template}")
     print(f"Streaming Output: {detailed}")
     print(f"Log Samples: {log_samples}")
     print(f"{'='*80}\n")
@@ -315,6 +340,7 @@ def run_evaluation(args):
                 example = test_data[dataset_idx]
                 question, ground_truth = extract_question_and_answer(example, args.dataset)
                 prompt = format_prompt_standard(question, args.dataset)
+                prompt = apply_chat_template_if_enabled(prompt, tokenizer, use_chat_template)
                 batch_data.append({
                     'dataset_idx': dataset_idx,
                     'question': question,
@@ -455,6 +481,7 @@ def run_evaluation(args):
                 f.write(f"Full Question: {question}\n")
             
             prompt = format_prompt_standard(question, args.dataset)
+            prompt = apply_chat_template_if_enabled(prompt, tokenizer, use_chat_template)
             
             try:
                 log_and_print(f"\n{'─'*40}", to_console=detailed)

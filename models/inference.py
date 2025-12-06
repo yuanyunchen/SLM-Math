@@ -214,6 +214,15 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
     inputs = {k: v.to(model_device) for k, v in inputs.items()}
     
     prompt_length = inputs['input_ids'].shape[1]
+    
+    if detailed:
+        print(f"\n[INFERENCE DEBUG]")
+        print(f"  Prompt length: {prompt_length} tokens")
+        print(f"  Greedy: {greedy}")
+        print(f"  Max new tokens: {MAX_NEW_TOKENS}")
+        print(f"  Prompt (first 500 chars):\n{prompt[:500]}")
+        print(f"  Prompt (last 200 chars):\n{prompt[-200:]}")
+        print(f"[/INFERENCE DEBUG]\n")
         
     # Create streamer for real-time token-by-token output (only if detailed)
     if detailed:
@@ -227,6 +236,8 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
     with torch.no_grad():
         if greedy:
             # Greedy decoding: ignore temperature/top_p/etc.
+            if detailed:
+                print(f"[GENERATION] Starting greedy decoding...")
             outputs = model.generate(
                 **inputs,
                 max_new_tokens=MAX_NEW_TOKENS,
@@ -235,6 +246,8 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
                 stopping_criteria=stopping_criteria,
                 streamer=streamer
             )
+            if detailed:
+                print(f"[GENERATION] Generated {outputs.shape[1] - prompt_length} new tokens")
         else:
             # Sampling with configured parameters
             outputs = model.generate(
@@ -249,8 +262,22 @@ def generate_response(model, tokenizer, prompt: str, mode: str, detailed: bool =
                 streamer=streamer
             )
     
-    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    response = generated_text[len(prompt):].strip()
+    # Decode only the newly generated tokens (not the prompt)
+    # Using prompt_length (token count) instead of len(prompt) (char count) for accuracy
+    response = tokenizer.decode(outputs[0][prompt_length:], skip_special_tokens=True).strip()
+    
+    if detailed:
+        print(f"\n[RESPONSE DEBUG]")
+        print(f"  Total output tokens: {outputs.shape[1]}")
+        print(f"  New tokens: {outputs.shape[1] - prompt_length}")
+        print(f"  Response length: {len(response)} chars")
+        if len(response) == 0:
+            print(f"  ⚠️ EMPTY RESPONSE!")
+            print(f"  First 10 generated token IDs: {outputs[0][prompt_length:prompt_length+10].tolist()}")
+            print(f"  EOS token ID: {tokenizer.eos_token_id}")
+        else:
+            print(f"  Response (first 200 chars): {response[:200]}")
+        print(f"[/RESPONSE DEBUG]\n")
     
     return response
 

@@ -9,6 +9,18 @@ from collections import Counter
 from models.generation_config import MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY
 
 
+def apply_chat_template_if_enabled(prompt: str, tokenizer, apply_chat_template: bool) -> str:
+    """Wrap prompt with chat template if enabled."""
+    if not apply_chat_template:
+        return prompt
+    if hasattr(tokenizer, 'chat_template') and tokenizer.chat_template:
+        messages = [{"role": "user", "content": prompt}]
+        return tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    return prompt
+
+
 def generate_response_with_seed(
     model,
     tokenizer,
@@ -95,7 +107,8 @@ def run_majority_vote_workflow(
     temperature: float = 0.7,
     top_p: float = 0.95,
     detailed: bool = False,
-    dataset_name: str = ""
+    dataset_name: str = "",
+    apply_chat_template: bool = False
 ) -> Dict:
     """
     Run majority vote workflow with multiple runs using different seeds.
@@ -110,6 +123,7 @@ def run_majority_vote_workflow(
         top_p: Nucleus sampling parameter (default 0.95)
         detailed: Whether to show detailed output
         dataset_name: Dataset name
+        apply_chat_template: Whether to apply chat template to prompts
     
     Returns:
         Dictionary with workflow results
@@ -122,6 +136,7 @@ def run_majority_vote_workflow(
     
     # Format prompt (use standard prompt)
     prompt = format_prompt_standard(question, dataset_name)
+    prompt = apply_chat_template_if_enabled(prompt, tokenizer, apply_chat_template)
     
     # Run multiple times with different seeds
     runs = []

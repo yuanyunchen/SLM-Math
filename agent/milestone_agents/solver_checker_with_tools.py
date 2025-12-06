@@ -33,6 +33,18 @@ from models.generation_config import (
 )
 
 
+def apply_chat_template_if_enabled(prompt: str, tokenizer, apply_chat_template: bool) -> str:
+    """Wrap prompt with chat template if enabled."""
+    if not apply_chat_template:
+        return prompt
+    if hasattr(tokenizer, 'chat_template') and tokenizer.chat_template:
+        messages = [{"role": "user", "content": prompt}]
+        return tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    return prompt
+
+
 def run_solver_checker_with_tools_workflow(
     question: str,
     ground_truth: str,
@@ -44,7 +56,8 @@ def run_solver_checker_with_tools_workflow(
     detailed: bool = False,
     dataset_name: str = "",
     enable_solver_tools: bool = True,
-    enable_checker_tools: bool = True
+    enable_checker_tools: bool = True,
+    apply_chat_template: bool = False
 ) -> Dict:
     """
     Run Solver-Checker workflow with tool execution
@@ -61,6 +74,7 @@ def run_solver_checker_with_tools_workflow(
         dataset_name: Dataset name
         enable_solver_tools: Enable code execution for solver
         enable_checker_tools: Enable code execution for checker
+        apply_chat_template: Whether to apply chat template to prompts
     
     Returns:
         Dict with workflow results
@@ -116,6 +130,9 @@ def run_solver_checker_with_tools_workflow(
             
             if enable_solver_tools:
                 solver_prompt += "\n\nYou can write Python code in ```python``` blocks for calculations."
+        
+        # Apply chat template if enabled
+        solver_prompt = apply_chat_template_if_enabled(solver_prompt, solver_tokenizer, apply_chat_template)
         
         if detailed:
             print(f"\n[Solver Turn]")
@@ -188,6 +205,9 @@ def run_solver_checker_with_tools_workflow(
         
         if enable_checker_tools:
             checker_prompt += "\n\nYou can write Python code in ```python``` blocks to verify calculations or test the solution."
+        
+        # Apply chat template if enabled
+        checker_prompt = apply_chat_template_if_enabled(checker_prompt, checker_tokenizer, apply_chat_template)
         
         # Generate checker response - check if model is an inference engine or raw model
         if hasattr(checker_model, 'generate_single'):

@@ -58,6 +58,18 @@ import torch
 from models.generation_config import MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY
 
 
+def apply_chat_template_if_enabled(prompt: str, tokenizer, apply_chat_template: bool) -> str:
+    """Wrap prompt with chat template if enabled."""
+    if not apply_chat_template:
+        return prompt
+    if hasattr(tokenizer, 'chat_template') and tokenizer.chat_template:
+        messages = [{"role": "user", "content": prompt}]
+        return tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    return prompt
+
+
 class PlanAndReflectionWorkflow:
     """Plan-and-Reflection Agent Workflow"""
     
@@ -68,7 +80,8 @@ class PlanAndReflectionWorkflow:
         max_iterations: int = 3,
         max_subproblems: int = 5,
         detailed: bool = False,
-        dataset_name: str = ""
+        dataset_name: str = "",
+        apply_chat_template: bool = False
     ):
         """
         Initialize workflow
@@ -80,6 +93,7 @@ class PlanAndReflectionWorkflow:
             max_subproblems: Maximum number of sub-problems
             detailed: Verbose output
             dataset_name: Dataset name for prompting
+            apply_chat_template: Whether to apply chat template to prompts
         """
         self.model = model
         self.tokenizer = tokenizer
@@ -87,6 +101,7 @@ class PlanAndReflectionWorkflow:
         self.max_subproblems = max_subproblems
         self.detailed = detailed
         self.dataset_name = dataset_name
+        self.apply_chat_template = apply_chat_template
         
         # Import utilities
         from utils.prompt_utils import extract_answer, check_answer
@@ -106,6 +121,9 @@ class PlanAndReflectionWorkflow:
         Returns:
             Generated response
         """
+        # Apply chat template if enabled
+        prompt = apply_chat_template_if_enabled(prompt, self.tokenizer, self.apply_chat_template)
+        
         # Check if model is an inference engine or raw model
         if hasattr(self.model, 'generate_single'):
             # Using inference engine (from load_inference_engine_wrapper)
@@ -628,7 +646,8 @@ def run_plan_and_reflection_workflow(
     max_iterations: int = 3,
     max_subproblems: int = 5,
     detailed: bool = False,
-    dataset_name: str = ""
+    dataset_name: str = "",
+    apply_chat_template: bool = False
 ) -> Dict:
     """
     Run Plan-and-Reflection workflow
@@ -642,6 +661,7 @@ def run_plan_and_reflection_workflow(
         max_subproblems: Maximum sub-problems per plan
         detailed: Verbose output
         dataset_name: Dataset name
+        apply_chat_template: Whether to apply chat template to prompts
     
     Returns:
         Dict with workflow results
@@ -652,7 +672,8 @@ def run_plan_and_reflection_workflow(
         max_iterations=max_iterations,
         max_subproblems=max_subproblems,
         detailed=detailed,
-        dataset_name=dataset_name
+        dataset_name=dataset_name,
+        apply_chat_template=apply_chat_template
     )
     
     result = workflow.run(question, ground_truth)
