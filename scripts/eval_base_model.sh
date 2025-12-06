@@ -26,7 +26,7 @@ ROUND_NAME="my_evaluation"
 DATASET="gsm8k"
 
 # Number of test cases (0 = full dataset)
-COUNT=0
+COUNT=500
 
 # Evaluation mode: "standard"
 MODE="standard"
@@ -55,7 +55,7 @@ APPLY_CHAT_TEMPLATE="false"
 WORKERS=0
 
 # Available GPUs (comma-separated, e.g., "0,1,2,3")
-GPUS="0,1"
+GPUS="0"
 
 ################################################################################
 # Advanced Settings (可选)
@@ -134,8 +134,9 @@ if [ "$WORKERS" -le 1 ]; then
     echo "Running in single-process mode..."
     
     # Use first GPU
-    IFS=',' read -ra GPU_ARRAY <<< "$GPUS"
-    export CUDA_VISIBLE_DEVICES="${GPU_ARRAY[0]}"
+    GPU_ARRAY=$(echo "$GPUS" | tr ',' ' ')
+    set -- $GPU_ARRAY
+    export CUDA_VISIBLE_DEVICES="$1"
     echo "Using GPU: $CUDA_VISIBLE_DEVICES"
     echo ""
     
@@ -173,14 +174,18 @@ else
     echo "Running in multi-worker mode with $WORKERS workers..."
     
     # Parse GPUs
-    IFS=',' read -ra GPU_ARRAY <<< "$GPUS"
-    NUM_GPUS=${#GPU_ARRAY[@]}
+    GPU_ARRAY=$(echo "$GPUS" | tr ',' ' ')
+    set -- $GPU_ARRAY
+    NUM_GPUS=$#
+    
+    # Store GPUs in a simple way
+    GPU_LIST="$GPUS"
     
     # Get total samples
     if [ "$COUNT" -eq 0 ]; then
-        if [ "$DATASET" == "gsm8k" ]; then
+        if [ "$DATASET" = "gsm8k" ]; then
             TOTAL_SAMPLES=1319
-        elif [ "$DATASET" == "math500" ]; then
+        elif [ "$DATASET" = "math500" ]; then
             TOTAL_SAMPLES=500
         else
             echo "Error: Unknown dataset $DATASET, please set COUNT manually"
@@ -200,10 +205,11 @@ else
     echo ""
     
     # Launch workers in parallel
-    PIDS=()
+    PIDS=""
     START_IDX=0
     
-    for ((i=0; i<WORKERS; i++)); do
+    i=0
+    while [ $i -lt $WORKERS ]; do
         # Calculate worker's sample count (distribute remainder)
         if [ $i -lt $REMAINDER ]; then
             WORKER_COUNT=$((SAMPLES_PER_WORKER + 1))
@@ -213,12 +219,12 @@ else
         
         # Assign GPU (round-robin)
         GPU_IDX=$((i % NUM_GPUS))
-        GPU_ID="${GPU_ARRAY[$GPU_IDX]}"
+        GPU_ID=$(echo "$GPU_LIST" | cut -d',' -f$((GPU_IDX + 1)))
         
         # Launch worker in background
         echo "Launching worker $i on GPU $GPU_ID: samples [$START_IDX, $((START_IDX + WORKER_COUNT)))"
         
-        (
+        if [ -n "$CHECKPOINT" ]; then
             CUDA_VISIBLE_DEVICES=$GPU_ID python -m evaluation.eval \
                 --model "$MODEL" \
                 --round "${ROUND_NAME}_worker${i}" \
@@ -232,21 +238,36 @@ else
                 --greedy "$GREEDY" \
                 --apply_chat_template "$APPLY_CHAT_TEMPLATE" \
                 --save_interval $SAVE_INTERVAL \
-                $([ -n "$CHECKPOINT" ] && echo "--checkpoint $CHECKPOINT")
-        ) &
+                --checkpoint "$CHECKPOINT" &
+        else
+            CUDA_VISIBLE_DEVICES=$GPU_ID python -m evaluation.eval \
+                --model "$MODEL" \
+                --round "${ROUND_NAME}_worker${i}" \
+                --dataset "$DATASET" \
+                --count $WORKER_COUNT \
+                --start $START_IDX \
+                --mode "$MODE" \
+                --batch_size $BATCH_SIZE \
+                --detailed "false" \
+                --log_samples "$LOG_SAMPLES" \
+                --greedy "$GREEDY" \
+                --apply_chat_template "$APPLY_CHAT_TEMPLATE" \
+                --save_interval $SAVE_INTERVAL &
+        fi
         
-        PIDS+=($!)
+        PIDS="$PIDS $!"
         START_IDX=$((START_IDX + WORKER_COUNT))
+        i=$((i + 1))
     done
     
     echo ""
     echo "All $WORKERS workers launched. Waiting for completion..."
-    echo "PIDs: ${PIDS[*]}"
+    echo "PIDs:$PIDS"
     echo ""
     
     # Wait for all workers
     FAILED=0
-    for pid in "${PIDS[@]}"; do
+    for pid in $PIDS; do
         if ! wait $pid; then
             echo "Worker (PID $pid) failed!"
             FAILED=$((FAILED + 1))

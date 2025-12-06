@@ -30,6 +30,18 @@ from typing import Dict
 from models.generation_config import MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY
 
 
+def apply_chat_template_if_enabled(prompt: str, tokenizer, apply_chat_template: bool) -> str:
+    """Wrap prompt with chat template if enabled."""
+    if not apply_chat_template:
+        return prompt
+    if hasattr(tokenizer, 'chat_template') and tokenizer.chat_template:
+        messages = [{"role": "user", "content": prompt}]
+        return tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    return prompt
+
+
 def run_agent_with_python_tools(
     question: str,
     ground_truth: str,
@@ -66,16 +78,16 @@ def run_agent_with_python_tools(
         print(f"{'='*80}")
         print(f"Question: {question[:100]}...")
         print(f"Python Tools: {'✓' if enable_tools else '✗'}")
-        print(f"Chat Template: {apply_chat_template}")
         print(f"{'='*80}\n")
     
-    # Build tool instruction (avoid triple backticks which confuse some models)
-    tool_instruction = ""
-    if enable_tools:
-        tool_instruction = "\n\nYou may use Python code to help with calculations. Show your reasoning step by step."
+    # Build prompt with tool instruction
+    prompt = format_prompt_standard(question, dataset_name)
     
-    # Build prompt (standard mode works for both base and chat models)
-    prompt = format_prompt_standard(question, dataset_name) + tool_instruction
+    if enable_tools:
+        prompt += "\n\nYou can write Python code in ```python``` blocks to help with calculations. The code will be executed automatically and you'll see the results. Use code for any arithmetic operations to ensure accuracy."
+    
+    # Apply chat template if enabled
+    prompt = apply_chat_template_if_enabled(prompt, tokenizer, apply_chat_template)
     
     if detailed:
         print(f"[Generating response...]")

@@ -17,6 +17,18 @@ from models.generation_config import (
 )
 
 
+def apply_chat_template_if_enabled(prompt: str, tokenizer, apply_chat_template: bool) -> str:
+    """Wrap prompt with chat template if enabled."""
+    if not apply_chat_template:
+        return prompt
+    if hasattr(tokenizer, 'chat_template') and tokenizer.chat_template:
+        messages = [{"role": "user", "content": prompt}]
+        return tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+    return prompt
+
+
 def run_solver_checker_workflow(
     question: str,
     ground_truth: str,
@@ -26,7 +38,8 @@ def run_solver_checker_workflow(
     checker_tokenizer,
     max_iterations: int = 5,
     detailed: bool = False,
-    dataset_name: str = ""
+    dataset_name: str = "",
+    apply_chat_template: bool = False
 ) -> Dict:
     """
     Run solver-checker iterative workflow.
@@ -41,6 +54,7 @@ def run_solver_checker_workflow(
         max_iterations: Maximum number of iterations
         detailed: Whether to show detailed output
         dataset_name: Dataset name
+        apply_chat_template: Whether to apply chat template to prompts
     
     Returns:
         Dictionary with workflow results
@@ -78,6 +92,7 @@ def run_solver_checker_workflow(
             solver_prompt = format_prompt_standard(question, dataset_name)
         else:
             solver_prompt = format_prompt_solver(question, checker_feedback, dataset_name)
+        solver_prompt = apply_chat_template_if_enabled(solver_prompt, solver_tokenizer, apply_chat_template)
         
         try:
             # Check if model is an inference engine or raw model
@@ -100,6 +115,7 @@ def run_solver_checker_workflow(
         # Fallback if empty
         if not solver_response.strip():
             fallback_prompt = format_prompt_standard(question, dataset_name)
+            fallback_prompt = apply_chat_template_if_enabled(fallback_prompt, solver_tokenizer, apply_chat_template)
             try:
                 if hasattr(solver_model, 'generate_single'):
                     solver_response = solver_model.generate_single(
@@ -122,6 +138,7 @@ def run_solver_checker_workflow(
         
         # Step 2: Checker evaluates
         checker_prompt = format_prompt_checker(question, solver_response, dataset_name)
+        checker_prompt = apply_chat_template_if_enabled(checker_prompt, checker_tokenizer, apply_chat_template)
         
         try:
             # Check if model is an inference engine or raw model
@@ -145,6 +162,7 @@ def run_solver_checker_workflow(
         # Fallback if empty
         if not checker_response.strip():
             simple_prompt = f"Q: {question}\nA: {solver_answer}\n\nVERDICT:"
+            simple_prompt = apply_chat_template_if_enabled(simple_prompt, checker_tokenizer, apply_chat_template)
             try:
                 if hasattr(checker_model, 'generate_single'):
                     checker_response = checker_model.generate_single(
