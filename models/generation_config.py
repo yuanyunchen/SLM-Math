@@ -45,3 +45,4 @@ SUMMARY_REPETITION_PENALTY = 1.1
 # For backward compatibility with existing code that uses old parameter names:
 MAX_TOKEN = MAX_NEW_TOKENS  # Legacy alias
 
+
