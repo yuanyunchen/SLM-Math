@@ -34,6 +34,7 @@ from agent.agent_code_as_answer import run_agent_code_as_answer
 from agent.milestone_agents.majority_vote import run_majority_vote_workflow
 from agent.milestone_agents.plan_and_reflection import run_plan_and_reflection_workflow
 from agent.solver_verifier import run_solver_verifier_workflow
+from agent.solver_verifier_check import run_solver_verifier_check_workflow
 from agent.solver_coder import run_solver_coder_workflow
 from agent.solver_with_interactive_code import run_solver_with_interactive_code
 from agent.solver_step_by_step_code import run_solver_step_by_step_code
@@ -45,7 +46,7 @@ def parse_args():
     parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint (LoRA adapter or fine-tuned model). Can be relative to project root or absolute path.')
     parser.add_argument('--checker_model', type=str, default=None, help='Checker model name (for solver_checker only, default: same as solver)')
     parser.add_argument('--checker_checkpoint', type=str, default=None, help='Path to checker checkpoint (optional, for solver_checker only)')
-    parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_with_tools_v2', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'solver_verifier', 'solver_coder', 'solver_interactive_code', 'solver_step_by_step_code', 'agent_with_python_tools', 'agent_with_code_feedback', 'agent_default_prompt_with_code', 'agent_code_as_answer', 'majority_vote', 'plan_and_reflection'], help='Agent method')
+    parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_with_tools_v2', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'solver_verifier', 'solver_verifier_check', 'solver_coder', 'solver_interactive_code', 'solver_step_by_step_code', 'agent_with_python_tools', 'agent_with_code_feedback', 'agent_default_prompt_with_code', 'agent_code_as_answer', 'majority_vote', 'plan_and_reflection'], help='Agent method')
     parser.add_argument('--round', type=str, required=True, help='Test round name')
     parser.add_argument('--dataset', type=str, required=True, help='Dataset name')
     parser.add_argument('--split', type=str, default=None, help='Dataset split')
@@ -126,6 +127,9 @@ def run_evaluation(args):
         print(f"Max Sub-problems: {args.max_subproblems}")
     elif args.agent == 'solver_verifier':
         print(f"Solver-Verifier: Code self-verification + forward verification")
+        print(f"Max Iterations: {args.max_iterations}")
+    elif args.agent == 'solver_verifier_check':
+        print(f"Solver-Verifier (check): Code self-verification + boolean check verifier")
         print(f"Max Iterations: {args.max_iterations}")
     elif args.agent == 'solver_coder':
         print(f"Solver-Coder: Pure code-based math solving with debug iterations")
@@ -327,7 +331,7 @@ def run_evaluation(args):
         
         log_and_print("\n" + "="*80, to_console=detailed)
         log_and_print(f"[Sample {processed_count}/{remaining_count} | Index: {dataset_idx}]", to_console=detailed)
-        log_and_print(f"Question: {question[:150]}...", to_console=detailed)
+        log_and_print(f"Question: {question}", to_console=detailed)
         log_and_print(f"Ground Truth: {ground_truth}", to_console=detailed)
         
         with open(log_file, 'a', encoding='utf-8') as f:
@@ -509,6 +513,29 @@ def run_evaluation(args):
                 # Solver-Verifier with code self-verification
                 model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
                 workflow_result = run_solver_verifier_workflow(
+                    question=question,
+                    ground_truth=ground_truth,
+                    solver_model=model_to_use,
+                    solver_tokenizer=tokenizer,
+                    verifier_model=model_to_use,
+                    verifier_tokenizer=tokenizer,
+                    max_iterations=args.max_iterations,
+                    detailed=detailed,
+                    dataset_name=dataset_name,
+                    enable_solver_tools=True,
+                    consistency_threshold=2
+                )
+                predicted_answer = workflow_result['predicted_answer']
+                final_correct = workflow_result['final_correct']
+                total_iterations = workflow_result['total_iterations']
+                case_type = workflow_result['case_type']
+                iterations = workflow_result.get('iterations', [])
+                runs = None
+                num_runs = None
+            elif args.agent == 'solver_verifier_check':
+                # Solver-Verifier with check(candidate) boolean verification
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
+                workflow_result = run_solver_verifier_check_workflow(
                     question=question,
                     ground_truth=ground_truth,
                     solver_model=model_to_use,
@@ -734,7 +761,7 @@ def run_evaluation(args):
                 stats['total_iterations'] += total_iterations
                 if workflow_result['first_correct'] and total_iterations == 1:
                     stats['first_try_correct'] += 1
-            elif args.agent == 'solver_verifier':
+            elif args.agent in ['solver_verifier', 'solver_verifier_check']:
                 stats['total_iterations'] += total_iterations
                 if workflow_result['first_correct']:
                     stats['first_try_correct'] += 1
@@ -801,7 +828,7 @@ def run_evaluation(args):
                     "total_iterations": total_iterations,
                     "iterations": iterations,
                 })
-            elif args.agent == 'solver_verifier':
+            elif args.agent in ['solver_verifier', 'solver_verifier_check']:
                 prediction_entry.update({
                     "total_iterations": total_iterations,
                     "iterations": iterations,
@@ -895,14 +922,14 @@ def run_evaluation(args):
                         f.write(f"Actually Correct: {iter_data.get('is_actually_correct', False)}\n")
                         f.write(f"Checker Verdict: {iter_data.get('checker_verdict', 'N/A')}\n")
                         if args.agent in ['solver_checker_chat', 'solver_checker_trivial_chat']:
-                            f.write(f"Checker Feedback: {iter_data.get('checker_feedback', '')[:200]}\n")
+                            f.write(f"Checker Feedback: {iter_data.get('checker_feedback', '')}\n")
                             f.write(f"Conversation Length: {iter_data.get('conversation_length', 0)}\n")
                         elif args.agent in ['solver_checker_with_tools', 'solver_checker_with_tools_v2']:
                             f.write(f"Solver Tools Used: {iter_data.get('solver_tools_used', False)}\n")
                             f.write(f"Checker Tools Used: {iter_data.get('checker_tools_used', False)}\n")
-                            f.write(f"Checker Feedback: {iter_data.get('checker_feedback', '')[:200]}\n")
-                        f.write(f"Solver Response:\n{iter_data.get('solver_response', '')[:500]}\n")
-                        f.write(f"Checker Response:\n{iter_data.get('checker_response', '')[:300]}\n")
+                            f.write(f"Checker Feedback: {iter_data.get('checker_feedback', '')}\n")
+                        f.write(f"Solver Response:\n{iter_data.get('solver_response', '')}\n")
+                        f.write(f"Checker Response:\n{iter_data.get('checker_response', '')}\n")
                 elif args.agent == 'plan_and_reflection':
                     f.write(f"Total Iterations: {total_iterations}\n")
                     for iter_data in iterations:
@@ -924,7 +951,7 @@ def run_evaluation(args):
                         f.write(f"Boxed Answer: {iter_data.get('boxed_answer', 'N/A')}\n")
                         f.write(f"Verifier Verdict: {iter_data.get('verifier_verdict', 'N/A')}\n")
                         f.write(f"Actually Correct: {iter_data.get('is_actually_correct', False)}\n")
-                        f.write(f"Solver Response:\n{iter_data.get('solver_response', '')[:500]}\n")
+                        f.write(f"Solver Response:\n{iter_data.get('solver_response', '')}\n")
                 elif args.agent == 'solver_coder':
                     f.write(f"Total Iterations: {total_iterations}\n")
                     f.write(f"Error Count: {workflow_result.get('error_count', 0)}\n")
@@ -935,18 +962,18 @@ def run_evaluation(args):
                         f.write(f"Extracted Answer: {iter_data.get('extracted_answer', 'N/A')}\n")
                         f.write(f"Checker Verdict: {iter_data.get('checker_verdict', 'N/A')}\n")
                         if iter_data.get('exec_error'):
-                            f.write(f"Error: {iter_data.get('exec_error', '')[:300]}\n")
+                            f.write(f"Error: {iter_data.get('exec_error', '')}\n")
                         if iter_data.get('code'):
-                            f.write(f"Code:\n{iter_data.get('code', '')[:500]}\n")
+                            f.write(f"Code:\n{iter_data.get('code', '')}\n")
                         if iter_data.get('exec_output'):
-                            f.write(f"Output: {iter_data.get('exec_output', '')[:200]}\n")
+                            f.write(f"Output: {iter_data.get('exec_output', '')}\n")
                 elif args.agent == 'majority_vote':
                     f.write(f"Total Runs: {num_runs}\n")
                     for run_data in runs:
                         f.write(f"\n--- Run {run_data['run']} (seed={run_data['seed']}) ---\n")
                         f.write(f"Answer: {run_data['answer']}\n")
                         f.write(f"Correct: {run_data.get('is_correct', False)}\n")
-                        f.write(f"Response:\n{run_data['response'][:500]}\n")
+                        f.write(f"Response:\n{run_data['response']}\n")
                     f.write(f"\nAnswer Counts: {workflow_result.get('answer_counts', {})}\n")
                 elif args.agent == 'agent_with_python_tools':
                     # Detailed logging for Python tools agent
@@ -959,10 +986,10 @@ def run_evaluation(args):
                         for i, result in enumerate(exec_results, 1):
                             if result.get('success'):
                                 f.write(f"  Block {i}: Success\n")
-                                f.write(f"    Output: {result.get('output', '')[:100]}\n")
+                                f.write(f"    Output: {result.get('output', '')}\n")
                             else:
                                 f.write(f"  Block {i}: Error\n")
-                                f.write(f"    Error: {result.get('error', '')[:100]}\n")
+                                f.write(f"    Error: {result.get('error', '')}\n")
                     
                     response = workflow_result.get('response', '')
                     f.write(f"\nModel Response:\n{response}\n")
@@ -983,10 +1010,10 @@ def run_evaluation(args):
                             for i, result in enumerate(all_exec_results, 1):
                                 if result.get('success'):
                                     f.write(f"  Block {i}: Success\n")
-                                    f.write(f"    Output: {result.get('output', '')[:100]}\n")
+                                    f.write(f"    Output: {result.get('output', '')}\n")
                                 else:
                                     f.write(f"  Block {i}: Error\n")
-                                    f.write(f"    Error: {result.get('error', '')[:100]}\n")
+                                    f.write(f"    Error: {result.get('error', '')}\n")
                         
                         # Use last iteration's response
                         response = iterations[-1].get('response', '')
@@ -1164,7 +1191,7 @@ def save_metrics_csv(results, stats, results_dir, args):
         metrics_data['max_iterations'] = [args.max_iterations]
         metrics_data['max_subproblems'] = [args.max_subproblems]
     
-    elif args.agent == 'solver_verifier':
+    elif args.agent in ['solver_verifier', 'solver_verifier_check']:
         metrics_data['avg_iterations'] = [stats['total_iterations'] / stats['total'] if stats['total'] > 0 else 0]
         metrics_data['max_iterations'] = [args.max_iterations]
     
@@ -1346,8 +1373,8 @@ def generate_analysis_report(results, stats, results_dir, args):
         # Improved cases
         improved = [p for p in results['predictions'] if p.get('case_type') == 'IMPROVED']
         if improved:
-            f.write(f"\nImproved Cases (showing first 3 of {len(improved)}):\n")
-            for i, case in enumerate(improved[:3], 1):
+            f.write(f"\nImproved Cases (all {len(improved)}):\n")
+            for i, case in enumerate(improved, 1):
                 f.write(f"\n  Example {i}:\n")
                 f.write(f"    Question ID: {case['question_id']}\n")
                 f.write(f"    First Answer: {case['first_answer']} (WRONG)\n")
@@ -1358,8 +1385,8 @@ def generate_analysis_report(results, stats, results_dir, args):
         # Degraded cases
         degraded = [p for p in results['predictions'] if p.get('case_type') == 'DEGRADED']
         if degraded:
-            f.write(f"\nDegraded Cases (showing first 3 of {len(degraded)}):\n")
-            for i, case in enumerate(degraded[:3], 1):
+            f.write(f"\nDegraded Cases (all {len(degraded)}):\n")
+            for i, case in enumerate(degraded, 1):
                 f.write(f"\n  Example {i}:\n")
                 f.write(f"    Question ID: {case['question_id']}\n")
                 f.write(f"    First Answer: {case['first_answer']} (CORRECT)\n")
