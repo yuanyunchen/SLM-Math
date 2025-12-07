@@ -29,13 +29,11 @@ from agent.milestone_agents.solver_checker_summarizer import run_solver_checker_
 from agent.milestone_agents.solver_checker_summarizer_chat import run_solver_checker_summarizer_chat_workflow
 from agent.agent_with_python_tools import run_agent_with_python_tools
 from agent.agent_with_code_feedback import run_agent_with_code_feedback
+from agent.agent_default_prompt_with_code import run_agent_default_prompt_with_code
 from agent.agent_code_as_answer import run_agent_code_as_answer
-from agent.agent_with_math_rag import run_agent_with_math_rag
-from agent.agent_with_rag_review import run_agent_with_rag_review
 from agent.milestone_agents.majority_vote import run_majority_vote_workflow
 from agent.milestone_agents.plan_and_reflection import run_plan_and_reflection_workflow
 from agent.solver_verifier import run_solver_verifier_workflow
-from agent.solver_verifier_v2 import run_solver_verifier_v2_workflow
 from agent.solver_coder import run_solver_coder_workflow
 from agent.solver_with_interactive_code import run_solver_with_interactive_code
 from agent.solver_step_by_step_code import run_solver_step_by_step_code
@@ -47,7 +45,7 @@ def parse_args():
     parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint (LoRA adapter or fine-tuned model). Can be relative to project root or absolute path.')
     parser.add_argument('--checker_model', type=str, default=None, help='Checker model name (for solver_checker only, default: same as solver)')
     parser.add_argument('--checker_checkpoint', type=str, default=None, help='Path to checker checkpoint (optional, for solver_checker only)')
-    parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_with_tools_v2', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'solver_verifier', 'solver_verifier_v2', 'solver_coder', 'solver_interactive_code', 'solver_step_by_step_code', 'agent_with_python_tools', 'agent_with_code_feedback', 'agent_code_as_answer', 'agent_with_math_rag', 'agent_with_rag_review', 'majority_vote', 'plan_and_reflection'], help='Agent method')
+    parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_with_tools_v2', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'solver_verifier', 'solver_coder', 'solver_interactive_code', 'solver_step_by_step_code', 'agent_with_python_tools', 'agent_with_code_feedback', 'agent_default_prompt_with_code', 'agent_code_as_answer', 'majority_vote', 'plan_and_reflection'], help='Agent method')
     parser.add_argument('--round', type=str, required=True, help='Test round name')
     parser.add_argument('--dataset', type=str, required=True, help='Dataset name')
     parser.add_argument('--split', type=str, default=None, help='Dataset split')
@@ -60,9 +58,6 @@ def parse_args():
     parser.add_argument('--num_runs', type=int, default=5, help='Number of runs (for majority_vote)')
     parser.add_argument('--temperature', type=float, default=0.7, help='Temperature for majority_vote')
     parser.add_argument('--top_p', type=float, default=0.95, help='Top-p for majority_vote')
-    parser.add_argument('--rag_top_k', type=int, default=3, help='Number of similar examples to retrieve (for agent_with_math_rag)')
-    parser.add_argument('--rag_include_solution', type=str, default='true', choices=['true', 'false'], help='Include solution in retrieved examples (for agent_with_math_rag)')
-    parser.add_argument('--rag_enable_tools', type=str, default='false', choices=['true', 'false'], help='Enable Python code execution with RAG (for agent_with_math_rag)')
     parser.add_argument('--enable_code_checker', type=str, default='true', choices=['true', 'false'], help='Enable checker validation for solver_coder')
     parser.add_argument('--code_timeout', type=int, default=10, help='Code execution timeout in seconds (for solver_coder)')
     parser.add_argument('--detailed', type=str, default='false', choices=['true', 'false'], help='Detailed output')
@@ -131,9 +126,6 @@ def run_evaluation(args):
         print(f"Max Sub-problems: {args.max_subproblems}")
     elif args.agent == 'solver_verifier':
         print(f"Solver-Verifier: Code self-verification + forward verification")
-        print(f"Max Iterations: {args.max_iterations}")
-    elif args.agent == 'solver_verifier_v2':
-        print(f"Solver-Verifier V2: Always verify (even when code==boxed)")
         print(f"Max Iterations: {args.max_iterations}")
     elif args.agent == 'solver_coder':
         print(f"Solver-Coder: Pure code-based math solving with debug iterations")
@@ -228,22 +220,6 @@ def run_evaluation(args):
     except Exception as e:
         print(f"ERROR loading dataset: {e}")
         return None
-    
-    # Initialize RAG retriever if needed
-    rag_retriever = None
-    if args.agent in ['agent_with_math_rag', 'agent_with_rag_review']:
-        print(f"Initializing Math RAG retriever (top_k={args.rag_top_k})...")
-        try:
-            from utils.math_rag import MathRAGRetriever
-            rag_retriever = MathRAGRetriever(
-                dataset_name=dataset_name,
-                method="bm25",
-                base_path=str(base_path)
-            )
-            print(f"RAG retriever initialized with {len(rag_retriever.documents)} training examples\n")
-        except Exception as e:
-            print(f"ERROR initializing RAG retriever: {e}")
-            return None
     
     # Setup results directory
     resume_mode = args.resume is not None
@@ -552,29 +528,6 @@ def run_evaluation(args):
                 iterations = workflow_result.get('iterations', [])
                 runs = None
                 num_runs = None
-            elif args.agent == 'solver_verifier_v2':
-                # Solver-Verifier V2: Always verify even when code==boxed
-                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
-                workflow_result = run_solver_verifier_v2_workflow(
-                    question=question,
-                    ground_truth=ground_truth,
-                    solver_model=model_to_use,
-                    solver_tokenizer=tokenizer,
-                    verifier_model=model_to_use,
-                    verifier_tokenizer=tokenizer,
-                    max_iterations=args.max_iterations,
-                    detailed=detailed,
-                    dataset_name=dataset_name,
-                    enable_solver_tools=True,
-                    consistency_threshold=2
-                )
-                predicted_answer = workflow_result['predicted_answer']
-                final_correct = workflow_result['final_correct']
-                total_iterations = workflow_result['total_iterations']
-                case_type = workflow_result['case_type']
-                iterations = workflow_result.get('iterations', [])
-                runs = None
-                num_runs = None
             elif args.agent == 'solver_coder':
                 # Solver-Coder: Pure code-based math solving
                 model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
@@ -610,7 +563,8 @@ def run_evaluation(args):
                     max_code_executions=5,
                     detailed=detailed,
                     dataset_name=dataset_name,
-                    share_variables=True
+                    share_variables=True,
+                    apply_chat_template=use_chat_template
                 )
                 predicted_answer = workflow_result['predicted_answer']
                 final_correct = workflow_result['final_correct']
@@ -656,6 +610,7 @@ def run_evaluation(args):
                 predicted_answer = workflow_result['predicted_answer']
                 final_correct = workflow_result['final_correct']
                 total_iterations = 1  # Single-shot
+                first_try_correct = final_correct
                 case_type = workflow_result['case_type']
                 iterations = None
                 runs = None
@@ -677,6 +632,28 @@ def run_evaluation(args):
                 predicted_answer = workflow_result['predicted_answer']
                 final_correct = workflow_result['final_correct']
                 total_iterations = 1  # Single-shot with feedback
+                first_try_correct = final_correct
+                case_type = workflow_result['case_type']
+                iterations = None
+                runs = None
+                num_runs = None
+            elif args.agent == 'agent_default_prompt_with_code':
+                # Agent with default prompt + code execution (no tool instruction)
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
+                workflow_result = run_agent_default_prompt_with_code(
+                    question=question,
+                    ground_truth=ground_truth,
+                    model=model_to_use,
+                    tokenizer=tokenizer,
+                    detailed=detailed,
+                    dataset_name=dataset_name,
+                    greedy=True,
+                    apply_chat_template=use_chat_template
+                )
+                predicted_answer = workflow_result['predicted_answer']
+                final_correct = workflow_result['final_correct']
+                total_iterations = 1  # Single-shot with feedback
+                first_try_correct = final_correct
                 case_type = workflow_result['case_type']
                 iterations = None
                 runs = None
@@ -698,57 +675,7 @@ def run_evaluation(args):
                 predicted_answer = workflow_result['predicted_answer']
                 final_correct = workflow_result['final_correct']
                 total_iterations = 1  # Single-shot
-                case_type = workflow_result['case_type']
-                iterations = None
-                runs = None
-                num_runs = None
-            elif args.agent == 'agent_with_math_rag':
-                # Agent with Math RAG (Few-Shot Retrieval)
-                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
-                rag_include_solution = args.rag_include_solution.lower() == 'true'
-                rag_enable_tools = args.rag_enable_tools.lower() == 'true'
-                workflow_result = run_agent_with_math_rag(
-                    question=question,
-                    ground_truth=ground_truth,
-                    model=model_to_use,
-                    tokenizer=tokenizer,
-                    retriever=rag_retriever,  # Shared retriever
-                    top_k=args.rag_top_k,
-                    detailed=detailed,
-                    dataset_name=dataset_name,
-                    enable_tools=rag_enable_tools,
-                    include_solution=rag_include_solution,
-                    apply_chat_template=use_chat_template
-                )
-                predicted_answer = workflow_result['predicted_answer']
-                final_correct = workflow_result['final_correct']
-                total_iterations = 1  # Single-shot with RAG
-                case_type = workflow_result['case_type']
-                iterations = None
-                runs = None
-                num_runs = None
-            elif args.agent == 'agent_with_rag_review':
-                # Agent with RAG Review (Two-Stage: Generate first, then review with RAG)
-                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
-                rag_include_solution = args.rag_include_solution.lower() == 'true'
-                rag_enable_tools = args.rag_enable_tools.lower() == 'true'
-                workflow_result = run_agent_with_rag_review(
-                    question=question,
-                    ground_truth=ground_truth,
-                    model=model_to_use,
-                    tokenizer=tokenizer,
-                    retriever=rag_retriever,  # Shared retriever
-                    top_k=args.rag_top_k,
-                    detailed=detailed,
-                    dataset_name=dataset_name,
-                    enable_tools=rag_enable_tools,
-                    include_solution=rag_include_solution,
-                    apply_chat_template=use_chat_template,
-                    always_review=True
-                )
-                predicted_answer = workflow_result['predicted_answer']
-                final_correct = workflow_result['final_correct']
-                total_iterations = 2 if workflow_result.get('stage2_used', False) else 1
+                first_try_correct = final_correct
                 case_type = workflow_result['case_type']
                 iterations = None
                 runs = None
@@ -771,6 +698,7 @@ def run_evaluation(args):
                 predicted_answer = workflow_result['predicted_answer']
                 final_correct = workflow_result['final_correct']
                 total_iterations = None
+                first_try_correct = final_correct
                 case_type = workflow_result['case_type']
                 iterations = None
                 runs = workflow_result.get('runs', [])
@@ -806,7 +734,7 @@ def run_evaluation(args):
                 stats['total_iterations'] += total_iterations
                 if workflow_result['first_correct'] and total_iterations == 1:
                     stats['first_try_correct'] += 1
-            elif args.agent in ['solver_verifier', 'solver_verifier_v2']:
+            elif args.agent == 'solver_verifier':
                 stats['total_iterations'] += total_iterations
                 if workflow_result['first_correct']:
                     stats['first_try_correct'] += 1
@@ -821,10 +749,10 @@ def run_evaluation(args):
             elif args.agent == 'agent_with_code_feedback':
                 if workflow_result['first_correct']:
                     stats['first_try_correct'] += 1
-            elif args.agent == 'agent_code_as_answer':
+            elif args.agent == 'agent_default_prompt_with_code':
                 if workflow_result['first_correct']:
                     stats['first_try_correct'] += 1
-            elif args.agent in ['agent_with_math_rag', 'agent_with_rag_review']:
+            elif args.agent == 'agent_code_as_answer':
                 if workflow_result['first_correct']:
                     stats['first_try_correct'] += 1
             elif args.agent == 'majority_vote':
@@ -852,7 +780,7 @@ def run_evaluation(args):
                 "final_correct": final_correct,
                 "case_type": case_type,
                 "first_answer": workflow_result.get('first_answer', predicted_answer),
-                "first_correct": workflow_result.get('first_correct', first_try_correct),
+                "first_correct": workflow_result.get('first_correct', final_correct),
                 "final_verdict": workflow_result.get('final_verdict', 'correct' if final_correct else 'incorrect'),
                 "sample_time": sample_time
             }
@@ -873,7 +801,7 @@ def run_evaluation(args):
                     "total_iterations": total_iterations,
                     "iterations": iterations,
                 })
-            elif args.agent in ['solver_verifier', 'solver_verifier_v2']:
+            elif args.agent == 'solver_verifier':
                 prediction_entry.update({
                     "total_iterations": total_iterations,
                     "iterations": iterations,
@@ -924,6 +852,17 @@ def run_evaluation(args):
                     "first_correct": workflow_result.get('first_correct', False),
                     "tools_config": workflow_result.get('tools_config', {})
                 })
+            elif args.agent == 'agent_default_prompt_with_code':
+                prediction_entry.update({
+                    "response": workflow_result.get('response', ''),
+                    "code_executed": workflow_result.get('code_executed', False),
+                    "exec_results": workflow_result.get('exec_results', []),
+                    "num_code_blocks": workflow_result.get('num_code_blocks', 0),
+                    "used_feedback": workflow_result.get('used_feedback', False),
+                    "first_answer": workflow_result.get('first_answer'),
+                    "first_correct": workflow_result.get('first_correct', False),
+                    "config": workflow_result.get('config', {})
+                })
             elif args.agent == 'agent_code_as_answer':
                 prediction_entry.update({
                     "response": workflow_result.get('response', ''),
@@ -933,31 +872,6 @@ def run_evaluation(args):
                     "code_answer": workflow_result.get('code_answer'),
                     "model_answer": workflow_result.get('model_answer'),
                     "answer_source": workflow_result.get('answer_source'),
-                    "tools_config": workflow_result.get('tools_config', {})
-                })
-            elif args.agent == 'agent_with_math_rag':
-                prediction_entry.update({
-                    "response": workflow_result.get('response', ''),
-                    "code_executed": workflow_result.get('code_executed', False),
-                    "exec_results": workflow_result.get('exec_results', []),
-                    "num_code_blocks": workflow_result.get('num_code_blocks', 0),
-                    "rag_config": workflow_result.get('rag_config', {}),
-                    "tools_config": workflow_result.get('tools_config', {})
-                })
-            elif args.agent == 'agent_with_rag_review':
-                prediction_entry.update({
-                    "response": workflow_result.get('response', ''),
-                    "stage1_answer": workflow_result.get('stage1_answer'),
-                    "stage1_correct": workflow_result.get('stage1_correct'),
-                    "stage1_response": workflow_result.get('stage1_response', ''),
-                    "stage2_used": workflow_result.get('stage2_used', False),
-                    "stage2_answer": workflow_result.get('stage2_answer'),
-                    "stage2_correct": workflow_result.get('stage2_correct'),
-                    "stage2_response": workflow_result.get('stage2_response', ''),
-                    "code_executed": workflow_result.get('code_executed', False),
-                    "exec_results": workflow_result.get('exec_results', []),
-                    "num_code_blocks": workflow_result.get('num_code_blocks', 0),
-                    "rag_config": workflow_result.get('rag_config', {}),
                     "tools_config": workflow_result.get('tools_config', {})
                 })
             elif args.agent == 'majority_vote':
@@ -1001,7 +915,7 @@ def run_evaluation(args):
                         f.write(f"Reflect Verdict: {reflect_info.get('verdict', 'N/A')}\n")
                         f.write(f"Final Answer: {iter_data.get('answer', 'N/A')}\n")
                         f.write(f"Correct: {iter_data.get('is_correct', False)}\n")
-                elif args.agent in ['solver_verifier', 'solver_verifier_v2']:
+                elif args.agent == 'solver_verifier':
                     f.write(f"Total Iterations: {total_iterations}\n")
                     for iter_data in iterations:
                         f.write(f"\n--- Iteration {iter_data['iteration']} ---\n")
@@ -1250,7 +1164,7 @@ def save_metrics_csv(results, stats, results_dir, args):
         metrics_data['max_iterations'] = [args.max_iterations]
         metrics_data['max_subproblems'] = [args.max_subproblems]
     
-    elif args.agent in ['solver_verifier', 'solver_verifier_v2']:
+    elif args.agent == 'solver_verifier':
         metrics_data['avg_iterations'] = [stats['total_iterations'] / stats['total'] if stats['total'] > 0 else 0]
         metrics_data['max_iterations'] = [args.max_iterations]
     

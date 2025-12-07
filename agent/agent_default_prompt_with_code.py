@@ -1,19 +1,19 @@
 """
-Agent with Code Execution Feedback
-带代码执行反馈的 Agent
+Agent with Default Prompt + Code Execution
+使用默认 prompt，检测代码后执行并反馈
 
 工作流程：
-1. 模型生成 reasoning + Python 代码
-2. 自动执行代码，将结果注入
-3. 模型看到执行结果，基于此给出 \boxed{} 答案
+1. 使用默认 prompt（无 tool instruction）让模型生成
+2. 如果检测到 Python 代码，执行并将结果注入
+3. 模型看到执行结果，继续生成 \boxed{} 答案
 
-与单次推理的区别：
-- 单次推理：模型生成 reasoning + code，执行后直接提取答案（模型看不到执行结果）
-- 代码反馈：模型先生成 code → 看到执行结果 → 再生成 \boxed{} 答案
+与 agent_with_code_feedback 的区别：
+- 本文件：使用默认 prompt，不提示模型可以用代码
+- agent_with_code_feedback：在 prompt 中告诉模型可以用 Python 代码
 
 适用场景：
-- 模型能写对代码，但不确定如何使用执行结果
-- 需要基于计算结果继续推理的问题
+- 测试模型在无提示下自主使用代码的能力
+- 保持 prompt 一致性的同时支持代码执行
 """
 
 import sys
@@ -24,19 +24,18 @@ from typing import Dict
 from models.generation_config import MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY
 
 
-def run_agent_with_code_feedback(
+def run_agent_default_prompt_with_code(
     question: str,
     ground_truth: str,
     model,
     tokenizer,
     detailed: bool = False,
     dataset_name: str = "",
-    enable_tools: bool = True,
     greedy: bool = True,
     apply_chat_template: bool = False
 ) -> Dict:
     """
-    Run agent with code execution feedback
+    Run agent with default prompt + code execution
     
     Args:
         question: Problem to solve
@@ -45,7 +44,6 @@ def run_agent_with_code_feedback(
         tokenizer: Tokenizer
         detailed: Verbose output
         dataset_name: Dataset name
-        enable_tools: Enable Python code execution
         greedy: Use greedy decoding
         apply_chat_template: Whether to use chat template format
     
@@ -58,26 +56,20 @@ def run_agent_with_code_feedback(
     
     if detailed:
         print(f"\n{'='*80}")
-        print(f"AGENT WITH CODE EXECUTION FEEDBACK")
+        print(f"AGENT WITH DEFAULT PROMPT + CODE EXECUTION")
         print(f"{'='*80}")
         print(f"Question: {question[:100]}...")
-        print(f"Python Tools: {'Enabled' if enable_tools else 'Disabled'}")
         print(f"Greedy: {greedy}")
         print(f"Chat Template: {apply_chat_template}")
         print(f"{'='*80}\n")
     
-    # Build initial prompt (avoid triple backticks in instruction which confuse some models)
-    tool_instruction = ""
-    if enable_tools:
-        tool_instruction = "\n\nYou may use Python code to help with calculations. Show your reasoning step by step."
-    
-    # Build prompt (standard mode works for both base and chat models)
-    prompt = format_prompt_standard(question, dataset_name) + tool_instruction
+    # Use default prompt (no tool instruction)
+    prompt = format_prompt_standard(question, dataset_name)
     
     if detailed:
-        print(f"[Step 1: Generating reasoning + code...]")
+        print(f"[Step 1: Generating with default prompt...]")
     
-    # First generation: reasoning + code
+    # First generation
     if hasattr(model, 'generate_single'):
         response = model.generate_single(
             prompt,
@@ -101,7 +93,7 @@ def run_agent_with_code_feedback(
     if detailed:
         print(f"\n[Initial Response]:\n{response[:300]}...")
     
-    # Check if already has \boxed{} answer (no code needed)
+    # Check if already has \boxed{} answer and no code
     initial_answer = extract_answer(response)
     has_code = "```python" in response
     
@@ -126,8 +118,7 @@ def run_agent_with_code_feedback(
             "exec_results": [],
             "num_code_blocks": 0,
             "used_feedback": False,
-            "tools_config": {
-                "enable_tools": enable_tools,
+            "config": {
                 "greedy": greedy,
                 "use_chat_template": apply_chat_template
             }
@@ -137,9 +128,9 @@ def run_agent_with_code_feedback(
     exec_results = []
     code_output = ""
     
-    if enable_tools and has_code:
+    if has_code:
         if detailed:
-            print(f"\n[Step 2: Executing code...]")
+            print(f"\n[Step 2: Detected code, executing...]")
         
         # Extract and execute code blocks
         code_blocks = extract_python_code_blocks(response)
@@ -185,8 +176,7 @@ def run_agent_with_code_feedback(
             "exec_results": exec_results,
             "num_code_blocks": len(exec_results),
             "used_feedback": False,
-            "tools_config": {
-                "enable_tools": enable_tools,
+            "config": {
                 "greedy": greedy,
                 "use_chat_template": apply_chat_template
             }
@@ -282,8 +272,7 @@ def run_agent_with_code_feedback(
         "exec_results": exec_results,
         "num_code_blocks": len(exec_results),
         "used_feedback": True,
-        "tools_config": {
-            "enable_tools": enable_tools,
+        "config": {
             "greedy": greedy,
             "use_chat_template": apply_chat_template
         }

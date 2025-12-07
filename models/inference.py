@@ -130,6 +130,32 @@ def load_model(model_name: str, base_path: Path, checkpoint_path: str = None):
             model_files = list(model_dir.glob("*.safetensors")) + list(model_dir.glob("*.bin"))
             if not model_files:
                 raise FileNotFoundError(f"No model files found in {model_dir}!")
+            
+            # For checkpoints, load tokenizer from base model (checkpoint tokenizer may be corrupted)
+            base_model_dir = base_path / 'pretrained_models' / model_name
+            tokenizer_dir = base_model_dir if base_model_dir.exists() else model_dir
+            
+            print(f"Loading tokenizer from {tokenizer_dir}...")
+            tokenizer = AutoTokenizer.from_pretrained(
+                str(tokenizer_dir),
+                trust_remote_code=True
+            )
+            
+            if tokenizer.pad_token is None:
+                tokenizer.pad_token = tokenizer.eos_token
+            
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            print(f"Loading model from {model_dir}...")
+            model = AutoModelForCausalLM.from_pretrained(
+                str(model_dir),
+                trust_remote_code=True,
+                torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+                device_map=device
+            )
+            model.eval()
+            print(f"Model loaded successfully on {device.upper()}\n")
+            
+            return model, tokenizer
     else:
         # No checkpoint, load from pretrained_models
         model_dir = base_path / 'pretrained_models' / model_name
@@ -143,7 +169,7 @@ def load_model(model_name: str, base_path: Path, checkpoint_path: str = None):
         
         print(f"Loading model from {model_dir}...")
     
-    # Load tokenizer and model (for non-LoRA cases)
+    # Load tokenizer and model (for non-checkpoint cases)
     tokenizer = AutoTokenizer.from_pretrained(
         str(model_dir),
         trust_remote_code=True
