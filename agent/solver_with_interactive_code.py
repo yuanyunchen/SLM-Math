@@ -382,6 +382,15 @@ def generate_with_interactive_code(
     return final_response, execution_results
 
 
+# System prompt for chat template (should match training)
+SYSTEM_PROMPT_AGENT = (
+    "You are a mathematical reasoning assistant that uses Python code to solve problems. "
+    "Write code to help with calculations. When you see an error or unexpected result, "
+    "analyze what went wrong, explain your reasoning, and correct the code. "
+    "Always provide your final answer in \\boxed{} format."
+)
+
+
 def run_solver_with_interactive_code(
     question: str,
     ground_truth: str,
@@ -391,9 +400,15 @@ def run_solver_with_interactive_code(
     max_code_executions: int = 5,
     detailed: bool = False,
     dataset_name: str = "",
-    share_variables: bool = True
+    share_variables: bool = True,
+    apply_chat_template: bool = False
 ) -> Dict:
-    """Run solver with interactive code execution."""
+    """Run solver with interactive code execution.
+    
+    Args:
+        apply_chat_template: If True, use chat template format (for fine-tuned models).
+                           If False, use plain text format (for base models).
+    """
     from utils.prompt_utils import extract_answer, check_answer
     
     if detailed:
@@ -402,6 +417,7 @@ def run_solver_with_interactive_code(
         print(f"{'='*80}")
         print(f"Question: {question[:100]}...")
         print(f"Max code executions: {max_code_executions}")
+        print(f"Apply chat template: {apply_chat_template}")
         print(f"{'='*80}\n")
     
     iterations = []
@@ -411,11 +427,34 @@ def run_solver_with_interactive_code(
         if detailed:
             print(f"\n[Iteration {iteration_num}/{max_iterations}]")
         
-        # Build prompt - same format as code_as_answer for fair comparison
-        from utils.prompt_utils import format_prompt_standard
-        base_prompt = format_prompt_standard(question, dataset_name)
-        tool_instruction = "\n\nYou may use Python code to help with calculations. Show your reasoning step by step."
-        prompt = base_prompt + tool_instruction
+        # Build prompt based on chat template setting
+        if apply_chat_template:
+            # Use chat template format (for fine-tuned models)
+            messages = [
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT_AGENT,
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        question
+                        + "\nPlease solve this step by step using Python code. "
+                        "Put your final answer within \\boxed{}."
+                    ),
+                },
+            ]
+            prompt = tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        else:
+            # Use plain text format (for base models)
+            from utils.prompt_utils import format_prompt_standard
+            base_prompt = format_prompt_standard(question, dataset_name)
+            tool_instruction = "\n\nYou may use Python code to help with calculations. Show your reasoning step by step."
+            prompt = base_prompt + tool_instruction
         
         # Generate with interactive code execution
         response, exec_results = generate_with_interactive_code(

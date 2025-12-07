@@ -133,18 +133,25 @@ def load_all_data(args) -> Dataset:
         logger.info(f"Added {len(rstar_samples)} rstar samples")
     
     if args.data_mix in ["all", "correction"]:
-        gsm8k_samples = load_correction_data(correction_gsm8k_path, args.max_correction_samples)
-        all_samples.extend(gsm8k_samples)
-        logger.info(f"Added {len(gsm8k_samples)} GSM8K correction samples")
+        # Use specific limits if provided, otherwise fall back to general limit
+        gsm8k_limit = args.max_gsm8k_correction if args.max_gsm8k_correction is not None else args.max_correction_samples
+        math_limit = args.max_math_correction if args.max_math_correction is not None else args.max_correction_samples
         
-        math_samples = load_correction_data(correction_math_path, args.max_correction_samples)
+        gsm8k_samples = load_correction_data(correction_gsm8k_path, gsm8k_limit)
+        all_samples.extend(gsm8k_samples)
+        logger.info(f"Added {len(gsm8k_samples)} GSM8K correction samples (limit: {gsm8k_limit or 'all'})")
+        
+        math_samples = load_correction_data(correction_math_path, math_limit)
         all_samples.extend(math_samples)
-        logger.info(f"Added {len(math_samples)} MATH correction samples")
+        logger.info(f"Added {len(math_samples)} MATH correction samples (limit: {math_limit or 'all'})")
     
     if args.data_mix == "correction_only":
-        gsm8k_samples = load_correction_data(correction_gsm8k_path, args.max_correction_samples)
+        gsm8k_limit = args.max_gsm8k_correction if args.max_gsm8k_correction is not None else args.max_correction_samples
+        math_limit = args.max_math_correction if args.max_math_correction is not None else args.max_correction_samples
+        
+        gsm8k_samples = load_correction_data(correction_gsm8k_path, gsm8k_limit)
         all_samples.extend(gsm8k_samples)
-        math_samples = load_correction_data(correction_math_path, args.max_correction_samples)
+        math_samples = load_correction_data(correction_math_path, math_limit)
         all_samples.extend(math_samples)
     
     # Log statistics
@@ -183,8 +190,26 @@ def load_all_data(args) -> Dataset:
     return dataset
 
 
-def formatting_prompts_agent(examples, tokenizer):
-    """Format training examples into chat template for agent-style training.
+def format_prompt_plain(query: str) -> str:
+    """Format prompt in plain text format (no chat template).
+    
+    This matches the format used in previous experiments and eval.
+    """
+    prompt = f"""{query}
+Please reason step by step, and put your final answer within \\boxed{{}}.
+
+You may use Python code to help with calculations. Show your reasoning step by step."""
+    return prompt
+
+
+def formatting_prompts_agent(examples, tokenizer, apply_chat_template: bool = False):
+    """Format training examples for agent-style training.
+    
+    Args:
+        examples: Training examples with 'query' and 'response' fields
+        tokenizer: Tokenizer for chat template (if used)
+        apply_chat_template: If True, use chat template format.
+                           If False, use plain text format (default for consistency).
     
     Handles both single examples and batched examples.
     """
@@ -192,6 +217,40 @@ def formatting_prompts_agent(examples, tokenizer):
     if isinstance(examples.get("query"), list):
         texts = []
         for query, response in zip(examples["query"], examples["response"]):
+            if apply_chat_template:
+                # Use chat template format
+                messages = [
+                    {
+                        "role": "system",
+                        "content": SYSTEM_PROMPT_AGENT,
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            query
+                            + "\nPlease solve this step by step using Python code. "
+                            "Put your final answer within \\boxed{}."
+                        ),
+                    },
+                    {
+                        "role": "assistant",
+                        "content": response,
+                    },
+                ]
+                text = tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=False,
+                )
+            else:
+                # Use plain text format (consistent with previous experiments)
+                prompt = format_prompt_plain(query)
+                text = prompt + "\n\n" + response
+            texts.append(text)
+        return texts
+    else:
+        # Single example
+        if apply_chat_template:
             messages = [
                 {
                     "role": "system",
@@ -200,14 +259,14 @@ def formatting_prompts_agent(examples, tokenizer):
                 {
                     "role": "user",
                     "content": (
-                        query
+                        examples["query"]
                         + "\nPlease solve this step by step using Python code. "
                         "Put your final answer within \\boxed{}."
                     ),
                 },
                 {
                     "role": "assistant",
-                    "content": response,
+                    "content": examples["response"],
                 },
             ]
             text = tokenizer.apply_chat_template(
@@ -215,33 +274,10 @@ def formatting_prompts_agent(examples, tokenizer):
                 tokenize=False,
                 add_generation_prompt=False,
             )
-            texts.append(text)
-        return texts
-    else:
-        # Single example
-        messages = [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT_AGENT,
-            },
-            {
-                "role": "user",
-                "content": (
-                    examples["query"]
-                    + "\nPlease solve this step by step using Python code. "
-                    "Put your final answer within \\boxed{}."
-                ),
-            },
-            {
-                "role": "assistant",
-                "content": examples["response"],
-            },
-        ]
-        text = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=False,
-        )
+        else:
+            # Use plain text format (consistent with previous experiments)
+            prompt = format_prompt_plain(examples["query"])
+            text = prompt + "\n\n" + examples["response"]
         return text
 
 
@@ -335,7 +371,8 @@ def setup_model_and_tokenizer(model_name: str, use_lora: bool = False, lora_rank
             r=lora_rank,
             lora_alpha=32,
             lora_dropout=0.05,
-            bias="none"
+            bias="none",
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "up_proj", "down_proj", "gate_proj"],
         )
     
     return model, tokenizer, peft_config
@@ -371,6 +408,7 @@ def train(args):
     logger.info(f"Mode: {args.mode}")
     logger.info(f"Model: {args.model_name}")
     logger.info(f"Data Mix: {args.data_mix}")
+    logger.info(f"Apply Chat Template: {args.apply_chat_template}")
     logger.info(f"Output: {output_dir}")
     logger.info(f"Logs: {log_dir}")
     logger.info(f"GPUs: {args.gpus}")
@@ -399,7 +437,7 @@ def train(args):
     
     # Create formatting function closure
     def format_func(example):
-        return formatting_prompts_agent(example, tokenizer)
+        return formatting_prompts_agent(example, tokenizer, apply_chat_template=args.apply_chat_template)
     
     # Calculate steps for saving
     num_gpus = len(args.gpus.split(','))
@@ -437,7 +475,7 @@ def train(args):
         else:
             run_name = f"agent_{mode_str}_{timestamp}"
     
-    # Training arguments - use SFTConfig for trl >= 0.25
+    # Training arguments - compatible with trl 0.9.x
     training_args = SFTConfig(
         output_dir=str(output_dir),
         num_train_epochs=args.num_epochs,
@@ -457,12 +495,11 @@ def train(args):
         optim="adamw_torch",
         report_to=["wandb"] if args.use_wandb else [],
         run_name=run_name,
-        dataloader_num_workers=4,
+        dataloader_num_workers=0,  # Avoid memory issues with forked processes
         ddp_find_unused_parameters=False,
-        max_length=args.max_seq_length,
     )
     
-    # Create trainer
+    # Create trainer - max_seq_length passed to SFTTrainer for trl 0.9.x compatibility
     trainer = SFTTrainer(
         model=model,
         train_dataset=train_dataset,
@@ -470,6 +507,7 @@ def train(args):
         args=training_args,
         peft_config=peft_config,
         callbacks=[metrics_callback],
+        max_seq_length=args.max_seq_length,
     )
     
     # Train
@@ -541,7 +579,19 @@ def parse_args():
         "--max_correction_samples",
         type=int,
         default=None,
-        help="Maximum correction samples per dataset (default: all)"
+        help="Maximum correction samples per dataset (default: all, overridden by specific args)"
+    )
+    parser.add_argument(
+        "--max_gsm8k_correction",
+        type=int,
+        default=None,
+        help="Maximum GSM8K correction samples (overrides --max_correction_samples for GSM8K)"
+    )
+    parser.add_argument(
+        "--max_math_correction",
+        type=int,
+        default=None,
+        help="Maximum MATH correction samples (overrides --max_correction_samples for MATH)"
     )
     parser.add_argument(
         "--lora_rank",
@@ -623,6 +673,11 @@ def parse_args():
         "--skip_save",
         action="store_true",
         help="Skip saving the final model"
+    )
+    parser.add_argument(
+        "--apply_chat_template",
+        action="store_true",
+        help="Use chat template format (default: False, use plain text for consistency)"
     )
     
     return parser.parse_args()

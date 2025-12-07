@@ -1,8 +1,12 @@
 #!/bin/bash
 
 ################################################################################
-# Agent with Code Feedback Evaluation Script
-# Test agent_with_code_feedback on GSM8K dataset
+# Agent with Default Prompt + Code Execution Evaluation Script
+# Test agent_default_prompt_with_code on dataset
+# 
+# Key difference from agent_with_code_feedback:
+# - Uses default prompt (no tool instruction)
+# - Still detects and executes code if model generates it
 ################################################################################
 
 set -e
@@ -17,13 +21,13 @@ MODEL="Qwen2.5-Math-1.5B"
 CHECKPOINT=""
 
 # Agent method
-AGENT="agent_with_code_feedback"
+AGENT="agent_default_prompt_with_code"
 
 # Test round name
-ROUND_NAME="test_code_feedback"
+ROUND_NAME="test_default_prompt_code"
 
 # Dataset
-DATASET="gsm8k"
+DATASET="math500"
 
 # Number of test cases (0 = full dataset)
 COUNT=500
@@ -31,7 +35,7 @@ COUNT=500
 # Detailed output
 DETAILED="false"
 
-# Apply chat template (not required after fixing tool instruction)
+# Apply chat template (for chat-tuned models)
 APPLY_CHAT_TEMPLATE="false"
 
 # Resume from existing results (leave empty to start fresh)
@@ -44,7 +48,7 @@ SAVE_INTERVAL=10
 # Pre-flight Checks
 
 echo "=============================================================================="
-echo "          Agent with Code Feedback - Evaluation Script                        "
+echo "       Agent with Default Prompt + Code Execution - Evaluation Script         "
 echo "=============================================================================="
 echo ""
 
