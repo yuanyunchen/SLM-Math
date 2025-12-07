@@ -1052,6 +1052,11 @@ def main():
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    # For decoder-only models use left padding to avoid generation offset issues
+    try:
+        tokenizer.padding_side = "left"
+    except Exception:
+        pass
 
     model = AutoModelForCausalLM.from_pretrained(
         config.model_path,
