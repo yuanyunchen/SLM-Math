@@ -3259,3 +3259,91 @@ Time: 34.00s
 Question: If $m$ and $n$ are integers such that $3m + 4n = 100$, what is the smallest possible value of $\left| m - n \right|$ ?
 Ground Truth: 3
 Full Question: If $m$ and $n$ are integers such that $3m + 4n = 100$, what is the smallest possible value of $\left| m - n \right|$ ?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 3
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 81.07s
+================================================================================
+
+================================================================================
+[Sample 177/500 | Index: 176]
+Question: Convert $\frac{21}{2^2 \cdot 5^7}$ to a terminating decimal.
+Ground Truth: .0000672
+Full Question: Convert $\frac{21}{2^2 \cdot 5^7}$ to a terminating decimal.
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 0.0000672000
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 35.89s
+================================================================================
+
+================================================================================
+[Sample 178/500 | Index: 177]
+Question: In the diagram, four circles of radius 1 with centres $P$, $Q$, $R$, and $S$ are tangent to one another and to the sides of $\triangle ABC$, as shown. [asy]
+size(200);
+pair A, B, C, P, Q, R, S;
+R=(0,0);
+Q=(-2,0);
+S=(2,0);
+P=(1,1.732);
+B=(-5.73,-1);
+C=(3.732,-1);
+A=(1.366,3.098);
+draw(A--B--C--A);
+draw(circle(P, 1));
+draw(circle(Q, 1));
+draw(circle(R, 1));
+draw(circle(S, 1));
+label("A", A, N);
+label("B", B, SW);
+label("C", C, SE);
+dot(P);
+dot(Q);
+dot(R);
+dot(S);
+label("P", P, N);
+label("Q", Q, SW);
+label("R", R, SW);
+label("S", S, SE);
+[/asy]
+
+
+What is the degree measure of the smallest angle in triangle $PQS$?
+Ground Truth: 30^\circ
+Full Question: In the diagram, four circles of radius 1 with centres $P$, $Q$, $R$, and $S$ are tangent to one another and to the sides of $\triangle ABC$, as shown. [asy]
+size(200);
+pair A, B, C, P, Q, R, S;
+R=(0,0);
+Q=(-2,0);
+S=(2,0);
+P=(1,1.732);
+B=(-5.73,-1);
+C=(3.732,-1);
+A=(1.366,3.098);
+draw(A--B--C--A);
+draw(circle(P, 1));
+draw(circle(Q, 1));
+draw(circle(R, 1));
+draw(circle(S, 1));
+label("A", A, N);
+label("B", B, SW);
+label("C", C, SE);
+dot(P);
+dot(Q);
+dot(R);
+dot(S);
+label("P", P, N);
+label("Q", Q, SW);
+label("R", R, SW);
+label("S", S, SE);
+[/asy]
+
+
+What is the degree measure of the smallest angle in triangle $PQS$?

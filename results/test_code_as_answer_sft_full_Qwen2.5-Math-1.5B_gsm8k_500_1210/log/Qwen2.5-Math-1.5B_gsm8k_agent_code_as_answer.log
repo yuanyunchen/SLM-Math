@@ -4133,3 +4133,33 @@ Time: 29.88s
 Question: Sean is practicing for his role in a theater production. He has to memorize his lines for two scenes and the lyrics to one solo song. His solo song has 54 lines in the lyrics. The first scene has twice the number of lines, but only a third of them are his lines. The second scene has six more lines than the song, and four-fifths of them are his. How many lines does Sean have to memorize?
 Ground Truth: 138
 Full Question: Sean is practicing for his role in a theater production. He has to memorize his lines for two scenes and the lyrics to one solo song. His solo song has 54 lines in the lyrics. The first scene has twice the number of lines, but only a third of them are his lines. The second scene has six more lines than the song, and four-fifths of them are his. How many lines does Sean have to memorize?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 138
+Final Correct: True
+Case Type: BOTH_CORRECT
+Time: 51.36s
+================================================================================
+
+================================================================================
+[Sample 277/500 | Index: 276]
+Question: Carly had 80 cards, 2/5 of the cards had the letter A on them, 1/2 of the remaining had the letter B, 5/8 of the rest had the letter C on them, and the others had the letter D. How many of the cards had the letter D on them?
+Ground Truth: 9
+Full Question: Carly had 80 cards, 2/5 of the cards had the letter A on them, 1/2 of the remaining had the letter B, 5/8 of the rest had the letter C on them, and the others had the letter D. How many of the cards had the letter D on them?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 9
+Final Correct: True
+Case Type: BOTH_CORRECT
+Time: 34.97s
+================================================================================
+
+================================================================================
+[Sample 278/500 | Index: 277]
+Question: It takes Matthew 3 minutes to dig a small hole for shrubs and 10 minutes to dig a large hole for trees.  How many hours will it take him to dig 30 small holes and 15 large holes?
+Ground Truth: 4
+Full Question: It takes Matthew 3 minutes to dig a small hole for shrubs and 10 minutes to dig a large hole for trees.  How many hours will it take him to dig 30 small holes and 15 large holes?

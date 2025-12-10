@@ -19968,3 +19968,117 @@ Full Question: Millie decides to open a lemonade stand. She spends $18 to buy en
 ────────────────────────────────────────
 Generating (standard mode)...
 ────────────────────────────────────────
+
+────────────────────────────────────────
+Full Response:
+To solve this problem, first calculate the total cups of lemonade produced: 3 pitchers × 12 cups per pitcher = 36 cups.
+
+Millie sells all 36 cups at $1 per cup, so total revenue = 36 × 1 = $36.
+
+She spends $18 on supplies, so total cost = 18.
+
+Profit = total revenue - total cost = 36 - 18 = $18.
+
+She sells an average of 4 cups per hour, so the number of hours to sell all lemonade = 36 cups ÷ 4 cups per hour = 9 hours.
+
+Profit per hour = total profit ÷ hours = 18 ÷ 9 = $2.
+
+Let me write code to compute this:
+```python
+# Total cups produced
+pitchers = 3
+cups_per_pitcher = 12
+total_cups = pitchers * cups_per_pitcher
+
+# Revenue
+price_per_cup = 1
+total_revenue = total_cups * price_per_cup
+
+# Costs
+total_cost = 18
+
+# Profit
+total_profit = total_revenue - total_cost
+
+# Hours to sell all lemonade
+cups_per_hour = 4
+hours = total_cups / cups_per_hour
+
+# Profit per hour
+profit_per_hour = total_profit / hours
+
+final_answer = profit_per_hour
+print(final_answer)
+```
+
+The code outputs 2.0, so the answer is \boxed{2}
+────────────────────────────────────────
+Generation time: 42.61s
+────────────────────────────────────────
+
+✓ Predicted: 2
+✓ Expected: 2
+✓ Result: CORRECT
+────────────────────────────────────────
+Running Score: 328/384 (85.4%)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+[Sample 385/500 remaining | Dataset Index: 384 | Total: 385/500]
+Question: Mr. Ruther sold 3/5 of his land and had 12.8 hectares left. How much land did he have at first?
+Ground Truth: 32
+Full Question: Mr. Ruther sold 3/5 of his land and had 12.8 hectares left. How much land did he have at first?
+
+────────────────────────────────────────
+Generating (standard mode)...
+────────────────────────────────────────
+
+────────────────────────────────────────
+Full Response:
+To solve this problem, let \( T \) be the total hectares of land Mr. Ruther had initially.  
+He sold \( \frac{3}{5} \) of it, so he kept \( \frac{2}{5} \) of it.  
+This equals 12.8 hectares, so \( \frac{2}{5} T = 12.8 \).  
+Solving for \( T \): \( T = 12.8 \times \frac{5}{2} = 32 \).  
+Verification: \( \frac{3}{5} \times 32 = 19.2 \), and \( 32 - 19.2 = 12.8 \).
+
+Let me write code to compute this:
+```python
+# Total land T satisfies (2/5)T = 12.8
+# Solve: T = 12.8 * (5/2)
+
+left = 12.8
+fraction_kept = 2 / 5
+total_land = left / fraction_kept
+
+# Verify
+sold = total_land * (3 / 5)
+left_verified = total_land - sold
+
+print(f"Total: {total_land}")
+print(f"Verification: kept = {left_verified}, sold = {sold}")
+
+final_answer = total_land
+print(final_answer)
+```
+
+The code outputs 32.0, so the answer is \boxed{32}
+────────────────────────────────────────
+Generation time: 40.42s
+────────────────────────────────────────
+
+✓ Predicted: 32
+✓ Expected: 32
+✓ Result: CORRECT
+────────────────────────────────────────
+Running Score: 329/385 (85.5%)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+[Sample 386/500 remaining | Dataset Index: 385 | Total: 386/500]
+Question: Lisa is part of a choir that has 52 members, 50% of which are boys and 50% of which are girls.  The choir decides to perform with just its female memb...
+Ground Truth: 16
+Full Question: Lisa is part of a choir that has 52 members, 50% of which are boys and 50% of which are girls.  The choir decides to perform with just its female members.  On the day of the performance, however, half the people performing can't make it to the show because their bus breaks down.  The choir's 3 teachers then decide to sing with them. How many people sang in the performance?
+
+────────────────────────────────────────
+Generating (standard mode)...
+────────────────────────────────────────

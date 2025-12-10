@@ -2578,3 +2578,18 @@ Time: 29.62s
 Question: A Senate committee has 5 Democrats, 5 Republicans, and 1 Independent.  In how many ways can they sit around a circular table if all the members of each party all sit next to each other?  (Two seatings are considered equivalent if one is a rotation of the other.)
 Ground Truth: 28800
 Full Question: A Senate committee has 5 Democrats, 5 Republicans, and 1 Independent.  In how many ways can they sit around a circular table if all the members of each party all sit next to each other?  (Two seatings are considered equivalent if one is a rotation of the other.)
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 3456000
+Final Correct: False
+Case Type: BOTH_WRONG
+Time: 25.86s
+================================================================================
+
+================================================================================
+[Sample 144/500 | Index: 143]
+Question: The points $O,$ $A,$ and $B$ satisfy $\overrightarrow{OA} = \begin{pmatrix} 1 \\ 2 \\ 3 \end{pmatrix}$ and $\overrightarrow{OB} = \begin{pmatrix} -3 \\ -2 \\ 1 \end{pmatrix}.$  Find the area of triangle $OAB.$
+Ground Truth: 3 \sqrt{5}
+Full Question: The points $O,$ $A,$ and $B$ satisfy $\overrightarrow{OA} = \begin{pmatrix} 1 \\ 2 \\ 3 \end{pmatrix}$ and $\overrightarrow{OB} = \begin{pmatrix} -3 \\ -2 \\ 1 \end{pmatrix}.$  Find the area of triangle $OAB.$

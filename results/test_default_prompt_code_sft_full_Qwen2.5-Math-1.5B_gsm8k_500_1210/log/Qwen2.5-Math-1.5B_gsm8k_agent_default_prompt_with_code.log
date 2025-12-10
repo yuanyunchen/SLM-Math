@@ -4478,3 +4478,18 @@ Time: 46.35s
 Question: Carmen goes to an auction to win an antique desk. She accepts the opening bid of $200 and continues bidding until she wins. The bids on the desk rise by $50 each time and 3 other people each bid once. Carmen bids after each of the 3 other people and eventually wins. How much money, in dollars, does the desk cost her?
 Ground Truth: 500
 Full Question: Carmen goes to an auction to win an antique desk. She accepts the opening bid of $200 and continues bidding until she wins. The bids on the desk rise by $50 each time and 3 other people each bid once. Carmen bids after each of the 3 other people and eventually wins. How much money, in dollars, does the desk cost her?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 400
+Final Correct: False
+Case Type: FAILED
+Time: 42.71s
+================================================================================
+
+================================================================================
+[Sample 300/500 | Index: 299]
+Question: John hires a driving service to get him to work each day.  His work is 30 miles away and he has to go there and back each day.  He goes to work 5 days a week for 50 weeks a year.  He gets charged $2 per mile driven and he also gives his driver a $150 bonus per month.  How much does he pay a year for driving?
+Ground Truth: 31800
+Full Question: John hires a driving service to get him to work each day.  His work is 30 miles away and he has to go there and back each day.  He goes to work 5 days a week for 50 weeks a year.  He gets charged $2 per mile driven and he also gives his driver a $150 bonus per month.  How much does he pay a year for driving?

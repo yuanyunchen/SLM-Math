@@ -8240,3 +8240,48 @@ print(final_answer)
 
 The code outputs 12.0, so the answer is \boxed{12}
 ================================================================================
+
+================================================================================
+[Sample 170] WRONG
+================================================================================
+Question:
+Find the product of the $y$-coordinates of all the distinct solutions $(x,y)$ for the two equations $y=x^2-8$ and $y^2=-5x+44$.
+
+────────────────────────────────────────
+Ground Truth: 1736
+Predicted: 8
+
+────────────────────────────────────────
+Full Response:
+**Explanation:**
+
+The equations are \( y = x^2 - 8 \) and \( y^2 = -5x + 44 \).
+
+Substitute \( y = x^2 - 8 \) into \( y^2 = -5x + 44 \):
+\[
+(x^2 - 8)^2 = -5x + 44
+\]
+\[
+x^4 - 16x^2 + 64 = -5x + 44
+\]
+\[
+x^4 - 16x^2 + 5x + 20 = 0
+\]
+
+This is a quartic equation. Let the roots be \( x_1, x_2, x_3, x_4 \). By Vieta's formulas, the sum of the roots is 0 (coefficient of \( x^3 \) is 0), and the product of the roots is \(-20\) (constant term divided by leading coefficient).
+
+The \( y \)-coordinates are \( y_i = x_i^2 - 8 \). The product of the \( y \)-coordinates is:
+\[
+\prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 x_i^2 - 8 \prod_{i=1}^4 x_i
+\]
+\[
+= \left( \prod_{i=1}^4 x_i \right)^2 - 8 \left( \prod_{i=1}^4 x_i \right)
+\]
+\[
+= (-20)^2 - 8(-20) = 400 + 160 = 560
+\]
+
+Alternatively, the roots of the quartic equation are \( x_1, x_2, x_3, x_4 \). The product of the \( y \)-coordinates is:
+\[
+\prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x_i^2 - 8) = \prod_{i=1}^4 (x...(truncated)
+================================================================================

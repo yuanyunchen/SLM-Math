@@ -5258,3 +5258,33 @@ Time: 29.05s
 Question: Peyton scheduled after-work activities of a one hour yoga class on Monday, a cooking class that lasts three times as long as Monday’s yoga on Tuesday, a half-hour cheese-tasting event on Wednesday, a museum tour that takes half as long as the cooking class on Thursday, and two hours of errands on Friday. How many hours will all Peyton’s after-work activities take?
 Ground Truth: 8
 Full Question: Peyton scheduled after-work activities of a one hour yoga class on Monday, a cooking class that lasts three times as long as Monday’s yoga on Tuesday, a half-hour cheese-tasting event on Wednesday, a museum tour that takes half as long as the cooking class on Thursday, and two hours of errands on Friday. How many hours will all Peyton’s after-work activities take?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 8.0
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 26.02s
+================================================================================
+
+================================================================================
+[Sample 352/500 | Index: 351]
+Question: April is donating plant pots to a local school for their new garden. They ask for 30 plant pots for the daisies, and twice as many for the roses. April had already bought 100 plant pots from the garden center before she knew how many she needed. How many plant pots does April have left over?
+Ground Truth: 10
+Full Question: April is donating plant pots to a local school for their new garden. They ask for 30 plant pots for the daisies, and twice as many for the roses. April had already bought 100 plant pots from the garden center before she knew how many she needed. How many plant pots does April have left over?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 10
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 25.16s
+================================================================================
+
+================================================================================
+[Sample 353/500 | Index: 352]
+Question: After Andrea saved some money, she then spent the rest of her money on an $11 sweater and gave her brother $4. If she had $36 in the beginning, how much did Andrea save?
+Ground Truth: 21
+Full Question: After Andrea saved some money, she then spent the rest of her money on an $11 sweater and gave her brother $4. If she had $36 in the beginning, how much did Andrea save?
