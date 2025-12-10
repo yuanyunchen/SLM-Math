@@ -5213,3 +5213,48 @@ Time: 20.36s
 Question: Davos bought 2 shirts from the mall that cost $30 each. If he bought them with a 40% discount, how much did Davos pay for the 2 shirts?
 Ground Truth: 36
 Full Question: Davos bought 2 shirts from the mall that cost $30 each. If he bought them with a 40% discount, how much did Davos pay for the 2 shirts?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 36.0
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 27.20s
+================================================================================
+
+================================================================================
+[Sample 349/500 | Index: 348]
+Question: A factory used to make tractors, but now makes silos. When they made tractors, they sold 10 tractors a day and made $100 per tractor. Now, they sell 5 silos a day, and make $220 per silo. What percentage more are they making per day now?
+Ground Truth: 10
+Full Question: A factory used to make tractors, but now makes silos. When they made tractors, they sold 10 tractors a day and made $100 per tractor. Now, they sell 5 silos a day, and make $220 per silo. What percentage more are they making per day now?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 10.0
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 39.71s
+================================================================================
+
+================================================================================
+[Sample 350/500 | Index: 349]
+Question: Every month, Madeline has to buy food, treats, and medicine for her dog. Food costs $25 per week. Treats cost $20 per month. Medicine costs $100 per month. How much money does Madeline spend on her dog per year if there are 4 weeks in a month?
+Ground Truth: 2640
+Full Question: Every month, Madeline has to buy food, treats, and medicine for her dog. Food costs $25 per week. Treats cost $20 per month. Medicine costs $100 per month. How much money does Madeline spend on her dog per year if there are 4 weeks in a month?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 2640
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 29.05s
+================================================================================
+
+================================================================================
+[Sample 351/500 | Index: 350]
+Question: Peyton scheduled after-work activities of a one hour yoga class on Monday, a cooking class that lasts three times as long as Monday’s yoga on Tuesday, a half-hour cheese-tasting event on Wednesday, a museum tour that takes half as long as the cooking class on Thursday, and two hours of errands on Friday. How many hours will all Peyton’s after-work activities take?
+Ground Truth: 8
+Full Question: Peyton scheduled after-work activities of a one hour yoga class on Monday, a cooking class that lasts three times as long as Monday’s yoga on Tuesday, a half-hour cheese-tasting event on Wednesday, a museum tour that takes half as long as the cooking class on Thursday, and two hours of errands on Friday. How many hours will all Peyton’s after-work activities take?

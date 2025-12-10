@@ -12868,3 +12868,130 @@ print(final_answer)
 
 The code outputs 32, so the answer is \boxed{32}
 ================================================================================
+
+================================================================================
+[Sample 313] WRONG
+================================================================================
+Question:
+Six years ago, when Noah was half as old as Cera, the population of Chile was half what it is now. Currently, Cera is 46 years old. If the population of Chile six years ago was 3000 times the age of Noah, calculate the population of Chile now.
+
+────────────────────────────────────────
+Ground Truth: 120000
+Predicted: 6
+
+────────────────────────────────────────
+Full Response:
+To solve this problem, let's define the variables:
+- Let \( N \) be Noah's current age.
+- Let \( C \) be Cera's current age, which is 46.
+- Let \( P \) be the current population of Chile.
+
+From the problem, we know:
+- Six years ago, Noah's age was \( N - 6 \).
+- Six years ago, Cera's age was \( C - 6 = 40 \).
+- At that time, Noah was half as old as Cera, so \( N - 6 = \frac{1}{2} \times 40 = 20 \).
+- Therefore, Noah's current age is \( N = 20 + 6 = 26 \).
+
+Six years ago, the population of Chile was \( P - 6 \times \text{population per year} \). Since the population per year is constant, let \( p \) be the population per year. Then, \( P - 6p = 3000 \times 26 \).
+
+Currently, the population is \( P = 3000 \times 26 + 6p \).
+
+We also know that the population six years ago was \( P - 6p = 3000 \times 26 \), so \( P = 3000 \times 26 + 6p \).
+
+Since \( P - 6p = 3000 \times 26 \), we can solve for \( p \):
+\[ P - 6p = 78000 \]
+\[ P = 78000 + 6p \]
+
+The population per year \( p \) is the same as the population six years ago divided by 6, so \( p = \frac{P - 78000}{6} \).
+
+Substituting \( p \) back into the equation for \( P \):
+\[ P = 78000 + 6 \left( \frac{P - 78000}{6} \right) \]
+\[ P = 78000 + P - 78000 \]
+\[ P = P \]
+
+This confirms our equation is consistent. Now, we can calculate \( P \):
+\[ P = 78000 + 6p \]
+\[ p = \frac{P - 78000}{6} \]
+\[ P = 78000 + 6 \left( \frac{P - 78000}{6} \right) \]
+\[ P = 78000 + P - 78000 \]
+\[ P = P \]
+
+Since \( P = 78000 + 6p \) and \( p = \frac{P - 78000}{6} \), we can solve for \( P \) directly:
+\[ P = 78000 + 6 \left( \frac{P - 78000}{6} \right) \]
+\[ P = 78000 + P - 78000 \]
+\[ P = P \]
+
+This simplifies to \( P = 78000 + 6p \), and since \( p = \frac{P - 78000}{6} \), we get:
+\[ P = 78000 + 6 \left( \frac{P - 78000}{6} \right) \]
+\[ P = 78000 + P - 78000 \]
+\[ P = P \]
+
+This confirms the equation is consistent. Now, we can calculate \( P \):
+\[ P = 78000 + 6p \]
+\[ p = \frac{P - 78000}{6} \]
+\[ P = 78000 + 6 \left( \frac{P - 78000}{6}...(truncated)
+================================================================================
+
+================================================================================
+[Sample 314] CORRECT
+================================================================================
+Question:
+A football team has 105 members.  There are twice as many players on the offense as there is on the defense. There is half the number of players on the special teams as there is on the defense.  How many players are on the defense?
+
+────────────────────────────────────────
+Ground Truth: 30
+Predicted: 30
+
+────────────────────────────────────────
+Full Response:
+**Reasoning:**
+Let \( D \) be the number of players on the defense.  
+Then the number of players on the offense is \( 2D \), and the number of players on the special teams is \( \frac{D}{2} \).  
+The total number of players is \( D + 2D + \frac{D}{2} = 105 \).  
+Combining terms, \( 3D + \frac{D}{2} = 105 \).  
+Multiplying through by 2 to clear the fraction: \( 6D + D = 210 \).  
+Thus, \( 7D = 210 \), so \( D = 30 \).  
+The number of players on the defense is \( \boxed{30}
+================================================================================
+
+================================================================================
+[Sample 315] CORRECT
+================================================================================
+Question:
+Martha is planning her Christmas party. She invited 2 families with 6 people and 3 families with 4 people. 8 people couldn't come due to illness, and 1/4 that number had previous commitments. How many people show up for Martha's party?
+
+────────────────────────────────────────
+Ground Truth: 14
+Predicted: 14
+
+────────────────────────────────────────
+Full Response:
+To solve this problem, first calculate the total number of people invited: 2 families of 6 each plus 3 families of 4 each, which is \(2 \times 6 + 3 \times 4 = 12 + 12 = 24\).
+
+Next, determine the number of people who couldn't come due to illness: 8 people.
+
+Then, find the number of people with previous commitments: \( \frac{1}{4} \times 8 = 2 \).
+
+Subtract these from the total: \(24 - 8 - 2 = 14\).
+
+The code below computes this step-by-step:
+
+```python
+# Total people invited
+total_people = 2 * 6 + 3 * 4
+
+# People who couldn't come due to illness
+illness = 8
+
+# People with previous commitments
+previous_commitments = illness // 4
+
+# People who show up
+show_up = total_people - illness - previous_commitments
+
+final_answer = show_up
+print(final_answer)
+```
+
+The code outputs 14, so the answer is \boxed{14}
+================================================================================

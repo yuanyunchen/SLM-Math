@@ -19862,3 +19862,109 @@ Full Question: Cho hiked 14 kilometers per hour for 8 hours. Chloe hiked 9 kilom
 ────────────────────────────────────────
 Generating (standard mode)...
 ────────────────────────────────────────
+
+────────────────────────────────────────
+Full Response:
+To solve this problem, calculate the distance each person hiked using the formula distance = speed × time, then subtract Chloe's distance from Cho's distance.
+
+- Cho's distance: 14 km/h × 8 h = 112 km  
+- Chloe's distance: 9 km/h × 5 h = 45 km  
+- Difference: 112 km - 45 km = 67 km  
+
+Let me write code to compute this:  
+```python
+cho_speed = 14  # km/h
+cho_time = 8    # hours
+cho_distance = cho_speed * cho_time
+
+chloe_speed = 9  # km/h
+chloe_time = 5   # hours
+chloe_distance = chloe_speed * chloe_time
+
+final_answer = cho_distance - chloe_distance
+print(final_answer)
+```
+
+The code outputs 67, so the answer is \boxed{67}
+────────────────────────────────────────
+Generation time: 25.48s
+────────────────────────────────────────
+
+✓ Predicted: 67
+✓ Expected: 67
+✓ Result: CORRECT
+────────────────────────────────────────
+Running Score: 326/382 (85.3%)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+[Sample 383/500 remaining | Dataset Index: 382 | Total: 383/500]
+Question: Axel has 50 silver pesos and 80 gold pesos. He visits her friend Anna who has twice as many silver pesos as he has and 40 more gold pesos. What's the ...
+Ground Truth: 350
+Full Question: Axel has 50 silver pesos and 80 gold pesos. He visits her friend Anna who has twice as many silver pesos as he has and 40 more gold pesos. What's the total number of pesos they have together?
+
+────────────────────────────────────────
+Generating (standard mode)...
+────────────────────────────────────────
+
+────────────────────────────────────────
+Full Response:
+To solve this problem, I need to calculate the total number of pesos Axel and Anna have together.
+
+Step 1: Determine Axel's total pesos.  
+Axel has 50 silver pesos and 80 gold pesos, so his total is 50 + 80 = 130 pesos.
+
+Step 2: Determine Anna's silver pesos.  
+Anna has twice as many silver pesos as Axel, so 2 * 50 = 100 silver pesos.
+
+Step 3: Determine Anna's gold pesos.  
+Anna has 40 more gold pesos than Axel, so 80 + 40 = 120 gold pesos.
+
+Step 4: Determine Anna's total pesos.  
+Anna's total is 100 + 120 = 220 pesos.
+
+Step 5: Determine the combined total.  
+The total number of pesos they have together is Axel's total plus Anna's total: 130 + 220 = 350 pesos.
+
+Let me write code to compute this:
+```python
+# Axel's pesos
+axel_silver = 50
+axel_gold = 80
+axel_total = axel_silver + axel_gold
+
+# Anna's silver pesos (twice Axel's)
+anna_silver = 2 * axel_silver
+
+# Anna's gold pesos (40 more than Axel)
+anna_gold = axel_gold + 40
+
+# Anna's total
+anna_total = anna_silver + anna_gold
+
+# Combined total
+final_answer = axel_total + anna_total
+print(final_answer)
+```
+
+The code outputs 350, so the answer is \boxed{350}
+────────────────────────────────────────
+Generation time: 47.91s
+────────────────────────────────────────
+
+✓ Predicted: 350
+✓ Expected: 350
+✓ Result: CORRECT
+────────────────────────────────────────
+Running Score: 327/383 (85.4%)
+────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────
+[Sample 384/500 remaining | Dataset Index: 383 | Total: 384/500]
+Question: Millie decides to open a lemonade stand. She spends $18 to buy enough supplies to make 3 pitchers of lemonade. Each pitcher holds 12 cups of lemonade....
+Ground Truth: 2
+Full Question: Millie decides to open a lemonade stand. She spends $18 to buy enough supplies to make 3 pitchers of lemonade. Each pitcher holds 12 cups of lemonade. She sells each cup of lemonade for $1. She sells an average of 4 cups per hour that her lemonade stand is open. If Millie sells all of the lemonade, how much profit will she make per hour that she spends running the lemonade stand?
+
+────────────────────────────────────────
+Generating (standard mode)...
+────────────────────────────────────────

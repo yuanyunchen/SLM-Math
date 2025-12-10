@@ -2454,3 +2454,35 @@ Ground Truth: 16
 Full Question: Let $F_1 = (10,2)$ and $F_ 2= (-16,2).$  Then the set of points $P$ such that
 \[|PF_1 - PF_2| = 24\]form a hyperbola.  The equation of this hyperbola can be written as
 \[\frac{(x - h)^2}{a^2} - \frac{(y - k)^2}{b^2} = 1.\]Find $h + k + a + b.$
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 34.06512518934159
+Final Correct: False
+Case Type: CODE_WRONG
+Time: 67.51s
+================================================================================
+
+================================================================================
+[Sample 136/500 | Index: 135]
+Question: How many zeroes are at the end of $42!$ (42 factorial)?  (Reminder: The number $n!$ is the product of the integers from 1 to $n$.  For example, $5!=5\cdot 4\cdot3\cdot2\cdot 1= 120$.)
+Ground Truth: 9
+Full Question: How many zeroes are at the end of $42!$ (42 factorial)?  (Reminder: The number $n!$ is the product of the integers from 1 to $n$.  For example, $5!=5\cdot 4\cdot3\cdot2\cdot 1= 120$.)
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 9
+Final Correct: True
+Case Type: BOTH_CORRECT
+Time: 40.58s
+================================================================================
+
+================================================================================
+[Sample 137/500 | Index: 136]
+Question: Let $(a_1, a_2, \dots, a_n)$ be a sequence of positive real numbers, such that
+\[\sum_{i = 1}^n a_i = 96, \quad \sum_{i = 1}^n a_i^2 = 144, \quad \sum_{i = 1}^n a_i^3 = 216.\]Find the sum of all possible values of $n.$
+Ground Truth: 64
+Full Question: Let $(a_1, a_2, \dots, a_n)$ be a sequence of positive real numbers, such that
+\[\sum_{i = 1}^n a_i = 96, \quad \sum_{i = 1}^n a_i^2 = 144, \quad \sum_{i = 1}^n a_i^3 = 216.\]Find the sum of all possible values of $n.$

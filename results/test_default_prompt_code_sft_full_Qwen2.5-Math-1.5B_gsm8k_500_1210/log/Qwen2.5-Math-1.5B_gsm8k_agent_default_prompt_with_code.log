@@ -4448,3 +4448,33 @@ Time: 54.70s
 Question: Each person in a certain household consumes 0.2 kg of rice every meal. Supposing 5 members of the household eat rice every lunch and dinner, how many weeks will a 42 kg bag of rice last?
 Ground Truth: 3
 Full Question: Each person in a certain household consumes 0.2 kg of rice every meal. Supposing 5 members of the household eat rice every lunch and dinner, how many weeks will a 42 kg bag of rice last?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 3.0
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 51.81s
+================================================================================
+
+================================================================================
+[Sample 298/500 | Index: 297]
+Question: Sam sells bread. He has a target of selling 120 crates of bread in a week. One week he was closed on Monday and Friday. Over the weekend he sold 20 crates. On Tuesday he sold 15 crates, on Wednesday 12 crates, and Thursday 18 crates. By how many crates was Sam off from his target for the week?
+Ground Truth: 55
+Full Question: Sam sells bread. He has a target of selling 120 crates of bread in a week. One week he was closed on Monday and Friday. Over the weekend he sold 20 crates. On Tuesday he sold 15 crates, on Wednesday 12 crates, and Thursday 18 crates. By how many crates was Sam off from his target for the week?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 55
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 46.35s
+================================================================================
+
+================================================================================
+[Sample 299/500 | Index: 298]
+Question: Carmen goes to an auction to win an antique desk. She accepts the opening bid of $200 and continues bidding until she wins. The bids on the desk rise by $50 each time and 3 other people each bid once. Carmen bids after each of the 3 other people and eventually wins. How much money, in dollars, does the desk cost her?
+Ground Truth: 500
+Full Question: Carmen goes to an auction to win an antique desk. She accepts the opening bid of $200 and continues bidding until she wins. The bids on the desk rise by $50 each time and 3 other people each bid once. Carmen bids after each of the 3 other people and eventually wins. How much money, in dollars, does the desk cost her?

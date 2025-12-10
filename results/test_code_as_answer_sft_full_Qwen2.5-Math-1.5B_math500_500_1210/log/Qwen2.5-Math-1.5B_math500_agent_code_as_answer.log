@@ -2533,3 +2533,48 @@ Question: Find the maximum value of
 Ground Truth: 1
 Full Question: Find the maximum value of
 \[f(x,y) = x \sqrt{1 - y^2} + y \sqrt{1 - x^2},\]where $-1 \le x,$ $y \le 1.$
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 1
+Final Correct: True
+Case Type: BOTH_CORRECT
+Time: 74.83s
+================================================================================
+
+================================================================================
+[Sample 141/500 | Index: 140]
+Question: Let $n$ be a positive integer.  What is the greatest possible value of $\gcd(n + 7, 2n + 1)$?
+Ground Truth: 13
+Full Question: Let $n$ be a positive integer.  What is the greatest possible value of $\gcd(n + 7, 2n + 1)$?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 13
+Final Correct: True
+Case Type: BOTH_CORRECT
+Time: 50.91s
+================================================================================
+
+================================================================================
+[Sample 142/500 | Index: 141]
+Question: Zach has three bags and a bunch of pencils to be placed into the bags. He is told to place the greatest number of pencils possible into each of the three bags while also keeping the number of pencils in each bag the same. What is the greatest number of pencils he could have left over?
+Ground Truth: 2
+Full Question: Zach has three bags and a bunch of pencils to be placed into the bags. He is told to place the greatest number of pencils possible into each of the three bags while also keeping the number of pencils in each bag the same. What is the greatest number of pencils he could have left over?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 2
+Final Correct: True
+Case Type: BOTH_CORRECT
+Time: 29.62s
+================================================================================
+
+================================================================================
+[Sample 143/500 | Index: 142]
+Question: A Senate committee has 5 Democrats, 5 Republicans, and 1 Independent.  In how many ways can they sit around a circular table if all the members of each party all sit next to each other?  (Two seatings are considered equivalent if one is a rotation of the other.)
+Ground Truth: 28800
+Full Question: A Senate committee has 5 Democrats, 5 Republicans, and 1 Independent.  In how many ways can they sit around a circular table if all the members of each party all sit next to each other?  (Two seatings are considered equivalent if one is a rotation of the other.)

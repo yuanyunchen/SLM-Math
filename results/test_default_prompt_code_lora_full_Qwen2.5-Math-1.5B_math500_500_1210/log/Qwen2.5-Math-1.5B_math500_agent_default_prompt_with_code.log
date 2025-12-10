@@ -3229,3 +3229,33 @@ Time: 42.03s
 Question: Consider the geometric series $4+\frac{12}{a}+\frac{36}{a^2}+\cdots$. If the sum is a perfect square, what is the smallest possible value of $a$ where $a$ is a positive integer?
 Ground Truth: 4
 Full Question: Consider the geometric series $4+\frac{12}{a}+\frac{36}{a^2}+\cdots$. If the sum is a perfect square, what is the smallest possible value of $a$ where $a$ is a positive integer?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 11
+Final Correct: False
+Case Type: DEGRADED
+Time: 76.55s
+================================================================================
+
+================================================================================
+[Sample 175/500 | Index: 174]
+Question: How many $y$-intercepts does the graph of the parabola $x = y^2 - 4y - 1$ have?
+Ground Truth: 2
+Full Question: How many $y$-intercepts does the graph of the parabola $x = y^2 - 4y - 1$ have?
+
+────────────────────────────────────────
+
+────────────────────────────────────────
+Final Answer: 2
+Final Correct: True
+Case Type: FIRST_TRY_SUCCESS
+Time: 34.00s
+================================================================================
+
+================================================================================
+[Sample 176/500 | Index: 175]
+Question: If $m$ and $n$ are integers such that $3m + 4n = 100$, what is the smallest possible value of $\left| m - n \right|$ ?
+Ground Truth: 3
+Full Question: If $m$ and $n$ are integers such that $3m + 4n = 100$, what is the smallest possible value of $\left| m - n \right|$ ?
