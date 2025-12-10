@@ -1,0 +1,2 @@
+model,agent,dataset,total_samples,correct,accuracy,first_try_correct,first_try_accuracy,improved_cases,degraded_cases,failed_cases,avg_time_per_sample,total_time,timestamp
+Qwen2.5-Math-1.5B,agent_default_prompt_with_code,gsm8k,500,406,0.812,403,0.806,11,8,86,5.896344465255737,2948.1722326278687,2025-12-09T08:37:13.196967

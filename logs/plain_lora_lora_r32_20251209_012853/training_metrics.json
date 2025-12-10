@@ -1,0 +1,11 @@
+{
+  "train_runtime": 3101.9401,
+  "train_samples_per_second": 15.255,
+  "train_steps_per_second": 0.096,
+  "total_flos": 2.379074996404869e+17,
+  "train_loss": 0.5008380063856491,
+  "entropy": 0.37985716323207197,
+  "num_tokens": 13910901.0,
+  "mean_token_accuracy": 0.898760275733202,
+  "epoch": 3.0
+}

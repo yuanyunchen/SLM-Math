@@ -78,7 +78,7 @@ class SVRLConfig:
     )
 
     # Data
-    datasets: List[str] = field(default_factory=lambda: ["gsm8k", "math500"])
+    datasets: List[str] = field(default_factory=lambda: ["gsm8k", "math"])
     max_samples: int = -1  # total across all datasets
     train_split_ratio: float = 0.95
 
@@ -118,7 +118,7 @@ class SVRLConfig:
     seed: int = 42
     bf16: bool = True
     gradient_checkpointing: bool = True
-    eval_samples: int = 10  # number of samples per dataset for quick eval
+    eval_samples: int = 0  # disabled by default (no in-training eval on train data)
 
 
 def load_config_from_yaml(config_path: str) -> SVRLConfig:
@@ -183,7 +183,7 @@ def load_config_from_yaml(config_path: str) -> SVRLConfig:
         seed=g(["training", "seed"], 42),
         bf16=g(["training", "bf16"], True),
         gradient_checkpointing=g(["training", "gradient_checkpointing"], True),
-        eval_samples=g(["training", "eval_samples"], 10),
+        eval_samples=g(["training", "eval_samples"], 0),
     )
 
     # Normalize dataset names
@@ -446,7 +446,7 @@ class SVGRPOTrainer:
             full_texts,
             return_tensors="pt",
             truncation=True,
-            max_length=2560,
+            max_length=2048,
             padding=True,
         ).to(self.device)
 
@@ -535,6 +535,7 @@ class SVGRPOTrainer:
                     reward_infos[idx]["duplicate_penalty"] = False
 
         rewards_tensor = torch.tensor(rewards, dtype=torch.float32).to(self.device)
+        raw_reward_mean = rewards_tensor.mean().item()
 
         if self.config.whiten_rewards and len(rewards_tensor) > 1:
             rewards_tensor = (rewards_tensor - rewards_tensor.mean()) / (
@@ -614,7 +615,8 @@ class SVGRPOTrainer:
         metrics = {
             "loss": final_loss.item()
             * (self.config.gradient_accumulation_steps if accumulate else 1),
-            "reward": rewards_tensor.mean().item(),
+            "reward": rewards_tensor.mean().item(),  # whitened (≈0 if whitening on)
+            "raw_reward": raw_reward_mean,           # pre-whiten mean for visibility
             "accuracy": accuracy,
             "kl_penalty": kl_penalty.item(),
             "lr": self.optimizer.param_groups[0]["lr"],
@@ -721,6 +723,26 @@ class SVGRPOTrainer:
                         if v
                     }
                     progress_bar.set_postfix(avg_metrics)
+                    # Explicit console log for quick visibility (includes accuracy and other metrics)
+                    acc_val = avg_metrics.get("accuracy")
+                    log_parts = [
+                        f"Step {self.global_step}",
+                        f"loss={avg_metrics.get('loss', 0):.4f}",
+                        f"reward={avg_metrics.get('reward', 0):.4f}",
+                        f"raw_reward={avg_metrics.get('raw_reward', 0):.4f}",
+                    ]
+                    if acc_val is not None:
+                        log_parts.append(f"accuracy={acc_val:.4f}")
+                    if "kl_penalty" in avg_metrics:
+                        log_parts.append(f"kl={avg_metrics.get('kl_penalty', 0):.4f}")
+                    if "code_error_rate" in avg_metrics:
+                        log_parts.append(f"code_err={avg_metrics.get('code_error_rate', 0):.4f}")
+                    # current LR
+                    try:
+                        log_parts.append(f"lr={self.optimizer.param_groups[0]['lr']:.2e}")
+                    except Exception:
+                        pass
+                    logger.info(" ".join(log_parts))
                     if self.use_wandb:
                         try:
                             import wandb
@@ -942,7 +964,7 @@ def main():
         "--reward_duplicate_answer", type=float, help="Penalty for duplicate answers"
     )
     parser.add_argument("--reward_missing_box", type=float, help="Penalty for no boxed")
-    parser.add_argument("--eval_samples", type=int, help="Samples per dataset for eval")
+    parser.add_argument("--eval_samples", type=int, help="Samples per dataset for eval (0 disables)")
     parser.add_argument("--use_wandb", action="store_true", help="Enable W&B logging")
     parser.add_argument("--wandb_project", type=str, default="slm_math_rl", help="W&B project")
     parser.add_argument("--wandb_run_name", type=str, default=None, help="W&B run name")
@@ -1097,25 +1119,26 @@ def main():
 
     train_data = load_train_data(config.datasets, config.max_samples)
 
-    logger.info("\nLoading evaluation datasets...")
     eval_datasets = {}
-    for name in config.datasets:
-        ds_path = project_root / "data" / name
-        if not ds_path.exists():
-            continue
-        try:
-            ds = load_from_disk(str(ds_path))
-            split = "test" if "test" in ds else list(ds.keys())[0]
-            eval_ds = ds[split]
-            if config.eval_samples and config.eval_samples > 0 and len(eval_ds) > config.eval_samples:
-                eval_ds = eval_ds.select(range(config.eval_samples))
-            eval_datasets[name] = eval_ds
-        except Exception as e:
-            logger.warning(f"Failed to load eval split for {name}: {e}")
-    if eval_datasets:
-        logger.info(f"Loaded evaluation datasets: {list(eval_datasets.keys())}")
-    else:
-        logger.warning("No evaluation datasets loaded")
+    if config.eval_samples and config.eval_samples > 0:
+        logger.info("\nLoading evaluation datasets...")
+        for name in config.datasets:
+            ds_path = project_root / "data" / name
+            if not ds_path.exists():
+                continue
+            try:
+                ds = load_from_disk(str(ds_path))
+                split = "test" if "test" in ds else list(ds.keys())[0]
+                eval_ds = ds[split]
+                if config.eval_samples and len(eval_ds) > config.eval_samples:
+                    eval_ds = eval_ds.select(range(config.eval_samples))
+                eval_datasets[name] = eval_ds
+            except Exception as e:
+                logger.warning(f"Failed to load eval split for {name}: {e}")
+        if eval_datasets:
+            logger.info(f"Loaded evaluation datasets: {list(eval_datasets.keys())}")
+        else:
+            logger.warning("No evaluation datasets loaded")
 
     trainer = SVGRPOTrainer(
         config=config,

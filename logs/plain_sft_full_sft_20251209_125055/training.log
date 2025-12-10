@@ -1,0 +1,19 @@
+2025-12-09 12:50:55,610 - INFO - ================================================================================
+2025-12-09 12:50:55,610 - INFO - Training Configuration
+2025-12-09 12:50:55,610 - INFO - ================================================================================
+2025-12-09 12:50:55,610 - INFO - Round Name: plain_sft_full
+2025-12-09 12:50:55,610 - INFO - Mode: sft
+2025-12-09 12:50:55,610 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-12-09 12:50:55,610 - INFO - Data: data/reasoning_code_v2/run_1209_1011/reasoning_code_v2_gsm8k_train_math_train_1209_1011_code_box_eq_gt.jsonl
+2025-12-09 12:50:55,610 - INFO - Output: checkpoints/plain_sft_full_sft_20251209_125055
+2025-12-09 12:50:55,610 - INFO - Logs: logs/plain_sft_full_sft_20251209_125055
+2025-12-09 12:50:55,610 - INFO - GPUs: 2
+2025-12-09 12:50:55,610 - INFO - Epochs: 3
+2025-12-09 12:50:55,610 - INFO - Batch size: 16
+2025-12-09 12:50:55,610 - INFO - Gradient accumulation: 4
+2025-12-09 12:50:55,610 - INFO - Max sequence length: 2048
+2025-12-09 12:50:55,610 - INFO - Gradient checkpointing: True
+2025-12-09 12:50:55,610 - INFO - Enable evaluation: True
+2025-12-09 12:50:55,610 - INFO - Evaluation frequency: every 1 epoch(s)
+2025-12-09 12:50:55,610 - INFO - ================================================================================
+2025-12-09 12:50:55,610 - INFO - Loading data from: data/reasoning_code_v2/run_1209_1011/reasoning_code_v2_gsm8k_train_math_train_1209_1011_code_box_eq_gt.jsonl

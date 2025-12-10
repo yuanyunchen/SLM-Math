@@ -1,14 +1,14 @@
 """
 Solver-Checker Trivial Chat Multi-Agent Workflow
-简单的对话实现 - 使用文本拼接和 [ROLE]: 标签
+Simple chat implementation using text concatenation and [ROLE]: tags.
 
-TRIVIAL CHAT MODE - 简单的文本拼接实现
-- 使用 [SOLVER]: 和 [CHECKER]: 标签
-- 没有使用chat template
-- 没有KV cache优化
-- 小模型容易幻觉
+TRIVIAL CHAT MODE - straightforward concatenation approach
+- Uses [SOLVER]: and [CHECKER]: tags.
+- Does not use a chat template.
+- No KV cache optimizations.
+- Smaller models may hallucinate easily.
 
-建议: 使用新的 solver_checker_chat.py（优化版）或 solver_checker_stateless.py
+Recommendation: use the newer solver_checker_chat.py (optimized) or solver_checker_stateless.py.
 """
 
 from typing import Dict, List, Tuple

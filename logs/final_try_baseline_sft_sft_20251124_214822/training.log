@@ -1,0 +1,55 @@
+2025-11-24 21:48:22,857 - INFO - ================================================================================
+2025-11-24 21:48:22,858 - INFO - Training Configuration
+2025-11-24 21:48:22,858 - INFO - ================================================================================
+2025-11-24 21:48:22,858 - INFO - Round Name: final_try_baseline_sft
+2025-11-24 21:48:22,858 - INFO - Mode: sft
+2025-11-24 21:48:22,858 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-11-24 21:48:22,858 - INFO - Data: data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json
+2025-11-24 21:48:22,858 - INFO - Output: checkpoints/final_try_baseline_sft_sft_20251124_214822
+2025-11-24 21:48:22,858 - INFO - Logs: logs/final_try_baseline_sft_sft_20251124_214822
+2025-11-24 21:48:22,858 - INFO - GPUs: 1
+2025-11-24 21:48:22,858 - INFO - Epochs: 5
+2025-11-24 21:48:22,858 - INFO - Batch size: 16
+2025-11-24 21:48:22,858 - INFO - Gradient accumulation: 4
+2025-11-24 21:48:22,858 - INFO - Max sequence length: 2048
+2025-11-24 21:48:22,858 - INFO - Gradient checkpointing: False
+2025-11-24 21:48:22,858 - INFO - Enable evaluation: True
+2025-11-24 21:48:22,858 - INFO - Evaluation frequency: every 1 epoch(s)
+2025-11-24 21:48:22,858 - INFO - ================================================================================
+2025-11-24 21:48:22,858 - INFO - Loading data from: data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json
+2025-11-24 21:48:23,585 - INFO - Filtered to 18946 correct samples
+2025-11-24 21:48:23,586 - INFO - Total samples: 18946
+2025-11-24 21:48:23,586 - INFO - Sample columns: ['index', 'question', 'ground_truth', 'predicted_answer', 'thinking_process', 'solution', 'raw_output', 'teacher_model', 'tokens_used', 'finish_reason', 'correct', 'status', '_validation', 'generation_round', 'dataset', 'attempt_count', 'attempts_history']
+2025-11-24 21:48:23,586 - INFO - Sample question: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How m...
+2025-11-24 21:48:24,200 - INFO - Training dataset size: 18946
+2025-11-24 21:48:24,226 - INFO - Loading model: pretrained_models/Qwen2.5-Math-1.5B
+2025-11-24 21:48:25,637 - INFO - Model loaded on: cuda:0
+2025-11-24 21:48:25,637 - INFO - Dataset size: 18946
+2025-11-24 21:48:25,637 - INFO - Steps per epoch: 297
+2025-11-24 21:48:25,637 - INFO - Save checkpoint every 297 steps (1 epochs)
+2025-11-24 21:48:25,637 - INFO - 
+Loading evaluation datasets...
+2025-11-24 21:48:25,637 - INFO - Evaluation will run every 1 epoch(s)
+2025-11-24 21:48:25,645 - INFO - Loaded 500 samples from gsm8k
+2025-11-24 21:48:25,647 - INFO - Loaded 500 samples from math500
+2025-11-24 21:48:25,647 - INFO - Loaded evaluation datasets: ['gsm8k', 'math500']
+2025-11-24 21:48:25,647 - INFO - Training metrics will be saved to: logs/final_try_baseline_sft_sft_20251124_214822/training_metrics.csv
+2025-11-24 21:49:11,107 - INFO - Starting training...
+2025-11-24 22:21:28,835 - INFO - Epoch 1.0 completed at step 297
+2025-11-24 22:21:28,836 - INFO - 
+================================================================================
+2025-11-24 22:21:28,836 - INFO - Running evaluation at epoch 1
+2025-11-24 22:21:28,836 - INFO - ================================================================================
+2025-11-24 22:21:28,836 - INFO - Evaluating on gsm8k...
+2025-11-24 23:27:05,910 - INFO -   gsm8k accuracy: 0.6960
+2025-11-24 23:27:05,910 - INFO - Evaluating on math500...
+2025-11-25 00:41:05,504 - INFO -   math500 accuracy: 0.3120
+2025-11-25 00:41:05,508 - INFO - Logged evaluation results to W&B
+2025-11-25 00:41:05,508 - INFO - ================================================================================
+
+2025-11-25 01:13:16,088 - INFO - Epoch 2.0 completed at step 594
+2025-11-25 01:13:16,088 - INFO - 
+================================================================================
+2025-11-25 01:13:16,089 - INFO - Running evaluation at epoch 2
+2025-11-25 01:13:16,089 - INFO - ================================================================================
+2025-11-25 01:13:16,089 - INFO - Evaluating on gsm8k...

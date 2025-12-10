@@ -1,6 +1,6 @@
 """
 Solver-Checker-Summarizer Multi-Agent Workflow (Chat Mode)
-带总结层的Solver-Checker工作流 - Chat模式
+Solver-Checker workflow with a summarizer layer (chat mode).
 
 ARCHITECTURE:
 Similar to stateless but maintains conversation history with [ROLE] tags
@@ -11,10 +11,10 @@ CHAT MODE FEATURES:
 - Better for larger models (>2B parameters)
 - Warning: May cause hallucination in small models
 
-适用场景：
-- 大模型 (>=2B)
-- 需要上下文连贯性
-- 实验性功能
+When to use:
+- Larger models (>=2B).
+- When context continuity is needed.
+- Experimental scenarios.
 """
 
 import sys

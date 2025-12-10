@@ -9,19 +9,19 @@
 # Training Settings
 
 # Round name (custom identifier for this training run)
-ROUND_NAME="sft_full"  # Change this to identify your training round
+ROUND_NAME="code_sft"  # Change this to identify your training round
 
 # Model to train
 MODEL="pretrained_models/Qwen2.5-Math-1.5B"
 
 # Training data path
-DATA_PATH="data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json"
+DATA_PATH="data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json"
 
 # Training mode (sft = full fine-tuning)
 MODE="sft"
 
 # Number of training epochs
-NUM_EPOCHS=5
+NUM_EPOCHS=3
 
 # Batch size (single GPU)
 BATCH_SIZE=16
@@ -35,22 +35,22 @@ GRADIENT_ACCUMULATION_STEPS=4
 # Options: 1e-5 (conservative) or 5e-5 (aggressive)
 LEARNING_RATE=1e-5
 
-# Save checkpoint every N epochs (999 = only save final model)
-SAVE_EVERY_N_EPOCHS=999
+# Save checkpoint every N epochs
+SAVE_EVERY_N_EPOCHS=1
 
 # Evaluation settings
 EVAL_EVERY_N_EPOCHS=1
-EVAL_SAMPLES=200  # Samples per dataset for evaluation
+EVAL_SAMPLES=20  # Samples per dataset for evaluation
 
 # GPU to use
-export CUDA_VISIBLE_DEVICES=0
-GPUS="0"
+export CUDA_VISIBLE_DEVICES=1
+GPUS="1"
 
 # Enable Weights & Biases logging
 USE_WANDB="--use_wandb"  # Comment out to disable W&B logging
 
 # W&B project and run name
-WANDB_PROJECT="slm_math_experiments_1124"
+WANDB_PROJECT="reasoning_code_experiments"
 WANDB_RUN_NAME=""  # Leave empty for auto-generated name, or set custom name
 
 # Enable evaluation during training

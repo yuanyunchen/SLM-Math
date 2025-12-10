@@ -1,0 +1,88 @@
+2025-12-08 16:14:18,622 - INFO - ================================================================================
+2025-12-08 16:14:18,622 - INFO - Training Configuration
+2025-12-08 16:14:18,622 - INFO - ================================================================================
+2025-12-08 16:14:18,622 - INFO - Round Name: reasoning_code_lora
+2025-12-08 16:14:18,622 - INFO - Mode: lora
+2025-12-08 16:14:18,622 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-12-08 16:14:18,622 - INFO - Data: data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json
+2025-12-08 16:14:18,622 - INFO - Output: checkpoints/reasoning_code_lora_lora_r32_20251208_161418
+2025-12-08 16:14:18,622 - INFO - Logs: logs/reasoning_code_lora_lora_r32_20251208_161418
+2025-12-08 16:14:18,622 - INFO - GPUs: 2
+2025-12-08 16:14:18,622 - INFO - Epochs: 3
+2025-12-08 16:14:18,622 - INFO - Batch size: 20
+2025-12-08 16:14:18,622 - INFO - Gradient accumulation: 8
+2025-12-08 16:14:18,622 - INFO - Max sequence length: 2048
+2025-12-08 16:14:18,622 - INFO - Gradient checkpointing: True
+2025-12-08 16:14:18,622 - INFO - Enable evaluation: True
+2025-12-08 16:14:18,622 - INFO - Evaluation frequency: every 1 epoch(s)
+2025-12-08 16:14:18,622 - INFO - LoRA rank: 32
+2025-12-08 16:14:18,622 - INFO - ================================================================================
+2025-12-08 16:14:18,622 - INFO - Loading data from: data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json
+2025-12-08 16:14:18,987 - INFO - Filtered to 16581 correct samples
+2025-12-08 16:14:18,988 - INFO - Total samples: 16581
+2025-12-08 16:14:18,988 - INFO - Sample columns: ['index', 'question', 'ground_truth', 'predicted_answer', 'code_answer', 'boxed_answer', 'answers_match', 'thinking_process', 'solution', 'raw_output', 'code', 'execution', 'answer_source', 'correct', 'teacher_model', 'thinking_effort', 'round', 'attempt_count', 'attempts_history', 'tokens_used', 'status', 'dataset']
+2025-12-08 16:14:18,988 - INFO - Sample question: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How m...
+2025-12-08 16:14:19,208 - INFO - Training dataset size: 16581
+2025-12-08 16:14:19,230 - INFO - Loading model: pretrained_models/Qwen2.5-Math-1.5B
+2025-12-08 16:14:20,702 - INFO - Model loaded on: cuda:0
+2025-12-08 16:14:20,702 - INFO - Configuring LoRA with rank=32
+2025-12-08 16:14:20,703 - INFO - Dataset size: 16581
+2025-12-08 16:14:20,703 - INFO - Steps per epoch: 104
+2025-12-08 16:14:20,703 - INFO - Save checkpoint every 104 steps (1 epochs)
+2025-12-08 16:14:20,703 - INFO - 
+Loading evaluation datasets...
+2025-12-08 16:14:20,703 - INFO - Evaluation will run every 1 epoch(s)
+2025-12-08 16:14:20,709 - INFO - Loaded 50 samples from gsm8k
+2025-12-08 16:14:20,712 - INFO - Loaded 50 samples from math500
+2025-12-08 16:14:20,712 - INFO - Loaded evaluation datasets: ['gsm8k', 'math500']
+2025-12-08 16:14:20,713 - INFO - Training metrics will be saved to: logs/reasoning_code_lora_lora_r32_20251208_161418/training_metrics.csv
+2025-12-08 16:14:20,713 - INFO - Using learning rate: 0.0001
+2025-12-08 16:14:46,324 - INFO - Starting training...
+2025-12-08 16:35:19,269 - INFO - Epoch 1.0 completed at step 104
+2025-12-08 16:35:19,269 - INFO - 
+================================================================================
+2025-12-08 16:35:19,270 - INFO - Running evaluation at epoch 1
+2025-12-08 16:35:19,270 - INFO - ================================================================================
+2025-12-08 16:35:19,270 - INFO - Evaluating on gsm8k...
+2025-12-08 16:49:39,938 - INFO - Saved 10 sample logs to logs/reasoning_code_lora_lora_r32_20251208_161418/eval_samples_gsm8k_20251208_164939.txt
+2025-12-08 16:49:39,939 - INFO -   gsm8k accuracy: 0.7200
+2025-12-08 16:49:39,939 - INFO - Evaluating on math500...
+2025-12-08 17:01:48,697 - INFO - Saved 10 sample logs to logs/reasoning_code_lora_lora_r32_20251208_161418/eval_samples_math500_20251208_170148.txt
+2025-12-08 17:01:48,697 - INFO -   math500 accuracy: 0.6800
+2025-12-08 17:01:48,700 - INFO - Logged evaluation results to W&B
+2025-12-08 17:01:48,700 - INFO - ================================================================================
+
+2025-12-08 17:22:03,623 - INFO - Epoch 2.0 completed at step 208
+2025-12-08 17:22:03,623 - INFO - 
+================================================================================
+2025-12-08 17:22:03,623 - INFO - Running evaluation at epoch 2
+2025-12-08 17:22:03,623 - INFO - ================================================================================
+2025-12-08 17:22:03,624 - INFO - Evaluating on gsm8k...
+2025-12-08 17:41:35,711 - INFO - Saved 10 sample logs to logs/reasoning_code_lora_lora_r32_20251208_161418/eval_samples_gsm8k_20251208_174135.txt
+2025-12-08 17:41:35,711 - INFO -   gsm8k accuracy: 0.7600
+2025-12-08 17:41:35,711 - INFO - Evaluating on math500...
+2025-12-08 17:56:05,315 - INFO - Saved 10 sample logs to logs/reasoning_code_lora_lora_r32_20251208_161418/eval_samples_math500_20251208_175605.txt
+2025-12-08 17:56:05,315 - INFO -   math500 accuracy: 0.6000
+2025-12-08 17:56:05,318 - INFO - Logged evaluation results to W&B
+2025-12-08 17:56:05,318 - INFO - ================================================================================
+
+2025-12-08 18:16:25,450 - INFO - Epoch 3.0 completed at step 312
+2025-12-08 18:16:25,451 - INFO - 
+================================================================================
+2025-12-08 18:16:25,451 - INFO - Running evaluation at epoch 3
+2025-12-08 18:16:25,451 - INFO - ================================================================================
+2025-12-08 18:16:25,452 - INFO - Evaluating on gsm8k...
+2025-12-08 18:34:29,303 - INFO - Saved 10 sample logs to logs/reasoning_code_lora_lora_r32_20251208_161418/eval_samples_gsm8k_20251208_183429.txt
+2025-12-08 18:34:29,303 - INFO -   gsm8k accuracy: 0.7000
+2025-12-08 18:34:29,303 - INFO - Evaluating on math500...
+2025-12-08 18:46:18,586 - INFO - Saved 10 sample logs to logs/reasoning_code_lora_lora_r32_20251208_161418/eval_samples_math500_20251208_184618.txt
+2025-12-08 18:46:18,587 - INFO -   math500 accuracy: 0.6000
+2025-12-08 18:46:18,590 - INFO - Logged evaluation results to W&B
+2025-12-08 18:46:18,590 - INFO - ================================================================================
+
+2025-12-08 18:46:18,594 - INFO - Training metrics saved to: logs/reasoning_code_lora_lora_r32_20251208_161418/training_metrics.csv
+2025-12-08 18:46:18,597 - INFO - Metrics summary saved to: logs/reasoning_code_lora_lora_r32_20251208_161418/metrics_summary.txt
+2025-12-08 18:46:18,598 - INFO - Saving final model to: checkpoints/reasoning_code_lora_lora_r32_20251208_161418/final_model
+2025-12-08 18:46:18,770 - INFO - Training completed!
+2025-12-08 18:46:18,770 - INFO - Final model saved to: checkpoints/reasoning_code_lora_lora_r32_20251208_161418/final_model
+2025-12-08 18:46:18,771 - INFO - Training metrics: {'train_runtime': 9092.0422, 'train_samples_per_second': 5.471, 'train_steps_per_second': 0.034, 'total_flos': 2.7906495655567565e+17, 'train_loss': 0.6602484087149302, 'epoch': 3.0}

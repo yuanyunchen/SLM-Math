@@ -9,25 +9,25 @@
 # Training Settings
 
 # Round name (custom identifier for this training run)
-ROUND_NAME="lora_sft"  # Change this to identify your training round
+ROUND_NAME="reasoning_code_lora"  # Change this to identify your training round
 
 # Model to train
 MODEL="pretrained_models/Qwen2.5-Math-1.5B"
 
 # Training data path
-DATA_PATH="data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json"
+DATA_PATH="data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json"
 
 # Training mode (lora = LoRA fine-tuning)
 MODE="lora"
 
 # LoRA rank
-LORA_RANK=64
+LORA_RANK=32
 
 # Number of training epochs
-NUM_EPOCHS=5
+NUM_EPOCHS=3
 
 # Batch size (single GPU, LoRA can use larger batch)
-BATCH_SIZE=18
+BATCH_SIZE=20
 
 # Gradient accumulation steps
 # Effective batch size = BATCH_SIZE * GRADIENT_ACCUMULATION_STEPS
@@ -35,15 +35,15 @@ BATCH_SIZE=18
 GRADIENT_ACCUMULATION_STEPS=8
 
 # Save checkpoint every N epochs (999 = only save final model)
-SAVE_EVERY_N_EPOCHS=999
+SAVE_EVERY_N_EPOCHS=1
 
 # Evaluation settings
 EVAL_EVERY_N_EPOCHS=1
-EVAL_SAMPLES=200  # Samples per dataset for evaluation
+EVAL_SAMPLES=50  # Samples per dataset for evaluation
 
-# GPU to use
-export CUDA_VISIBLE_DEVICES=0
-GPUS="1"
+# GPU to use (default to cuda:1)
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-2}"
+GPUS="2"
 
 # Enable Weights & Biases logging
 USE_WANDB="--use_wandb"  # Comment out to disable W&B logging

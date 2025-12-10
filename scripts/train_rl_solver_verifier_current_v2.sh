@@ -3,7 +3,7 @@
 ################################################################################
 # Solver-Verifier GRPO RL Training Script
 # - Rewards incorporate code execution success and consistency
-# - Supports GSM8K + MATH500 datasets via HuggingFace load_from_disk
+# - Supports GSM8K + MATH datasets via HuggingFace load_from_disk
 ################################################################################
 
 set -e
@@ -21,10 +21,11 @@ CONFIG_FILE="configs/rl_grpo_config.yaml"
 OUTPUT_DIR="results/rl_solver_verifier_$(date +%Y%m%d_%H%M%S)"
 
 # Datasets to train on (comma-separated)
-DATASETS="gsm8k,math500"
+DATASETS="gsm8k,math"
 
 # GPU
 export CUDA_VISIBLE_DEVICES=0
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
 
 # W&B (optional)
 WANDB_PROJECT="slm_math_solver_verifier_rl"
@@ -35,23 +36,24 @@ USE_WANDB="--use_wandb"
 # Hyperparameters
 
 NUM_EPOCHS=1
-MAX_SAMPLES=6000       # Total samples across datasets (-1 for all)
-BATCH_SIZE=1
-GRADIENT_ACCUMULATION_STEPS=8
+MAX_SAMPLES=4000       # Total samples across datasets (-1 for all)
+# Reduce per-step load to mitigate CUDA OOM
+BATCH_SIZE=5
+GRADIENT_ACCUMULATION_STEPS=6
 LEARNING_RATE=5e-6
 NUM_RETURN_SEQUENCES=1
 TEMPERATURE=0.7
 KL_COEF=0
-LOGGING_STEPS=10
+LOGGING_STEPS=3
 EVAL_STEPS=200        # evaluate less frequently
 SAVE_STEPS=200
 
 # Reward shaping
 REWARD_CODE_ERROR=-0.2
 REWARD_CODE_INCONSISTENT=-0.2
-REWARD_CODE_CONSISTENT=0.1
+REWARD_CODE_CONSISTENT=0.2
 REWARD_DUPLICATE_ANSWER=-0.1
-REWARD_MISSING_BOX=-0.1
+REWARD_MISSING_BOX=-0.2
 
 ################################################################################
 # Pre-flight
@@ -123,7 +125,6 @@ python models/train_rl_solver_verifier.py \
     --logging_steps "$LOGGING_STEPS" \
     --eval_steps "$EVAL_STEPS" \
     --save_steps "$SAVE_STEPS" \
-    --eval_samples 10 \
     --reward_code_error "$REWARD_CODE_ERROR" \
     --reward_code_inconsistent "$REWARD_CODE_INCONSISTENT" \
     --reward_code_consistent "$REWARD_CODE_CONSISTENT" \

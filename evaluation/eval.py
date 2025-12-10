@@ -63,6 +63,7 @@ def parse_args():
     parser.add_argument('--inference_backend', type=str, default='transformers', choices=['transformers', 'vllm'], help='Inference backend (default: transformers)')
     parser.add_argument('--greedy', type=str, default='true', choices=['true', 'false'], help='Use greedy decoding (default: true). When true, ignores temperature/top_p/etc.')
     parser.add_argument('--apply_chat_template', type=str, default='false', choices=['true', 'false'], help='Apply chat template to prompts (default: false). Enable for chat-tuned models.')
+    parser.add_argument('--append_answer_section', type=str, default='false', choices=['true', 'false'], help='Append "\\n\\nAnswer:\\n" to prompt (match plain SFT training prompts).')
     return parser.parse_args()
 
 def run_evaluation(args):
@@ -72,6 +73,7 @@ def run_evaluation(args):
     log_samples = args.log_samples.lower() == 'true'  # Log full sample details to file
     greedy = args.greedy.lower() == 'true'
     use_chat_template = args.apply_chat_template.lower() == 'true'
+    append_answer = args.append_answer_section.lower() == 'true'
     
     print(f"\n{'='*80}")
     print(f"SLM-Math Evaluation")
@@ -100,6 +102,7 @@ def run_evaluation(args):
     print(f"Inference Backend: {args.inference_backend}")
     print(f"Greedy Decoding: {greedy}")
     print(f"Apply Chat Template: {use_chat_template}")
+    print(f"Append Answer Section: {append_answer}")
     print(f"Streaming Output: {detailed}")
     print(f"Log Samples: {log_samples}")
     print(f"{'='*80}\n")
@@ -340,6 +343,8 @@ def run_evaluation(args):
                 example = test_data[dataset_idx]
                 question, ground_truth = extract_question_and_answer(example, args.dataset)
                 prompt = format_prompt_standard(question, args.dataset)
+                if append_answer:
+                    prompt = f"{prompt}\n\nAnswer:\n"
                 prompt = apply_chat_template_if_enabled(prompt, tokenizer, use_chat_template)
                 batch_data.append({
                     'dataset_idx': dataset_idx,
@@ -481,6 +486,8 @@ def run_evaluation(args):
                 f.write(f"Full Question: {question}\n")
             
             prompt = format_prompt_standard(question, args.dataset)
+            if append_answer:
+                prompt = f"{prompt}\n\nAnswer:\n"
             prompt = apply_chat_template_if_enabled(prompt, tokenizer, use_chat_template)
             
             try:

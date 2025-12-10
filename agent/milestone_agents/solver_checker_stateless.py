@@ -1,13 +1,13 @@
 """
 Solver-Checker Stateless Multi-Agent Workflow
-独立实现solver-checker迭代工作流的核心逻辑
+Standalone implementation of the core solver-checker iterative workflow.
 
-STATELESS MODE - 每轮使用独立的prompt，不维护对话历史
-- 更稳定，不会出现幻觉问题
-- 适合小模型(<2B参数)
-- 推荐用于生产环境
+STATELESS MODE - each round uses an independent prompt; conversation history is not kept.
+- More stable, reduces hallucinations.
+- Suitable for small models (<2B parameters).
+- Recommended for production.
 
-原名: solver_checker_separate.py
+Former name: solver_checker_separate.py
 """
 
 from typing import Dict

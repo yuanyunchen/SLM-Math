@@ -14,13 +14,17 @@ set -e
 MODEL="Qwen2.5-Math-1.5B"
 
 # Checkpoint path (optional)
-CHECKPOINT=""
+# Use the recent SFT checkpoint for testing
+CHECKPOINT="checkpoints/plain_lora_lora_r32_20251209_012853/final_model"
+# GPU selection (default to cuda:2)
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-1}"
+
 
 # Agent method
 AGENT="agent_with_code_feedback"
 
 # Test round name
-ROUND_NAME="test_code_feedback"
+ROUND_NAME="test_code_feedback_plain_lora_r32"
 
 # Dataset
 DATASET="gsm8k"
@@ -29,7 +33,7 @@ DATASET="gsm8k"
 COUNT=500
 
 # Detailed output
-DETAILED="false"
+DETAILED="true"
 
 # Apply chat template (not required after fixing tool instruction)
 APPLY_CHAT_TEMPLATE="false"

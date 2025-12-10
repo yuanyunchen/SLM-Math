@@ -1,0 +1,52 @@
+2025-12-08 14:51:47,253 - INFO - ================================================================================
+2025-12-08 14:51:47,254 - INFO - Training Configuration
+2025-12-08 14:51:47,254 - INFO - ================================================================================
+2025-12-08 14:51:47,254 - INFO - Round Name: code_sft
+2025-12-08 14:51:47,254 - INFO - Mode: sft
+2025-12-08 14:51:47,254 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-12-08 14:51:47,254 - INFO - Data: data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json
+2025-12-08 14:51:47,254 - INFO - Output: checkpoints/code_sft_sft_20251208_145147
+2025-12-08 14:51:47,254 - INFO - Logs: logs/code_sft_sft_20251208_145147
+2025-12-08 14:51:47,254 - INFO - GPUs: 1
+2025-12-08 14:51:47,254 - INFO - Epochs: 3
+2025-12-08 14:51:47,254 - INFO - Batch size: 16
+2025-12-08 14:51:47,254 - INFO - Gradient accumulation: 4
+2025-12-08 14:51:47,254 - INFO - Max sequence length: 2048
+2025-12-08 14:51:47,254 - INFO - Gradient checkpointing: True
+2025-12-08 14:51:47,254 - INFO - Enable evaluation: True
+2025-12-08 14:51:47,254 - INFO - Evaluation frequency: every 1 epoch(s)
+2025-12-08 14:51:47,254 - INFO - ================================================================================
+2025-12-08 14:51:47,254 - INFO - Loading data from: data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json
+2025-12-08 14:51:47,670 - INFO - Filtered to 16581 correct samples
+2025-12-08 14:51:47,670 - INFO - Total samples: 16581
+2025-12-08 14:51:47,670 - INFO - Sample columns: ['index', 'question', 'ground_truth', 'predicted_answer', 'code_answer', 'boxed_answer', 'answers_match', 'thinking_process', 'solution', 'raw_output', 'code', 'execution', 'answer_source', 'correct', 'teacher_model', 'thinking_effort', 'round', 'attempt_count', 'attempts_history', 'tokens_used', 'status', 'dataset']
+2025-12-08 14:51:47,670 - INFO - Sample question: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How m...
+2025-12-08 14:51:47,890 - INFO - Training dataset size: 16581
+2025-12-08 14:51:47,913 - INFO - Loading model: pretrained_models/Qwen2.5-Math-1.5B
+2025-12-08 14:51:49,361 - INFO - Model loaded on: cuda:0
+2025-12-08 14:51:49,361 - INFO - Dataset size: 16581
+2025-12-08 14:51:49,361 - INFO - Steps per epoch: 260
+2025-12-08 14:51:49,362 - INFO - Save checkpoint every 260 steps (1 epochs)
+2025-12-08 14:51:49,362 - INFO - 
+Loading evaluation datasets...
+2025-12-08 14:51:49,362 - INFO - Evaluation will run every 1 epoch(s)
+2025-12-08 14:51:49,369 - INFO - Loaded 20 samples from gsm8k
+2025-12-08 14:51:49,372 - INFO - Loaded 20 samples from math500
+2025-12-08 14:51:49,372 - INFO - Loaded evaluation datasets: ['gsm8k', 'math500']
+2025-12-08 14:51:49,372 - INFO - Training metrics will be saved to: logs/code_sft_sft_20251208_145147/training_metrics.csv
+2025-12-08 14:51:49,372 - INFO - Using learning rate: 1e-05
+2025-12-08 14:52:14,252 - INFO - Starting training...
+2025-12-08 15:15:53,457 - INFO - Epoch 1.0 completed at step 260
+2025-12-08 15:15:53,457 - INFO - 
+================================================================================
+2025-12-08 15:15:53,457 - INFO - Running evaluation at epoch 1
+2025-12-08 15:15:53,458 - INFO - ================================================================================
+2025-12-08 15:15:53,458 - INFO - Evaluating on gsm8k...
+2025-12-08 15:16:54,890 - INFO - Saved 10 sample logs to logs/code_sft_sft_20251208_145147/eval_samples_gsm8k_20251208_151654.txt
+2025-12-08 15:16:54,891 - INFO -   gsm8k accuracy: 0.6000
+2025-12-08 15:16:54,891 - INFO - Evaluating on math500...
+2025-12-08 15:18:56,171 - INFO - Saved 10 sample logs to logs/code_sft_sft_20251208_145147/eval_samples_math500_20251208_151856.txt
+2025-12-08 15:18:56,171 - INFO -   math500 accuracy: 0.6500
+2025-12-08 15:18:56,174 - INFO - Logged evaluation results to W&B
+2025-12-08 15:18:56,174 - INFO - ================================================================================
+

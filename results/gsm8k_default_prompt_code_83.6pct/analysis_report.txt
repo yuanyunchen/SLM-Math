@@ -1,0 +1,67 @@
+================================================================================
+AGENT EVALUATION - DETAILED ANALYSIS REPORT
+================================================================================
+
+Configuration:
+--------------------------------------------------------------------------------
+Model: Qwen2.5-Math-1.5B
+Agent Method: agent_default_prompt_with_code
+Dataset: gsm8k
+Timestamp: 2025-12-07T12:03:04.781449
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Samples: 500
+Correct Answers: 418
+Overall Accuracy: 83.60%
+First Try Correct: 398
+First Try Accuracy: 79.60%
+Average Iterations: 0.00
+Total Iterations: 0
+
+Case Type Distribution:
+--------------------------------------------------------------------------------
+Improved Cases (Wrong -> Correct): 24
+Degraded Cases (Correct -> Wrong): 4
+Failed Cases (Wrong -> Wrong): 78
+First Try Success: 398
+Other Cases: 394
+
+Case Examples:
+--------------------------------------------------------------------------------
+
+Improved Cases (showing first 3 of 24):
+
+  Example 1:
+    Question ID: 11
+    First Answer: 716 (WRONG)
+    Final Answer: 694 (CORRECT)
+
+  Example 2:
+    Question ID: 17
+    First Answer: 52500 (WRONG)
+    Final Answer: 57500 (CORRECT)
+
+  Example 3:
+    Question ID: 26
+    First Answer: 234 (WRONG)
+    Final Answer: 243.0 (CORRECT)
+
+Degraded Cases (showing first 3 of 4):
+
+  Example 1:
+    Question ID: 106
+    First Answer: 72 (CORRECT)
+    Final Answer: [k\pi - \frac{\pi}{6}, k\pi + \frac{\pi}{3}](k \in \mathbb{z}) (WRONG)
+
+  Example 2:
+    Question ID: 313
+    First Answer: 120000 (CORRECT)
+    Final Answer: 156000.0 (WRONG)
+
+  Example 3:
+    Question ID: 363
+    First Answer: 6 (CORRECT)
+    Final Answer: 8.857142857142858 (WRONG)
+
+================================================================================

@@ -34,7 +34,8 @@ from agent.agent_code_as_answer import run_agent_code_as_answer
 from agent.milestone_agents.majority_vote import run_majority_vote_workflow
 from agent.milestone_agents.plan_and_reflection import run_plan_and_reflection_workflow
 from agent.solver_verifier import run_solver_verifier_workflow
-from agent.solver_verifier_check import run_solver_verifier_check_workflow
+from agent.solver_verifier_backward import run_solver_verifier_backward
+# from agent.solver_verifier_check import run_solver_verifier_check_workflow
 from agent.solver_coder import run_solver_coder_workflow
 from agent.solver_with_interactive_code import run_solver_with_interactive_code
 from agent.solver_step_by_step_code import run_solver_step_by_step_code
@@ -46,7 +47,7 @@ def parse_args():
     parser.add_argument('--checkpoint', type=str, default=None, help='Path to checkpoint (LoRA adapter or fine-tuned model). Can be relative to project root or absolute path.')
     parser.add_argument('--checker_model', type=str, default=None, help='Checker model name (for solver_checker only, default: same as solver)')
     parser.add_argument('--checker_checkpoint', type=str, default=None, help='Path to checker checkpoint (optional, for solver_checker only)')
-    parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_with_tools_v2', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'solver_verifier', 'solver_verifier_check', 'solver_coder', 'solver_interactive_code', 'solver_step_by_step_code', 'agent_with_python_tools', 'agent_with_code_feedback', 'agent_default_prompt_with_code', 'agent_code_as_answer', 'majority_vote', 'plan_and_reflection'], help='Agent method')
+    parser.add_argument('--agent', type=str, required=True, choices=['solver_checker', 'solver_checker_chat', 'solver_checker_trivial_chat', 'solver_checker_with_tools', 'solver_checker_with_tools_v2', 'solver_checker_summarizer', 'solver_checker_summarizer_chat', 'solver_verifier', 'solver_verifier_check', 'solver_verifier_backward', 'solver_coder', 'solver_interactive_code', 'solver_step_by_step_code', 'agent_with_python_tools', 'agent_with_code_feedback', 'agent_default_prompt_with_code', 'agent_code_as_answer', 'majority_vote', 'plan_and_reflection'], help='Agent method')
     parser.add_argument('--round', type=str, required=True, help='Test round name')
     parser.add_argument('--dataset', type=str, required=True, help='Dataset name')
     parser.add_argument('--split', type=str, default=None, help='Dataset split')
@@ -131,6 +132,8 @@ def run_evaluation(args):
     elif args.agent == 'solver_verifier_check':
         print(f"Solver-Verifier (check): Code self-verification + boolean check verifier")
         print(f"Max Iterations: {args.max_iterations}")
+    elif args.agent == 'solver_verifier_backward':
+        print(f"Solver-Verifier Backward: Single-pass solver + backward consistency check")
     elif args.agent == 'solver_coder':
         print(f"Solver-Coder: Pure code-based math solving with debug iterations")
         print(f"Max Iterations: {args.max_iterations}")
@@ -523,7 +526,8 @@ def run_evaluation(args):
                     detailed=detailed,
                     dataset_name=dataset_name,
                     enable_solver_tools=True,
-                    consistency_threshold=2
+                    consistency_threshold=2,
+                    apply_chat_template=use_chat_template
                 )
                 predicted_answer = workflow_result['predicted_answer']
                 final_correct = workflow_result['final_correct']
@@ -552,6 +556,25 @@ def run_evaluation(args):
                 final_correct = workflow_result['final_correct']
                 total_iterations = workflow_result['total_iterations']
                 case_type = workflow_result['case_type']
+                iterations = workflow_result.get('iterations', [])
+                runs = None
+                num_runs = None
+            elif args.agent == 'solver_verifier_backward':
+                # Single-pass solver + backward consistency check
+                model_to_use = solver_engine if (use_batch_inference and solver_engine) else model
+                workflow_result = run_solver_verifier_backward(
+                    question=question,
+                    ground_truth=ground_truth,
+                    solver_model=model_to_use,
+                    solver_tokenizer=tokenizer,
+                    detailed=detailed,
+                    dataset_name=dataset_name,
+                    enable_solver_tools=args.enable_solver_tools.lower() == 'true'
+                )
+                predicted_answer = workflow_result['predicted_answer']
+                final_correct = workflow_result['final_correct']
+                total_iterations = 1
+                case_type = workflow_result.get('case_type', 'SINGLE_PASS')
                 iterations = workflow_result.get('iterations', [])
                 runs = None
                 num_runs = None
@@ -765,6 +788,10 @@ def run_evaluation(args):
                 stats['total_iterations'] += total_iterations
                 if workflow_result['first_correct']:
                     stats['first_try_correct'] += 1
+            elif args.agent == 'solver_verifier_backward':
+                stats['total_iterations'] += total_iterations
+                if workflow_result.get('first_correct', final_correct):
+                    stats['first_try_correct'] += 1
             elif args.agent == 'solver_coder':
                 stats['total_iterations'] += total_iterations
                 if workflow_result['first_correct']:
@@ -835,6 +862,13 @@ def run_evaluation(args):
                     "solver_answers": workflow_result.get('solver_answers', []),
                     "verifier_verdicts": workflow_result.get('verifier_verdicts', []),
                     "config": workflow_result.get('config', {})
+                })
+            elif args.agent == 'solver_verifier_backward':
+                prediction_entry.update({
+                    "total_iterations": total_iterations,
+                    "iterations": iterations,
+                    "verdict": workflow_result.get('verdict', ''),
+                    "verify_response": workflow_result.get('verify_response', '')
                 })
             elif args.agent == 'solver_coder':
                 prediction_entry.update({
@@ -1191,7 +1225,7 @@ def save_metrics_csv(results, stats, results_dir, args):
         metrics_data['max_iterations'] = [args.max_iterations]
         metrics_data['max_subproblems'] = [args.max_subproblems]
     
-    elif args.agent in ['solver_verifier', 'solver_verifier_check']:
+    elif args.agent in ['solver_verifier', 'solver_verifier_check', 'solver_verifier_backward']:
         metrics_data['avg_iterations'] = [stats['total_iterations'] / stats['total'] if stats['total'] > 0 else 0]
         metrics_data['max_iterations'] = [args.max_iterations]
     

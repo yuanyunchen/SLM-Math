@@ -1,0 +1,33 @@
+================================================================================
+AGENT EVALUATION - DETAILED ANALYSIS REPORT
+================================================================================
+
+Configuration:
+--------------------------------------------------------------------------------
+Model: Qwen2.5-Math-1.5B
+Agent Method: agent_code_as_answer
+Dataset: math500
+Timestamp: 2025-12-09T08:54:28.990870
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Samples: 500
+Correct Answers: 284
+Overall Accuracy: 56.80%
+First Try Correct: 298
+First Try Accuracy: 59.60%
+Average Iterations: 0.00
+Total Iterations: 0
+
+Case Type Distribution:
+--------------------------------------------------------------------------------
+Improved Cases (Wrong -> Correct): 0
+Degraded Cases (Correct -> Wrong): 0
+Failed Cases (Wrong -> Wrong): 0
+First Try Success: 298
+Other Cases: 500
+
+Case Examples:
+--------------------------------------------------------------------------------
+
+================================================================================

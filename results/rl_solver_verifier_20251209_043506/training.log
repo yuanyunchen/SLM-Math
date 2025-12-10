@@ -1,0 +1,301 @@
+2025-12-09 04:35:10,254 - INFO - ================================================================================
+2025-12-09 04:35:10,254 - INFO - Solver-Verifier GRPO Training Configuration
+2025-12-09 04:35:10,255 - INFO - ================================================================================
+2025-12-09 04:35:10,255 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-12-09 04:35:10,255 - INFO - Datasets: ['gsm8k', 'math']
+2025-12-09 04:35:10,255 - INFO - Output: results/rl_solver_verifier_20251209_043506
+2025-12-09 04:35:10,255 - INFO - LoRA: True (r=16, alpha=32)
+2025-12-09 04:35:10,255 - INFO - Batch size: 5 x 6
+2025-12-09 04:35:10,255 - INFO - Learning rate: 5e-06
+2025-12-09 04:35:10,255 - INFO - Epochs: 1
+2025-12-09 04:35:10,255 - INFO - Eval samples per dataset: 0
+2025-12-09 04:35:10,255 - INFO - ================================================================================
+2025-12-09 04:35:13,661 - INFO - Weights & Biases initialized: project=slm_math_solver_verifier_rl, run=sv_grpo_20251209_043511
+2025-12-09 04:35:15,121 - INFO - Applying LoRA...
+2025-12-09 04:35:16,884 - INFO - Loaded 4000 samples from ['gsm8k', 'math']
+2025-12-09 04:35:16,886 - INFO - Trainer initialized: 800 steps, 80 warmup steps
+2025-12-09 04:35:16,887 - INFO - ================================================================================
+2025-12-09 04:35:16,887 - INFO - Starting Solver-Verifier GRPO Training
+2025-12-09 04:35:16,887 - INFO - ================================================================================
+2025-12-09 04:35:16,887 - INFO - Gradient accumulation steps: 6
+2025-12-09 04:35:16,887 - INFO - 
+Epoch 1/1
+2025-12-09 04:41:58,565 - INFO - Step 3 loss=-0.2442 reward=-0.0000 raw_reward=0.4822 accuracy=0.6667 kl=0.0000 code_err=0.1000 lr=1.25e-07
+2025-12-09 04:42:19,544 - INFO - Step 3 loss=-0.2442 reward=-0.0000 raw_reward=0.4822 accuracy=0.6667 kl=0.0000 code_err=0.1000 lr=1.88e-07
+2025-12-09 04:42:35,187 - INFO - Step 3 loss=-0.2442 reward=-0.0000 raw_reward=0.4822 accuracy=0.6667 kl=0.0000 code_err=0.1000 lr=1.88e-07
+2025-12-09 04:42:53,312 - INFO - Step 3 loss=-0.2442 reward=-0.0000 raw_reward=0.4822 accuracy=0.6667 kl=0.0000 code_err=0.1000 lr=1.88e-07
+2025-12-09 04:43:14,328 - INFO - Step 3 loss=-0.2442 reward=-0.0000 raw_reward=0.4822 accuracy=0.6667 kl=0.0000 code_err=0.1000 lr=1.88e-07
+2025-12-09 04:43:32,131 - INFO - Step 3 loss=-0.2442 reward=-0.0000 raw_reward=0.4822 accuracy=0.6667 kl=0.0000 code_err=0.1000 lr=1.88e-07
+2025-12-09 04:48:15,981 - INFO - Step 6 loss=-0.2190 reward=-0.0000 raw_reward=0.4444 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=3.13e-07
+2025-12-09 04:48:38,077 - INFO - Step 6 loss=-0.2190 reward=-0.0000 raw_reward=0.4444 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=3.75e-07
+2025-12-09 04:48:55,789 - INFO - Step 6 loss=-0.2190 reward=-0.0000 raw_reward=0.4444 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=3.75e-07
+2025-12-09 04:49:16,106 - INFO - Step 6 loss=-0.2190 reward=-0.0000 raw_reward=0.4444 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=3.75e-07
+2025-12-09 04:49:31,048 - INFO - Step 6 loss=-0.2190 reward=-0.0000 raw_reward=0.4444 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=3.75e-07
+2025-12-09 04:49:45,358 - INFO - Step 6 loss=-0.2190 reward=-0.0000 raw_reward=0.4444 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=3.75e-07
+2025-12-09 04:53:48,135 - INFO - Step 9 loss=-0.2110 reward=0.0000 raw_reward=0.3911 accuracy=0.6111 kl=0.0000 code_err=0.0222 lr=5.00e-07
+2025-12-09 04:54:01,628 - INFO - Step 9 loss=-0.2110 reward=0.0000 raw_reward=0.3911 accuracy=0.6111 kl=0.0000 code_err=0.0222 lr=5.63e-07
+2025-12-09 04:54:28,689 - INFO - Step 9 loss=-0.2110 reward=0.0000 raw_reward=0.3911 accuracy=0.6111 kl=0.0000 code_err=0.0222 lr=5.63e-07
+2025-12-09 04:54:47,221 - INFO - Step 9 loss=-0.2110 reward=0.0000 raw_reward=0.3911 accuracy=0.6111 kl=0.0000 code_err=0.0222 lr=5.63e-07
+2025-12-09 04:55:01,019 - INFO - Step 9 loss=-0.2110 reward=0.0000 raw_reward=0.3911 accuracy=0.6111 kl=0.0000 code_err=0.0222 lr=5.63e-07
+2025-12-09 04:55:11,435 - INFO - Step 9 loss=-0.2110 reward=0.0000 raw_reward=0.3911 accuracy=0.6111 kl=0.0000 code_err=0.0222 lr=5.63e-07
+2025-12-09 05:00:31,833 - INFO - Step 12 loss=-0.1016 reward=-0.0000 raw_reward=0.2700 accuracy=0.5778 kl=0.0000 code_err=0.0556 lr=6.88e-07
+2025-12-09 05:00:54,501 - INFO - Step 12 loss=-0.1016 reward=-0.0000 raw_reward=0.2700 accuracy=0.5778 kl=0.0000 code_err=0.0556 lr=7.50e-07
+2025-12-09 05:01:11,128 - INFO - Step 12 loss=-0.1016 reward=-0.0000 raw_reward=0.2700 accuracy=0.5778 kl=0.0000 code_err=0.0556 lr=7.50e-07
+2025-12-09 05:01:21,035 - INFO - Step 12 loss=-0.1016 reward=-0.0000 raw_reward=0.2700 accuracy=0.5778 kl=0.0000 code_err=0.0556 lr=7.50e-07
+2025-12-09 05:01:34,621 - INFO - Step 12 loss=-0.1016 reward=-0.0000 raw_reward=0.2700 accuracy=0.5778 kl=0.0000 code_err=0.0556 lr=7.50e-07
+2025-12-09 05:02:21,164 - INFO - Step 12 loss=-0.1016 reward=-0.0000 raw_reward=0.2700 accuracy=0.5778 kl=0.0000 code_err=0.0556 lr=7.50e-07
+2025-12-09 05:07:29,036 - INFO - Step 15 loss=-0.2295 reward=-0.0000 raw_reward=0.5722 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=8.75e-07
+2025-12-09 05:07:45,613 - INFO - Step 15 loss=-0.2295 reward=-0.0000 raw_reward=0.5722 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=9.38e-07
+2025-12-09 05:08:00,355 - INFO - Step 15 loss=-0.2295 reward=-0.0000 raw_reward=0.5722 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=9.38e-07
+2025-12-09 05:08:19,360 - INFO - Step 15 loss=-0.2295 reward=-0.0000 raw_reward=0.5722 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=9.38e-07
+2025-12-09 05:08:32,955 - INFO - Step 15 loss=-0.2295 reward=-0.0000 raw_reward=0.5722 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=9.38e-07
+2025-12-09 05:09:26,545 - INFO - Step 15 loss=-0.2295 reward=-0.0000 raw_reward=0.5722 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=9.38e-07
+2025-12-09 05:13:56,871 - INFO - Step 18 loss=-0.2089 reward=-0.0000 raw_reward=0.4533 accuracy=0.6444 kl=0.0000 code_err=0.0444 lr=1.06e-06
+2025-12-09 05:14:59,248 - INFO - Step 18 loss=-0.2089 reward=-0.0000 raw_reward=0.4533 accuracy=0.6444 kl=0.0000 code_err=0.0444 lr=1.13e-06
+2025-12-09 05:15:16,635 - INFO - Step 18 loss=-0.2089 reward=-0.0000 raw_reward=0.4533 accuracy=0.6444 kl=0.0000 code_err=0.0444 lr=1.13e-06
+2025-12-09 05:15:37,833 - INFO - Step 18 loss=-0.2089 reward=-0.0000 raw_reward=0.4533 accuracy=0.6444 kl=0.0000 code_err=0.0444 lr=1.13e-06
+2025-12-09 05:16:12,590 - INFO - Step 18 loss=-0.2089 reward=-0.0000 raw_reward=0.4533 accuracy=0.6444 kl=0.0000 code_err=0.0444 lr=1.13e-06
+2025-12-09 05:16:32,743 - INFO - Step 18 loss=-0.2089 reward=-0.0000 raw_reward=0.4533 accuracy=0.6444 kl=0.0000 code_err=0.0444 lr=1.13e-06
+2025-12-09 05:21:22,874 - INFO - Step 21 loss=-0.1427 reward=-0.0000 raw_reward=0.4511 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=1.25e-06
+2025-12-09 05:21:41,524 - INFO - Step 21 loss=-0.1427 reward=-0.0000 raw_reward=0.4511 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=1.31e-06
+2025-12-09 05:22:09,601 - INFO - Step 21 loss=-0.1427 reward=-0.0000 raw_reward=0.4511 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=1.31e-06
+2025-12-09 05:22:21,744 - INFO - Step 21 loss=-0.1427 reward=-0.0000 raw_reward=0.4511 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=1.31e-06
+2025-12-09 05:22:36,074 - INFO - Step 21 loss=-0.1427 reward=-0.0000 raw_reward=0.4511 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=1.31e-06
+2025-12-09 05:23:05,290 - INFO - Step 21 loss=-0.1427 reward=-0.0000 raw_reward=0.4511 accuracy=0.6667 kl=0.0000 code_err=0.0556 lr=1.31e-06
+2025-12-09 05:27:00,984 - INFO - Step 24 loss=-0.2505 reward=-0.0000 raw_reward=0.4811 accuracy=0.6778 kl=0.0000 code_err=0.0444 lr=1.44e-06
+2025-12-09 05:27:24,452 - INFO - Step 24 loss=-0.2505 reward=-0.0000 raw_reward=0.4811 accuracy=0.6778 kl=0.0000 code_err=0.0444 lr=1.50e-06
+2025-12-09 05:28:03,999 - INFO - Step 24 loss=-0.2505 reward=-0.0000 raw_reward=0.4811 accuracy=0.6778 kl=0.0000 code_err=0.0444 lr=1.50e-06
+2025-12-09 05:28:26,884 - INFO - Step 24 loss=-0.2505 reward=-0.0000 raw_reward=0.4811 accuracy=0.6778 kl=0.0000 code_err=0.0444 lr=1.50e-06
+2025-12-09 05:28:42,327 - INFO - Step 24 loss=-0.2505 reward=-0.0000 raw_reward=0.4811 accuracy=0.6778 kl=0.0000 code_err=0.0444 lr=1.50e-06
+2025-12-09 05:29:03,771 - INFO - Step 24 loss=-0.2505 reward=-0.0000 raw_reward=0.4811 accuracy=0.6778 kl=0.0000 code_err=0.0444 lr=1.50e-06
+2025-12-09 05:33:32,029 - INFO - Step 27 loss=0.0287 reward=-0.0000 raw_reward=0.3867 accuracy=0.6333 kl=0.0000 code_err=0.0444 lr=1.63e-06
+2025-12-09 05:33:58,950 - INFO - Step 27 loss=0.0287 reward=-0.0000 raw_reward=0.3867 accuracy=0.6333 kl=0.0000 code_err=0.0444 lr=1.69e-06
+2025-12-09 05:34:21,591 - INFO - Step 27 loss=0.0287 reward=-0.0000 raw_reward=0.3867 accuracy=0.6333 kl=0.0000 code_err=0.0444 lr=1.69e-06
+2025-12-09 05:34:44,029 - INFO - Step 27 loss=0.0287 reward=-0.0000 raw_reward=0.3867 accuracy=0.6333 kl=0.0000 code_err=0.0444 lr=1.69e-06
+2025-12-09 05:35:19,955 - INFO - Step 27 loss=0.0287 reward=-0.0000 raw_reward=0.3867 accuracy=0.6333 kl=0.0000 code_err=0.0444 lr=1.69e-06
+2025-12-09 05:35:48,478 - INFO - Step 27 loss=0.0287 reward=-0.0000 raw_reward=0.3867 accuracy=0.6333 kl=0.0000 code_err=0.0444 lr=1.69e-06
+2025-12-09 05:39:14,137 - INFO - Step 30 loss=-0.1911 reward=0.0000 raw_reward=0.3744 accuracy=0.6111 kl=0.0000 code_err=0.0444 lr=1.81e-06
+2025-12-09 05:39:28,949 - INFO - Step 30 loss=-0.1911 reward=0.0000 raw_reward=0.3744 accuracy=0.6111 kl=0.0000 code_err=0.0444 lr=1.88e-06
+2025-12-09 05:39:51,178 - INFO - Step 30 loss=-0.1911 reward=0.0000 raw_reward=0.3744 accuracy=0.6111 kl=0.0000 code_err=0.0444 lr=1.88e-06
+2025-12-09 05:40:07,261 - INFO - Step 30 loss=-0.1911 reward=0.0000 raw_reward=0.3744 accuracy=0.6111 kl=0.0000 code_err=0.0444 lr=1.88e-06
+2025-12-09 05:40:28,692 - INFO - Step 30 loss=-0.1911 reward=0.0000 raw_reward=0.3744 accuracy=0.6111 kl=0.0000 code_err=0.0444 lr=1.88e-06
+2025-12-09 05:40:45,456 - INFO - Step 30 loss=-0.1911 reward=0.0000 raw_reward=0.3744 accuracy=0.6111 kl=0.0000 code_err=0.0444 lr=1.88e-06
+2025-12-09 05:45:06,941 - INFO - Step 33 loss=-0.2736 reward=-0.0000 raw_reward=0.5511 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=2.00e-06
+2025-12-09 05:45:19,471 - INFO - Step 33 loss=-0.2736 reward=-0.0000 raw_reward=0.5511 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=2.06e-06
+2025-12-09 05:45:32,487 - INFO - Step 33 loss=-0.2736 reward=-0.0000 raw_reward=0.5511 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=2.06e-06
+2025-12-09 05:46:00,319 - INFO - Step 33 loss=-0.2736 reward=-0.0000 raw_reward=0.5511 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=2.06e-06
+2025-12-09 05:46:16,844 - INFO - Step 33 loss=-0.2736 reward=-0.0000 raw_reward=0.5511 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=2.06e-06
+2025-12-09 05:47:03,990 - INFO - Step 33 loss=-0.2736 reward=-0.0000 raw_reward=0.5511 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=2.06e-06
+2025-12-09 05:53:19,646 - INFO - Step 36 loss=-0.2287 reward=-0.0000 raw_reward=0.6133 accuracy=0.7222 kl=0.0000 code_err=0.0333 lr=2.19e-06
+2025-12-09 05:53:39,268 - INFO - Step 36 loss=-0.2287 reward=-0.0000 raw_reward=0.6133 accuracy=0.7222 kl=0.0000 code_err=0.0333 lr=2.25e-06
+2025-12-09 05:53:51,768 - INFO - Step 36 loss=-0.2287 reward=-0.0000 raw_reward=0.6133 accuracy=0.7222 kl=0.0000 code_err=0.0333 lr=2.25e-06
+2025-12-09 05:54:09,713 - INFO - Step 36 loss=-0.2287 reward=-0.0000 raw_reward=0.6133 accuracy=0.7222 kl=0.0000 code_err=0.0333 lr=2.25e-06
+2025-12-09 05:54:36,256 - INFO - Step 36 loss=-0.2287 reward=-0.0000 raw_reward=0.6133 accuracy=0.7222 kl=0.0000 code_err=0.0333 lr=2.25e-06
+2025-12-09 05:54:57,801 - INFO - Step 36 loss=-0.2287 reward=-0.0000 raw_reward=0.6133 accuracy=0.7222 kl=0.0000 code_err=0.0333 lr=2.25e-06
+2025-12-09 05:59:38,091 - INFO - Step 39 loss=-0.2436 reward=-0.0000 raw_reward=0.5800 accuracy=0.7000 kl=0.0000 code_err=0.0111 lr=2.38e-06
+2025-12-09 06:00:02,347 - INFO - Step 39 loss=-0.2436 reward=-0.0000 raw_reward=0.5800 accuracy=0.7000 kl=0.0000 code_err=0.0111 lr=2.44e-06
+2025-12-09 06:00:14,596 - INFO - Step 39 loss=-0.2436 reward=-0.0000 raw_reward=0.5800 accuracy=0.7000 kl=0.0000 code_err=0.0111 lr=2.44e-06
+2025-12-09 06:00:46,161 - INFO - Step 39 loss=-0.2436 reward=-0.0000 raw_reward=0.5800 accuracy=0.7000 kl=0.0000 code_err=0.0111 lr=2.44e-06
+2025-12-09 06:00:59,340 - INFO - Step 39 loss=-0.2436 reward=-0.0000 raw_reward=0.5800 accuracy=0.7000 kl=0.0000 code_err=0.0111 lr=2.44e-06
+2025-12-09 06:01:12,745 - INFO - Step 39 loss=-0.2436 reward=-0.0000 raw_reward=0.5800 accuracy=0.7000 kl=0.0000 code_err=0.0111 lr=2.44e-06
+2025-12-09 06:06:43,751 - INFO - Step 42 loss=-0.1016 reward=0.0000 raw_reward=0.3122 accuracy=0.5889 kl=0.0000 code_err=0.0444 lr=2.56e-06
+2025-12-09 06:07:04,528 - INFO - Step 42 loss=-0.1016 reward=0.0000 raw_reward=0.3122 accuracy=0.5889 kl=0.0000 code_err=0.0444 lr=2.63e-06
+2025-12-09 06:07:20,007 - INFO - Step 42 loss=-0.1016 reward=0.0000 raw_reward=0.3122 accuracy=0.5889 kl=0.0000 code_err=0.0444 lr=2.63e-06
+2025-12-09 06:07:41,623 - INFO - Step 42 loss=-0.1016 reward=0.0000 raw_reward=0.3122 accuracy=0.5889 kl=0.0000 code_err=0.0444 lr=2.63e-06
+2025-12-09 06:08:24,382 - INFO - Step 42 loss=-0.1016 reward=0.0000 raw_reward=0.3122 accuracy=0.5889 kl=0.0000 code_err=0.0444 lr=2.63e-06
+2025-12-09 06:09:01,238 - INFO - Step 42 loss=-0.1016 reward=0.0000 raw_reward=0.3122 accuracy=0.5889 kl=0.0000 code_err=0.0444 lr=2.63e-06
+2025-12-09 06:13:59,352 - INFO - Step 45 loss=-0.1441 reward=-0.0000 raw_reward=0.5322 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=2.75e-06
+2025-12-09 06:14:35,948 - INFO - Step 45 loss=-0.1441 reward=-0.0000 raw_reward=0.5322 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=2.81e-06
+2025-12-09 06:14:51,402 - INFO - Step 45 loss=-0.1441 reward=-0.0000 raw_reward=0.5322 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=2.81e-06
+2025-12-09 06:15:36,294 - INFO - Step 45 loss=-0.1441 reward=-0.0000 raw_reward=0.5322 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=2.81e-06
+2025-12-09 06:15:49,836 - INFO - Step 45 loss=-0.1441 reward=-0.0000 raw_reward=0.5322 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=2.81e-06
+2025-12-09 06:16:16,188 - INFO - Step 45 loss=-0.1441 reward=-0.0000 raw_reward=0.5322 accuracy=0.7000 kl=0.0000 code_err=0.0333 lr=2.81e-06
+2025-12-09 06:20:12,171 - INFO - Step 48 loss=-0.2651 reward=-0.0000 raw_reward=0.3600 accuracy=0.6000 kl=0.0000 code_err=0.0444 lr=2.94e-06
+2025-12-09 06:20:28,261 - INFO - Step 48 loss=-0.2651 reward=-0.0000 raw_reward=0.3600 accuracy=0.6000 kl=0.0000 code_err=0.0444 lr=3.00e-06
+2025-12-09 06:20:58,341 - INFO - Step 48 loss=-0.2651 reward=-0.0000 raw_reward=0.3600 accuracy=0.6000 kl=0.0000 code_err=0.0444 lr=3.00e-06
+2025-12-09 06:21:26,600 - INFO - Step 48 loss=-0.2651 reward=-0.0000 raw_reward=0.3600 accuracy=0.6000 kl=0.0000 code_err=0.0444 lr=3.00e-06
+2025-12-09 06:21:41,195 - INFO - Step 48 loss=-0.2651 reward=-0.0000 raw_reward=0.3600 accuracy=0.6000 kl=0.0000 code_err=0.0444 lr=3.00e-06
+2025-12-09 06:22:04,186 - INFO - Step 48 loss=-0.2651 reward=-0.0000 raw_reward=0.3600 accuracy=0.6000 kl=0.0000 code_err=0.0444 lr=3.00e-06
+2025-12-09 06:27:29,822 - INFO - Step 51 loss=-0.2608 reward=-0.0000 raw_reward=0.4867 accuracy=0.6667 kl=0.0000 code_err=0.0667 lr=3.13e-06
+2025-12-09 06:27:40,825 - INFO - Step 51 loss=-0.2608 reward=-0.0000 raw_reward=0.4867 accuracy=0.6667 kl=0.0000 code_err=0.0667 lr=3.19e-06
+2025-12-09 06:28:11,270 - INFO - Step 51 loss=-0.2608 reward=-0.0000 raw_reward=0.4867 accuracy=0.6667 kl=0.0000 code_err=0.0667 lr=3.19e-06
+2025-12-09 06:28:28,216 - INFO - Step 51 loss=-0.2608 reward=-0.0000 raw_reward=0.4867 accuracy=0.6667 kl=0.0000 code_err=0.0667 lr=3.19e-06
+2025-12-09 06:28:48,051 - INFO - Step 51 loss=-0.2608 reward=-0.0000 raw_reward=0.4867 accuracy=0.6667 kl=0.0000 code_err=0.0667 lr=3.19e-06
+2025-12-09 06:29:26,098 - INFO - Step 51 loss=-0.2608 reward=-0.0000 raw_reward=0.4867 accuracy=0.6667 kl=0.0000 code_err=0.0667 lr=3.19e-06
+2025-12-09 06:33:37,787 - INFO - Step 54 loss=-0.1671 reward=-0.0000 raw_reward=0.3789 accuracy=0.6222 kl=0.0000 code_err=0.0444 lr=3.31e-06
+2025-12-09 06:33:51,910 - INFO - Step 54 loss=-0.1671 reward=-0.0000 raw_reward=0.3789 accuracy=0.6222 kl=0.0000 code_err=0.0444 lr=3.38e-06
+2025-12-09 06:34:01,858 - INFO - Step 54 loss=-0.1671 reward=-0.0000 raw_reward=0.3789 accuracy=0.6222 kl=0.0000 code_err=0.0444 lr=3.38e-06
+2025-12-09 06:34:32,135 - INFO - Step 54 loss=-0.1671 reward=-0.0000 raw_reward=0.3789 accuracy=0.6222 kl=0.0000 code_err=0.0444 lr=3.38e-06
+2025-12-09 06:34:48,020 - INFO - Step 54 loss=-0.1671 reward=-0.0000 raw_reward=0.3789 accuracy=0.6222 kl=0.0000 code_err=0.0444 lr=3.38e-06
+2025-12-09 06:35:01,585 - INFO - Step 54 loss=-0.1671 reward=-0.0000 raw_reward=0.3789 accuracy=0.6222 kl=0.0000 code_err=0.0444 lr=3.38e-06
+2025-12-09 06:39:34,332 - INFO - Step 57 loss=-0.1828 reward=-0.0000 raw_reward=0.4556 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=3.50e-06
+2025-12-09 06:39:52,174 - INFO - Step 57 loss=-0.1828 reward=-0.0000 raw_reward=0.4556 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=3.56e-06
+2025-12-09 06:40:13,440 - INFO - Step 57 loss=-0.1828 reward=-0.0000 raw_reward=0.4556 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=3.56e-06
+2025-12-09 06:40:26,827 - INFO - Step 57 loss=-0.1828 reward=-0.0000 raw_reward=0.4556 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=3.56e-06
+2025-12-09 06:40:59,281 - INFO - Step 57 loss=-0.1828 reward=-0.0000 raw_reward=0.4556 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=3.56e-06
+2025-12-09 06:41:11,314 - INFO - Step 57 loss=-0.1828 reward=-0.0000 raw_reward=0.4556 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=3.56e-06
+2025-12-09 06:45:35,695 - INFO - Step 60 loss=-0.2748 reward=-0.0000 raw_reward=0.5456 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=3.69e-06
+2025-12-09 06:45:53,597 - INFO - Step 60 loss=-0.2748 reward=-0.0000 raw_reward=0.5456 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=3.75e-06
+2025-12-09 06:46:18,138 - INFO - Step 60 loss=-0.2748 reward=-0.0000 raw_reward=0.5456 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=3.75e-06
+2025-12-09 06:47:28,309 - INFO - Step 60 loss=-0.2748 reward=-0.0000 raw_reward=0.5456 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=3.75e-06
+2025-12-09 06:47:50,199 - INFO - Step 60 loss=-0.2748 reward=-0.0000 raw_reward=0.5456 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=3.75e-06
+2025-12-09 06:48:14,059 - INFO - Step 60 loss=-0.2748 reward=-0.0000 raw_reward=0.5456 accuracy=0.6889 kl=0.0000 code_err=0.0222 lr=3.75e-06
+2025-12-09 06:53:43,601 - INFO - Step 63 loss=-0.2056 reward=-0.0000 raw_reward=0.5011 accuracy=0.6889 kl=0.0000 code_err=0.1000 lr=3.88e-06
+2025-12-09 06:54:02,499 - INFO - Step 63 loss=-0.2056 reward=-0.0000 raw_reward=0.5011 accuracy=0.6889 kl=0.0000 code_err=0.1000 lr=3.94e-06
+2025-12-09 06:54:28,500 - INFO - Step 63 loss=-0.2056 reward=-0.0000 raw_reward=0.5011 accuracy=0.6889 kl=0.0000 code_err=0.1000 lr=3.94e-06
+2025-12-09 06:55:38,514 - INFO - Step 63 loss=-0.2056 reward=-0.0000 raw_reward=0.5011 accuracy=0.6889 kl=0.0000 code_err=0.1000 lr=3.94e-06
+2025-12-09 06:55:54,266 - INFO - Step 63 loss=-0.2056 reward=-0.0000 raw_reward=0.5011 accuracy=0.6889 kl=0.0000 code_err=0.1000 lr=3.94e-06
+2025-12-09 06:56:04,906 - INFO - Step 63 loss=-0.2056 reward=-0.0000 raw_reward=0.5011 accuracy=0.6889 kl=0.0000 code_err=0.1000 lr=3.94e-06
+2025-12-09 07:01:19,138 - INFO - Step 66 loss=-0.1644 reward=0.0000 raw_reward=0.3378 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=4.06e-06
+2025-12-09 07:01:35,311 - INFO - Step 66 loss=-0.1644 reward=0.0000 raw_reward=0.3378 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=4.13e-06
+2025-12-09 07:01:50,702 - INFO - Step 66 loss=-0.1644 reward=0.0000 raw_reward=0.3378 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=4.13e-06
+2025-12-09 07:02:13,519 - INFO - Step 66 loss=-0.1644 reward=0.0000 raw_reward=0.3378 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=4.13e-06
+2025-12-09 07:02:29,255 - INFO - Step 66 loss=-0.1644 reward=0.0000 raw_reward=0.3378 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=4.13e-06
+2025-12-09 07:03:21,417 - INFO - Step 66 loss=-0.1644 reward=0.0000 raw_reward=0.3378 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=4.13e-06
+2025-12-09 07:08:50,777 - INFO - Step 69 loss=-0.2165 reward=0.0000 raw_reward=0.3467 accuracy=0.5889 kl=0.0000 code_err=0.0556 lr=4.25e-06
+2025-12-09 07:09:05,192 - INFO - Step 69 loss=-0.2165 reward=0.0000 raw_reward=0.3467 accuracy=0.5889 kl=0.0000 code_err=0.0556 lr=4.31e-06
+2025-12-09 07:09:28,384 - INFO - Step 69 loss=-0.2165 reward=0.0000 raw_reward=0.3467 accuracy=0.5889 kl=0.0000 code_err=0.0556 lr=4.31e-06
+2025-12-09 07:09:53,781 - INFO - Step 69 loss=-0.2165 reward=0.0000 raw_reward=0.3467 accuracy=0.5889 kl=0.0000 code_err=0.0556 lr=4.31e-06
+2025-12-09 07:10:09,219 - INFO - Step 69 loss=-0.2165 reward=0.0000 raw_reward=0.3467 accuracy=0.5889 kl=0.0000 code_err=0.0556 lr=4.31e-06
+2025-12-09 07:10:30,063 - INFO - Step 69 loss=-0.2165 reward=0.0000 raw_reward=0.3467 accuracy=0.5889 kl=0.0000 code_err=0.0556 lr=4.31e-06
+2025-12-09 07:14:26,997 - INFO - Step 72 loss=-0.1977 reward=0.0000 raw_reward=0.4944 accuracy=0.6778 kl=0.0000 code_err=0.0333 lr=4.44e-06
+2025-12-09 07:14:42,553 - INFO - Step 72 loss=-0.1977 reward=0.0000 raw_reward=0.4944 accuracy=0.6778 kl=0.0000 code_err=0.0333 lr=4.50e-06
+2025-12-09 07:14:56,723 - INFO - Step 72 loss=-0.1977 reward=0.0000 raw_reward=0.4944 accuracy=0.6778 kl=0.0000 code_err=0.0333 lr=4.50e-06
+2025-12-09 07:15:18,476 - INFO - Step 72 loss=-0.1977 reward=0.0000 raw_reward=0.4944 accuracy=0.6778 kl=0.0000 code_err=0.0333 lr=4.50e-06
+2025-12-09 07:15:34,373 - INFO - Step 72 loss=-0.1977 reward=0.0000 raw_reward=0.4944 accuracy=0.6778 kl=0.0000 code_err=0.0333 lr=4.50e-06
+2025-12-09 07:15:52,584 - INFO - Step 72 loss=-0.1977 reward=0.0000 raw_reward=0.4944 accuracy=0.6778 kl=0.0000 code_err=0.0333 lr=4.50e-06
+2025-12-09 07:20:09,956 - INFO - Step 75 loss=-0.3192 reward=0.0000 raw_reward=0.6511 accuracy=0.7444 kl=0.0000 code_err=0.0444 lr=4.63e-06
+2025-12-09 07:20:22,110 - INFO - Step 75 loss=-0.3192 reward=0.0000 raw_reward=0.6511 accuracy=0.7444 kl=0.0000 code_err=0.0444 lr=4.69e-06
+2025-12-09 07:20:37,474 - INFO - Step 75 loss=-0.3192 reward=0.0000 raw_reward=0.6511 accuracy=0.7444 kl=0.0000 code_err=0.0444 lr=4.69e-06
+2025-12-09 07:21:48,611 - INFO - Step 75 loss=-0.3192 reward=0.0000 raw_reward=0.6511 accuracy=0.7444 kl=0.0000 code_err=0.0444 lr=4.69e-06
+2025-12-09 07:22:05,773 - INFO - Step 75 loss=-0.3192 reward=0.0000 raw_reward=0.6511 accuracy=0.7444 kl=0.0000 code_err=0.0444 lr=4.69e-06
+2025-12-09 07:22:21,982 - INFO - Step 75 loss=-0.3192 reward=0.0000 raw_reward=0.6511 accuracy=0.7444 kl=0.0000 code_err=0.0444 lr=4.69e-06
+2025-12-09 07:27:42,214 - INFO - Step 78 loss=-0.2547 reward=-0.0000 raw_reward=0.4633 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=4.81e-06
+2025-12-09 07:28:08,089 - INFO - Step 78 loss=-0.2547 reward=-0.0000 raw_reward=0.4633 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=4.87e-06
+2025-12-09 07:28:18,121 - INFO - Step 78 loss=-0.2547 reward=-0.0000 raw_reward=0.4633 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=4.87e-06
+2025-12-09 07:28:35,881 - INFO - Step 78 loss=-0.2547 reward=-0.0000 raw_reward=0.4633 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=4.87e-06
+2025-12-09 07:28:47,112 - INFO - Step 78 loss=-0.2547 reward=-0.0000 raw_reward=0.4633 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=4.87e-06
+2025-12-09 07:29:09,071 - INFO - Step 78 loss=-0.2547 reward=-0.0000 raw_reward=0.4633 accuracy=0.6556 kl=0.0000 code_err=0.0444 lr=4.87e-06
+2025-12-09 07:33:50,791 - INFO - Step 81 loss=-0.1576 reward=0.0000 raw_reward=0.3611 accuracy=0.5889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:34:08,331 - INFO - Step 81 loss=-0.1576 reward=0.0000 raw_reward=0.3611 accuracy=0.5889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:34:32,616 - INFO - Step 81 loss=-0.1576 reward=0.0000 raw_reward=0.3611 accuracy=0.5889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:35:05,097 - INFO - Step 81 loss=-0.1576 reward=0.0000 raw_reward=0.3611 accuracy=0.5889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:35:31,413 - INFO - Step 81 loss=-0.1576 reward=0.0000 raw_reward=0.3611 accuracy=0.5889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:35:52,606 - INFO - Step 81 loss=-0.1576 reward=0.0000 raw_reward=0.3611 accuracy=0.5889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:40:35,757 - INFO - Step 84 loss=-0.1592 reward=0.0000 raw_reward=0.3756 accuracy=0.6222 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:40:49,169 - INFO - Step 84 loss=-0.1592 reward=0.0000 raw_reward=0.3756 accuracy=0.6222 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:41:03,016 - INFO - Step 84 loss=-0.1592 reward=0.0000 raw_reward=0.3756 accuracy=0.6222 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:41:18,756 - INFO - Step 84 loss=-0.1592 reward=0.0000 raw_reward=0.3756 accuracy=0.6222 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:41:42,343 - INFO - Step 84 loss=-0.1592 reward=0.0000 raw_reward=0.3756 accuracy=0.6222 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:42:03,740 - INFO - Step 84 loss=-0.1592 reward=0.0000 raw_reward=0.3756 accuracy=0.6222 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:46:45,483 - INFO - Step 87 loss=-0.3130 reward=-0.0000 raw_reward=0.5289 accuracy=0.6778 kl=0.0000 code_err=0.0222 lr=5.00e-06
+2025-12-09 07:47:06,873 - INFO - Step 87 loss=-0.3130 reward=-0.0000 raw_reward=0.5289 accuracy=0.6778 kl=0.0000 code_err=0.0222 lr=5.00e-06
+2025-12-09 07:47:25,867 - INFO - Step 87 loss=-0.3130 reward=-0.0000 raw_reward=0.5289 accuracy=0.6778 kl=0.0000 code_err=0.0222 lr=5.00e-06
+2025-12-09 07:47:53,839 - INFO - Step 87 loss=-0.3130 reward=-0.0000 raw_reward=0.5289 accuracy=0.6778 kl=0.0000 code_err=0.0222 lr=5.00e-06
+2025-12-09 07:48:11,716 - INFO - Step 87 loss=-0.3130 reward=-0.0000 raw_reward=0.5289 accuracy=0.6778 kl=0.0000 code_err=0.0222 lr=5.00e-06
+2025-12-09 07:48:27,487 - INFO - Step 87 loss=-0.3130 reward=-0.0000 raw_reward=0.5289 accuracy=0.6778 kl=0.0000 code_err=0.0222 lr=5.00e-06
+2025-12-09 07:54:10,950 - INFO - Step 90 loss=-0.1137 reward=-0.0000 raw_reward=0.5300 accuracy=0.6889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:54:31,328 - INFO - Step 90 loss=-0.1137 reward=-0.0000 raw_reward=0.5300 accuracy=0.6889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:54:43,343 - INFO - Step 90 loss=-0.1137 reward=-0.0000 raw_reward=0.5300 accuracy=0.6889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:55:04,130 - INFO - Step 90 loss=-0.1137 reward=-0.0000 raw_reward=0.5300 accuracy=0.6889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:55:18,525 - INFO - Step 90 loss=-0.1137 reward=-0.0000 raw_reward=0.5300 accuracy=0.6889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 07:55:43,768 - INFO - Step 90 loss=-0.1137 reward=-0.0000 raw_reward=0.5300 accuracy=0.6889 kl=0.0000 code_err=0.0333 lr=5.00e-06
+2025-12-09 08:01:13,757 - INFO - Step 93 loss=-0.3235 reward=-0.0000 raw_reward=0.3867 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=5.00e-06
+2025-12-09 08:01:27,997 - INFO - Step 93 loss=-0.3235 reward=-0.0000 raw_reward=0.3867 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=5.00e-06
+2025-12-09 08:01:51,988 - INFO - Step 93 loss=-0.3235 reward=-0.0000 raw_reward=0.3867 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=5.00e-06
+2025-12-09 08:02:21,864 - INFO - Step 93 loss=-0.3235 reward=-0.0000 raw_reward=0.3867 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=5.00e-06
+2025-12-09 08:02:34,506 - INFO - Step 93 loss=-0.3235 reward=-0.0000 raw_reward=0.3867 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=5.00e-06
+2025-12-09 08:02:54,755 - INFO - Step 93 loss=-0.3235 reward=-0.0000 raw_reward=0.3867 accuracy=0.6000 kl=0.0000 code_err=0.0556 lr=5.00e-06
+2025-12-09 08:07:56,846 - INFO - Step 96 loss=-0.3137 reward=-0.0000 raw_reward=0.4244 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:08:07,994 - INFO - Step 96 loss=-0.3137 reward=-0.0000 raw_reward=0.4244 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:09:20,341 - INFO - Step 96 loss=-0.3137 reward=-0.0000 raw_reward=0.4244 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:09:43,297 - INFO - Step 96 loss=-0.3137 reward=-0.0000 raw_reward=0.4244 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:09:57,454 - INFO - Step 96 loss=-0.3137 reward=-0.0000 raw_reward=0.4244 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:10:33,690 - INFO - Step 96 loss=-0.3137 reward=-0.0000 raw_reward=0.4244 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:15:27,611 - INFO - Step 99 loss=-0.2610 reward=-0.0000 raw_reward=0.2611 accuracy=0.5444 kl=0.0000 code_err=0.0444 lr=4.99e-06
+2025-12-09 08:15:47,818 - INFO - Step 99 loss=-0.2610 reward=-0.0000 raw_reward=0.2611 accuracy=0.5444 kl=0.0000 code_err=0.0444 lr=4.99e-06
+2025-12-09 08:16:04,371 - INFO - Step 99 loss=-0.2610 reward=-0.0000 raw_reward=0.2611 accuracy=0.5444 kl=0.0000 code_err=0.0444 lr=4.99e-06
+2025-12-09 08:16:23,125 - INFO - Step 99 loss=-0.2610 reward=-0.0000 raw_reward=0.2611 accuracy=0.5444 kl=0.0000 code_err=0.0444 lr=4.99e-06
+2025-12-09 08:16:42,637 - INFO - Step 99 loss=-0.2610 reward=-0.0000 raw_reward=0.2611 accuracy=0.5444 kl=0.0000 code_err=0.0444 lr=4.99e-06
+2025-12-09 08:16:58,340 - INFO - Step 99 loss=-0.2610 reward=-0.0000 raw_reward=0.2611 accuracy=0.5444 kl=0.0000 code_err=0.0444 lr=4.99e-06
+2025-12-09 08:21:29,127 - INFO - Step 102 loss=-0.3780 reward=-0.0000 raw_reward=0.2622 accuracy=0.5333 kl=0.0000 code_err=0.0667 lr=4.99e-06
+2025-12-09 08:21:47,972 - INFO - Step 102 loss=-0.3780 reward=-0.0000 raw_reward=0.2622 accuracy=0.5333 kl=0.0000 code_err=0.0667 lr=4.99e-06
+2025-12-09 08:22:07,092 - INFO - Step 102 loss=-0.3780 reward=-0.0000 raw_reward=0.2622 accuracy=0.5333 kl=0.0000 code_err=0.0667 lr=4.99e-06
+2025-12-09 08:22:32,696 - INFO - Step 102 loss=-0.3780 reward=-0.0000 raw_reward=0.2622 accuracy=0.5333 kl=0.0000 code_err=0.0667 lr=4.99e-06
+2025-12-09 08:22:53,077 - INFO - Step 102 loss=-0.3780 reward=-0.0000 raw_reward=0.2622 accuracy=0.5333 kl=0.0000 code_err=0.0667 lr=4.99e-06
+2025-12-09 08:23:09,030 - INFO - Step 102 loss=-0.3780 reward=-0.0000 raw_reward=0.2622 accuracy=0.5333 kl=0.0000 code_err=0.0667 lr=4.99e-06
+2025-12-09 08:26:41,055 - INFO - Step 105 loss=-0.3908 reward=-0.0000 raw_reward=0.2778 accuracy=0.5556 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:26:55,447 - INFO - Step 105 loss=-0.3908 reward=-0.0000 raw_reward=0.2778 accuracy=0.5556 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:27:14,492 - INFO - Step 105 loss=-0.3908 reward=-0.0000 raw_reward=0.2778 accuracy=0.5556 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:27:27,472 - INFO - Step 105 loss=-0.3908 reward=-0.0000 raw_reward=0.2778 accuracy=0.5556 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:27:43,856 - INFO - Step 105 loss=-0.3908 reward=-0.0000 raw_reward=0.2778 accuracy=0.5556 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:28:05,446 - INFO - Step 105 loss=-0.3908 reward=-0.0000 raw_reward=0.2778 accuracy=0.5556 kl=0.0000 code_err=0.0222 lr=4.99e-06
+2025-12-09 08:32:29,700 - INFO - Step 108 loss=-0.2752 reward=-0.0000 raw_reward=0.3889 accuracy=0.6000 kl=0.0000 code_err=0.0222 lr=4.98e-06
+2025-12-09 08:32:58,605 - INFO - Step 108 loss=-0.2752 reward=-0.0000 raw_reward=0.3889 accuracy=0.6000 kl=0.0000 code_err=0.0222 lr=4.98e-06
+2025-12-09 08:33:40,728 - INFO - Step 108 loss=-0.2752 reward=-0.0000 raw_reward=0.3889 accuracy=0.6000 kl=0.0000 code_err=0.0222 lr=4.98e-06
+2025-12-09 08:34:07,682 - INFO - Step 108 loss=-0.2752 reward=-0.0000 raw_reward=0.3889 accuracy=0.6000 kl=0.0000 code_err=0.0222 lr=4.98e-06
+2025-12-09 08:34:24,835 - INFO - Step 108 loss=-0.2752 reward=-0.0000 raw_reward=0.3889 accuracy=0.6000 kl=0.0000 code_err=0.0222 lr=4.98e-06
+2025-12-09 08:34:44,077 - INFO - Step 108 loss=-0.2752 reward=-0.0000 raw_reward=0.3889 accuracy=0.6000 kl=0.0000 code_err=0.0222 lr=4.98e-06
+2025-12-09 08:39:38,530 - INFO - Step 111 loss=-0.3418 reward=0.0000 raw_reward=0.2878 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.98e-06
+2025-12-09 08:39:50,136 - INFO - Step 111 loss=-0.3418 reward=0.0000 raw_reward=0.2878 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.98e-06
+2025-12-09 08:40:21,510 - INFO - Step 111 loss=-0.3418 reward=0.0000 raw_reward=0.2878 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.98e-06
+2025-12-09 08:40:47,517 - INFO - Step 111 loss=-0.3418 reward=0.0000 raw_reward=0.2878 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.98e-06
+2025-12-09 08:41:16,073 - INFO - Step 111 loss=-0.3418 reward=0.0000 raw_reward=0.2878 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.98e-06
+2025-12-09 08:41:41,742 - INFO - Step 111 loss=-0.3418 reward=0.0000 raw_reward=0.2878 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.98e-06
+2025-12-09 08:45:25,418 - INFO - Step 114 loss=-0.3872 reward=-0.0000 raw_reward=0.6456 accuracy=0.7333 kl=0.0000 code_err=0.0111 lr=4.97e-06
+2025-12-09 08:45:37,781 - INFO - Step 114 loss=-0.3872 reward=-0.0000 raw_reward=0.6456 accuracy=0.7333 kl=0.0000 code_err=0.0111 lr=4.97e-06
+2025-12-09 08:45:55,065 - INFO - Step 114 loss=-0.3872 reward=-0.0000 raw_reward=0.6456 accuracy=0.7333 kl=0.0000 code_err=0.0111 lr=4.97e-06
+2025-12-09 08:46:12,813 - INFO - Step 114 loss=-0.3872 reward=-0.0000 raw_reward=0.6456 accuracy=0.7333 kl=0.0000 code_err=0.0111 lr=4.97e-06
+2025-12-09 08:46:36,398 - INFO - Step 114 loss=-0.3872 reward=-0.0000 raw_reward=0.6456 accuracy=0.7333 kl=0.0000 code_err=0.0111 lr=4.97e-06
+2025-12-09 08:46:51,283 - INFO - Step 114 loss=-0.3872 reward=-0.0000 raw_reward=0.6456 accuracy=0.7333 kl=0.0000 code_err=0.0111 lr=4.97e-06
+2025-12-09 08:51:38,385 - INFO - Step 117 loss=-0.2382 reward=-0.0000 raw_reward=0.2378 accuracy=0.5222 kl=0.0000 code_err=0.0556 lr=4.97e-06
+2025-12-09 08:51:59,776 - INFO - Step 117 loss=-0.2382 reward=-0.0000 raw_reward=0.2378 accuracy=0.5222 kl=0.0000 code_err=0.0556 lr=4.97e-06
+2025-12-09 08:52:41,920 - INFO - Step 117 loss=-0.2382 reward=-0.0000 raw_reward=0.2378 accuracy=0.5222 kl=0.0000 code_err=0.0556 lr=4.97e-06
+2025-12-09 08:52:53,471 - INFO - Step 117 loss=-0.2382 reward=-0.0000 raw_reward=0.2378 accuracy=0.5222 kl=0.0000 code_err=0.0556 lr=4.97e-06
+2025-12-09 08:53:13,472 - INFO - Step 117 loss=-0.2382 reward=-0.0000 raw_reward=0.2378 accuracy=0.5222 kl=0.0000 code_err=0.0556 lr=4.97e-06
+2025-12-09 08:53:44,341 - INFO - Step 117 loss=-0.2382 reward=-0.0000 raw_reward=0.2378 accuracy=0.5222 kl=0.0000 code_err=0.0556 lr=4.97e-06
+2025-12-09 08:57:28,309 - INFO - Step 120 loss=-0.6177 reward=-0.0000 raw_reward=0.2211 accuracy=0.4778 kl=0.0000 code_err=0.0000 lr=4.96e-06
+2025-12-09 08:58:04,725 - INFO - Step 120 loss=-0.6177 reward=-0.0000 raw_reward=0.2211 accuracy=0.4778 kl=0.0000 code_err=0.0000 lr=4.96e-06
+2025-12-09 08:58:23,367 - INFO - Step 120 loss=-0.6177 reward=-0.0000 raw_reward=0.2211 accuracy=0.4778 kl=0.0000 code_err=0.0000 lr=4.96e-06
+2025-12-09 08:58:39,972 - INFO - Step 120 loss=-0.6177 reward=-0.0000 raw_reward=0.2211 accuracy=0.4778 kl=0.0000 code_err=0.0000 lr=4.96e-06
+2025-12-09 08:58:55,758 - INFO - Step 120 loss=-0.6177 reward=-0.0000 raw_reward=0.2211 accuracy=0.4778 kl=0.0000 code_err=0.0000 lr=4.96e-06
+2025-12-09 08:59:04,602 - INFO - Step 120 loss=-0.6177 reward=-0.0000 raw_reward=0.2211 accuracy=0.4778 kl=0.0000 code_err=0.0000 lr=4.96e-06
+2025-12-09 09:03:26,017 - INFO - Step 123 loss=-0.3188 reward=-0.0000 raw_reward=0.4267 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.96e-06
+2025-12-09 09:03:38,482 - INFO - Step 123 loss=-0.3188 reward=-0.0000 raw_reward=0.4267 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.96e-06
+2025-12-09 09:03:59,544 - INFO - Step 123 loss=-0.3188 reward=-0.0000 raw_reward=0.4267 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.96e-06
+2025-12-09 09:04:24,793 - INFO - Step 123 loss=-0.3188 reward=-0.0000 raw_reward=0.4267 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.96e-06
+2025-12-09 09:04:36,805 - INFO - Step 123 loss=-0.3188 reward=-0.0000 raw_reward=0.4267 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.96e-06
+2025-12-09 09:04:49,395 - INFO - Step 123 loss=-0.3188 reward=-0.0000 raw_reward=0.4267 accuracy=0.6222 kl=0.0000 code_err=0.0222 lr=4.96e-06
+2025-12-09 09:09:39,561 - INFO - Step 126 loss=-0.3846 reward=-0.0000 raw_reward=0.2378 accuracy=0.5000 kl=0.0000 code_err=0.0333 lr=4.95e-06
+2025-12-09 09:09:56,343 - INFO - Step 126 loss=-0.3846 reward=-0.0000 raw_reward=0.2378 accuracy=0.5000 kl=0.0000 code_err=0.0333 lr=4.95e-06
+2025-12-09 09:10:15,821 - INFO - Step 126 loss=-0.3846 reward=-0.0000 raw_reward=0.2378 accuracy=0.5000 kl=0.0000 code_err=0.0333 lr=4.95e-06
+2025-12-09 09:10:27,331 - INFO - Step 126 loss=-0.3846 reward=-0.0000 raw_reward=0.2378 accuracy=0.5000 kl=0.0000 code_err=0.0333 lr=4.95e-06
+2025-12-09 09:10:45,295 - INFO - Step 126 loss=-0.3846 reward=-0.0000 raw_reward=0.2378 accuracy=0.5000 kl=0.0000 code_err=0.0333 lr=4.95e-06
+2025-12-09 09:11:17,084 - INFO - Step 126 loss=-0.3846 reward=-0.0000 raw_reward=0.2378 accuracy=0.5000 kl=0.0000 code_err=0.0333 lr=4.95e-06
+2025-12-09 09:15:34,314 - INFO - Step 129 loss=-0.3813 reward=-0.0000 raw_reward=0.3256 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.95e-06
+2025-12-09 09:15:49,787 - INFO - Step 129 loss=-0.3813 reward=-0.0000 raw_reward=0.3256 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.94e-06
+2025-12-09 09:16:25,796 - INFO - Step 129 loss=-0.3813 reward=-0.0000 raw_reward=0.3256 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.94e-06
+2025-12-09 09:16:41,502 - INFO - Step 129 loss=-0.3813 reward=-0.0000 raw_reward=0.3256 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.94e-06
+2025-12-09 09:16:59,296 - INFO - Step 129 loss=-0.3813 reward=-0.0000 raw_reward=0.3256 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.94e-06
+2025-12-09 09:17:20,320 - INFO - Step 129 loss=-0.3813 reward=-0.0000 raw_reward=0.3256 accuracy=0.5556 kl=0.0000 code_err=0.0556 lr=4.94e-06
+2025-12-09 09:21:18,525 - INFO - Step 132 loss=-0.3997 reward=0.0000 raw_reward=0.2578 accuracy=0.5333 kl=0.0000 code_err=0.0444 lr=4.94e-06
+2025-12-09 09:21:32,587 - INFO - Step 132 loss=-0.3997 reward=0.0000 raw_reward=0.2578 accuracy=0.5333 kl=0.0000 code_err=0.0444 lr=4.94e-06
+2025-12-09 09:22:14,937 - INFO - Step 132 loss=-0.3997 reward=0.0000 raw_reward=0.2578 accuracy=0.5333 kl=0.0000 code_err=0.0444 lr=4.94e-06
+2025-12-09 09:22:39,040 - INFO - Step 132 loss=-0.3997 reward=0.0000 raw_reward=0.2578 accuracy=0.5333 kl=0.0000 code_err=0.0444 lr=4.94e-06
+2025-12-09 09:23:00,380 - INFO - Step 132 loss=-0.3997 reward=0.0000 raw_reward=0.2578 accuracy=0.5333 kl=0.0000 code_err=0.0444 lr=4.94e-06
+2025-12-09 09:23:12,518 - INFO - Step 132 loss=-0.3997 reward=0.0000 raw_reward=0.2578 accuracy=0.5333 kl=0.0000 code_err=0.0444 lr=4.94e-06
+2025-12-09 09:24:13,749 - INFO - Epoch 1 Summary:
+2025-12-09 09:24:13,750 - INFO -   loss: -0.2566
+2025-12-09 09:24:13,750 - INFO -   reward: -0.0000
+2025-12-09 09:24:13,750 - INFO -   raw_reward: 0.4142
+2025-12-09 09:24:13,750 - INFO -   accuracy: 0.6246
+2025-12-09 09:24:13,750 - INFO -   kl_penalty: 0.0000
+2025-12-09 09:24:13,751 - INFO -   lr: 0.0000
+2025-12-09 09:24:13,751 - INFO -   code_error_rate: 0.0413
+2025-12-09 09:24:13,751 - INFO - 
+Running evaluation at end of epoch 1...
+2025-12-09 09:24:13,932 - INFO - Checkpoint saved: results/rl_solver_verifier_20251209_043506/epoch_1
+2025-12-09 09:24:13,932 - INFO - ================================================================================
+2025-12-09 09:24:13,933 - INFO - Training completed!
+2025-12-09 09:24:13,933 - INFO - ================================================================================
+2025-12-09 09:24:17,106 - INFO - Training finished successfully!

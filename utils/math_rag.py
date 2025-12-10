@@ -1,12 +1,12 @@
 """
 Math RAG (Retrieval-Augmented Generation) Module
-从训练集中检索相似的数学题目作为 few-shot examples
+Retrieve similar math problems from the training set as few-shot examples.
 
-支持两种检索方式:
-1. BM25: 基于关键词的稀疏检索 (快速, 无需GPU)
-2. Embedding: 基于语义的稠密检索 (更准确, 需要额外模型)
+Supports two retrieval methods:
+1. BM25: keyword-based sparse retrieval (fast, no GPU needed).
+2. Embedding: semantic dense retrieval (more accurate, requires an extra model).
 
-使用方式:
+Usage:
     retriever = MathRAGRetriever(dataset_name="gsm8k", method="bm25")
     examples = retriever.retrieve(question, top_k=3)
 """
@@ -22,7 +22,7 @@ from dataclasses import dataclass
 
 @dataclass
 class RetrievedExample:
-    """检索到的例题"""
+    """Retrieved example."""
     question: str
     solution: str
     answer: str
@@ -32,8 +32,8 @@ class RetrievedExample:
 
 class MathRAGRetriever:
     """
-    数学题目检索器
-    从训练集中检索相似题目作为 few-shot examples
+    Math problem retriever.
+    Fetch similar problems from the training set as few-shot examples.
     """
     
     def __init__(
@@ -44,13 +44,13 @@ class MathRAGRetriever:
         cache_dir: Optional[str] = None
     ):
         """
-        初始化检索器
+        Initialize the retriever.
         
         Args:
-            dataset_name: 数据集名称 (gsm8k, math500)
-            method: 检索方法 (bm25, embedding)
-            base_path: 项目根目录
-            cache_dir: 缓存目录
+            dataset_name: Dataset name (gsm8k, math500)
+            method: Retrieval method (bm25, embedding)
+            base_path: Project root
+            cache_dir: Cache directory
         """
         self.dataset_name = dataset_name
         self.method = method
@@ -73,7 +73,7 @@ class MathRAGRetriever:
         self._build_index()
     
     def _load_knowledge_base(self):
-        """加载训练集作为知识库"""
+        """Load the training set as the knowledge base."""
         from datasets import load_from_disk
         
         dataset_path = self.base_path / "data" / self.dataset_name
@@ -83,15 +83,15 @@ class MathRAGRetriever:
         
         dataset = load_from_disk(str(dataset_path))
         
-        # 使用训练集作为知识库
+        # Use the training split as the knowledge base
         if "train" in dataset:
             train_data = dataset["train"]
         else:
-            # 如果没有训练集，使用测试集的一部分 (不推荐)
+            # If no training split, fall back to part of the test set (not recommended)
             print(f"WARNING: No train split found for {self.dataset_name}, using test split")
             train_data = dataset["test"]
         
-        # 解析数据
+        # Parse samples
         for idx, example in enumerate(train_data):
             doc = self._parse_example(example, idx)
             if doc:
@@ -100,12 +100,12 @@ class MathRAGRetriever:
         print(f"Loaded {len(self.documents)} examples from {self.dataset_name} train set")
     
     def _parse_example(self, example: dict, idx: int) -> Optional[Dict]:
-        """解析单个样本"""
+        """Parse a single sample."""
         if self.dataset_name == "gsm8k":
             question = example.get("question", "")
             full_answer = example.get("answer", "")
             
-            # GSM8K格式: solution #### answer
+            # GSM8K format: solution #### answer
             if "####" in full_answer:
                 parts = full_answer.split("####")
                 solution = parts[0].strip()
@@ -119,14 +119,14 @@ class MathRAGRetriever:
                 "question": question,
                 "solution": solution,
                 "answer": answer,
-                "text": question  # 用于检索的文本
+                "text": question  # Text used for retrieval
             }
         
         elif self.dataset_name in ["math", "math500"]:
             question = example.get("problem", "")
             solution = example.get("solution", "")
             
-            # 提取 \boxed{} 中的答案
+            # Extract the answer inside \boxed{}
             boxed_match = re.search(r'\\boxed\{([^}]+)\}', solution)
             if boxed_match:
                 answer = boxed_match.group(1)
@@ -144,7 +144,7 @@ class MathRAGRetriever:
         return None
     
     def _build_index(self):
-        """构建检索索引"""
+        """Build the retrieval index."""
         cache_file = self.cache_dir / f"{self.dataset_name}_{self.method}_index.pkl"
         
         # 尝试加载缓存
@@ -157,7 +157,7 @@ class MathRAGRetriever:
             except Exception as e:
                 print(f"Failed to load cache: {e}, rebuilding index...")
         
-        # 构建新索引
+        # Build a fresh index
         if self.method == "bm25":
             self._build_bm25_index()
         elif self.method == "embedding":
@@ -174,13 +174,13 @@ class MathRAGRetriever:
             print(f"Failed to save cache: {e}")
     
     def _build_bm25_index(self):
-        """构建 BM25 索引"""
+        """Build the BM25 index."""
         try:
             from rank_bm25 import BM25Okapi
         except ImportError:
             raise ImportError("Please install rank_bm25: pip install rank-bm25")
         
-        # 分词 (简单的空格分词 + 小写)
+        # Tokenize (simple whitespace split + lowercase)
         tokenized_docs = []
         for doc in self.documents:
             tokens = self._tokenize(doc["text"])
@@ -190,7 +190,7 @@ class MathRAGRetriever:
         print(f"Built BM25 index with {len(tokenized_docs)} documents")
     
     def _build_embedding_index(self):
-        """构建 Embedding 索引"""
+        """Build the embedding index."""
         try:
             from sentence_transformers import SentenceTransformer
             import numpy as np
@@ -214,14 +214,14 @@ class MathRAGRetriever:
         print(f"Built embedding index with {len(embeddings)} documents")
     
     def _tokenize(self, text: str) -> List[str]:
-        """简单分词"""
-        # 转小写
+        """Simple tokenizer."""
+        # Lowercase
         text = text.lower()
-        # 移除标点 (保留数字)
+        # Remove punctuation (keep digits)
         text = re.sub(r'[^\w\s]', ' ', text)
-        # 分词
+        # Split into tokens
         tokens = text.split()
-        # 移除停用词 (简单版本)
+        # Remove stopwords (lightweight list)
         stopwords = {'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 
                      'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
                      'would', 'could', 'should', 'may', 'might', 'must', 'shall',
@@ -241,15 +241,15 @@ class MathRAGRetriever:
         exclude_indices: Optional[List[int]] = None
     ) -> List[RetrievedExample]:
         """
-        检索相似题目
+        Retrieve similar problems.
         
         Args:
-            query: 查询问题
-            top_k: 返回的例题数量
-            exclude_indices: 要排除的索引 (避免检索到测试题本身)
+            query: Query text
+            top_k: Number of examples to return
+            exclude_indices: Indices to exclude (avoid retrieving the test item itself)
         
         Returns:
-            检索到的例题列表
+            List of retrieved examples
         """
         if exclude_indices is None:
             exclude_indices = []
@@ -267,7 +267,7 @@ class MathRAGRetriever:
         top_k: int,
         exclude_indices: List[int]
     ) -> List[RetrievedExample]:
-        """BM25 检索"""
+        """BM25 retrieval."""
         query_tokens = self._tokenize(query)
         scores = self.index.get_scores(query_tokens)
         
@@ -275,7 +275,7 @@ class MathRAGRetriever:
         scored_indices = [(i, s) for i, s in enumerate(scores) if i not in exclude_indices]
         scored_indices.sort(key=lambda x: x[1], reverse=True)
         
-        # 取 top-k
+        # Take top-k results
         results = []
         for idx, score in scored_indices[:top_k]:
             doc = self.documents[idx]
@@ -295,7 +295,7 @@ class MathRAGRetriever:
         top_k: int,
         exclude_indices: List[int]
     ) -> List[RetrievedExample]:
-        """Embedding 检索"""
+        """Embedding retrieval."""
         import numpy as np
         
         encoder = self.index["encoder"]
@@ -313,7 +313,7 @@ class MathRAGRetriever:
         scored_indices = [(i, s) for i, s in enumerate(similarities) if i not in exclude_indices]
         scored_indices.sort(key=lambda x: x[1], reverse=True)
         
-        # 取 top-k
+        # Take top-k results
         results = []
         for idx, score in scored_indices[:top_k]:
             doc = self.documents[idx]
@@ -334,15 +334,15 @@ class MathRAGRetriever:
         max_solution_length: int = 500
     ) -> str:
         """
-        将检索到的例题格式化为 few-shot prompt
+        Format retrieved examples as a few-shot prompt.
         
         Args:
-            examples: 检索到的例题列表
-            include_solution: 是否包含解题过程
-            max_solution_length: 解题过程的最大长度
+            examples: Retrieved example list
+            include_solution: Whether to include the solution steps
+            max_solution_length: Maximum length of the solution text
         
         Returns:
-            格式化的 few-shot prompt
+            Formatted few-shot prompt
         """
         if not examples:
             return ""
@@ -360,20 +360,20 @@ class MathRAGRetriever:
                 prompt_parts.append(f"Solution: {solution}")
             
             prompt_parts.append(f"Answer: {ex.answer}")
-            prompt_parts.append("")  # 空行分隔
+            prompt_parts.append("")  # Blank line separator
         
         prompt_parts.append("Now solve this problem:\n")
         
         return "\n".join(prompt_parts)
 
 
-# 便捷函数
+# Convenience helper
 def create_retriever(
     dataset_name: str = "gsm8k",
     method: str = "bm25",
     base_path: Optional[str] = None
 ) -> MathRAGRetriever:
-    """创建检索器的便捷函数"""
+    """Convenience function to create a retriever."""
     return MathRAGRetriever(
         dataset_name=dataset_name,
         method=method,
@@ -381,7 +381,7 @@ def create_retriever(
     )
 
 
-# 测试代码
+# Test code
 if __name__ == "__main__":
     print("=" * 80)
     print("Math RAG Retriever - Test")
@@ -405,7 +405,7 @@ if __name__ == "__main__":
         print(f"Question: {ex.question[:100]}...")
         print(f"Answer: {ex.answer}")
     
-    # 格式化为 prompt
+    # Format to prompt
     print("\n" + "=" * 80)
     print("Formatted Few-Shot Prompt:")
     print("=" * 80)

@@ -16,8 +16,6 @@ checkpoints/
 data/
 docs/
 
-# Evaluation results
-results/
 
 # Cache directories
 cache/
@@ -46,9 +44,7 @@ cache/
 # Weights & Biases
 wandb/
 
-# Log files
-logs/
-*.log
+# Log files (allow tracking under logs/)
 
 # ------------------------------------------------------------------------------
 # Python

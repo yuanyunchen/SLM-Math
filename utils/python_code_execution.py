@@ -1,12 +1,12 @@
 """
 Python Code Execution Utility
-从模型输出中提取Python代码，执行并返回结果
+Extract Python code from model output, execute it, and return results.
 
-用于帮助小模型完成精确计算：
-1. 模型生成 ```python ... ``` 代码块
-2. 自动执行代码
-3. 返回 ```output ... ``` 格式的结果
-4. 模型基于准确结果继续推理
+Helps small models perform precise calculations:
+1. Model generates ```python ... ``` code blocks.
+2. Code is executed automatically.
+3. Results are returned in ```output ... ``` format.
+4. The model can reason further based on accurate results.
 """
 
 import re
@@ -31,10 +31,10 @@ def timeout_handler(signum, frame):
 
 def extract_python_code_blocks(text: str) -> List[str]:
     """
-    从文本中提取所有Python代码块
+    Extract all Python code blocks from text.
     
     Args:
-        text: 包含代码块的文本
+        text: Text that may contain code blocks
     
     Returns:
         List of code strings
@@ -57,12 +57,12 @@ def execute_python_code(
     max_output_length: int = 1000
 ) -> Dict[str, any]:
     """
-    安全地执行Python代码并捕获输出
+    Safely execute Python code and capture output.
     
     Args:
-        code: Python代码字符串
-        timeout: 执行超时时间（秒）
-        max_output_length: 最大输出长度
+        code: Python code string
+        timeout: Execution timeout (seconds)
+        max_output_length: Maximum output length
     
     Returns:
         Dictionary with:
@@ -130,10 +130,10 @@ def execute_python_code(
 
 def format_execution_result(exec_result: Dict) -> str:
     """
-    将执行结果格式化为模型可读的输出
+    Format execution result into model-friendly output.
     
     Args:
-        exec_result: execute_python_code返回的结果字典
+        exec_result: Result dictionary returned by execute_python_code
     
     Returns:
         Formatted string like:
@@ -158,18 +158,18 @@ def process_text_with_code_execution(
     share_variables: bool = True
 ) -> Tuple[str, List[Dict]]:
     """
-    处理包含代码块的文本，执行代码并插入结果
+    Process text that contains code blocks, execute the code, and inject results.
     
     Args:
-        text: 包含```python```代码块的文本
-        execute_code: 是否实际执行代码
-        timeout: 代码执行超时时间
-        share_variables: 多个代码块之间是否共享变量（默认True）
+        text: Text containing ```python``` code blocks
+        execute_code: Whether to actually execute code
+        timeout: Code execution timeout
+        share_variables: Whether code blocks share variables (default True)
     
     Returns:
         Tuple of:
-            - processed_text: 插入了执行结果的文本
-            - execution_results: 所有执行结果的列表
+            - processed_text: Text with execution results inserted
+            - execution_results: List of all execution results
     """
     if not execute_code:
         return text, []
@@ -268,14 +268,14 @@ def execute_python_code_with_state(
     max_output_length: int = 1000
 ) -> Dict[str, any]:
     """
-    在指定的全局/局部环境中执行代码（支持状态持久化）
+    Execute code within provided global/local scopes (supports state persistence).
     
     Args:
-        code: Python代码字符串
-        exec_globals: 全局变量字典
-        exec_locals: 局部变量字典
-        timeout: 执行超时时间（秒）
-        max_output_length: 最大输出长度
+        code: Python code string
+        exec_globals: Global variable dict
+        exec_locals: Local variable dict
+        timeout: Execution timeout (seconds)
+        max_output_length: Maximum output length
     
     Returns:
         Same as execute_python_code

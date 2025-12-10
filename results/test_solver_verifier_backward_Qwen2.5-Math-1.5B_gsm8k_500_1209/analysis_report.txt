@@ -1,0 +1,33 @@
+================================================================================
+AGENT EVALUATION - DETAILED ANALYSIS REPORT
+================================================================================
+
+Configuration:
+--------------------------------------------------------------------------------
+Model: Qwen2.5-Math-1.5B
+Agent Method: solver_verifier_backward
+Dataset: gsm8k
+Timestamp: 2025-12-09T09:35:42.995107
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Samples: 500
+Correct Answers: 372
+Overall Accuracy: 74.40%
+First Try Correct: 372
+First Try Accuracy: 74.40%
+Average Iterations: 0.00
+Total Iterations: 500
+
+Case Type Distribution:
+--------------------------------------------------------------------------------
+Improved Cases (Wrong -> Correct): 0
+Degraded Cases (Correct -> Wrong): 0
+Failed Cases (Wrong -> Wrong): 0
+First Try Success: 372
+Other Cases: 500
+
+Case Examples:
+--------------------------------------------------------------------------------
+
+================================================================================

@@ -1,16 +1,17 @@
 """
 Solver with Interactive Code Execution
-支持交互式代码执行的Solver
+Solver that supports interactive code execution.
 
-核心功能：
-1. 模型生成时检测 ```python...``` 代码块
-2. 代码块结束后立即执行
-3. 将执行结果 ```output...``` 注入上下文
-4. 模型继续生成，可以看到输出结果
-5. 支持多次代码执行和错误处理
+Key capabilities:
+1. Detect ```python...``` code blocks during generation.
+2. Execute the code immediately when the block ends.
+3. Inject execution results as ```output...``` into the context.
+4. Continue generation with visibility of the output.
+5. Support multiple code executions and error handling.
 
-工作流程：
-模型生成 → 检测代码块结束 → 执行代码 → 注入输出 → 继续生成 → ... → 最终答案
+Workflow:
+Model generates → detect end of code block → execute code → inject output →
+continue generation → ... → final answer.
 """
 
 import sys

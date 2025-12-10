@@ -1,0 +1,36 @@
+2025-11-24 21:47:25,464 - INFO - ================================================================================
+2025-11-24 21:47:25,464 - INFO - Training Configuration
+2025-11-24 21:47:25,464 - INFO - ================================================================================
+2025-11-24 21:47:25,464 - INFO - Round Name: final_try_baseline_sft
+2025-11-24 21:47:25,464 - INFO - Mode: sft
+2025-11-24 21:47:25,464 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-11-24 21:47:25,464 - INFO - Data: data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json
+2025-11-24 21:47:25,464 - INFO - Output: checkpoints/final_try_baseline_sft_sft_20251124_214725
+2025-11-24 21:47:25,464 - INFO - Logs: logs/final_try_baseline_sft_sft_20251124_214725
+2025-11-24 21:47:25,464 - INFO - GPUs: 1
+2025-11-24 21:47:25,464 - INFO - Epochs: 5
+2025-11-24 21:47:25,465 - INFO - Batch size: 16
+2025-11-24 21:47:25,465 - INFO - Gradient accumulation: 4
+2025-11-24 21:47:25,465 - INFO - Max sequence length: 2048
+2025-11-24 21:47:25,465 - INFO - Gradient checkpointing: False
+2025-11-24 21:47:25,465 - INFO - Enable evaluation: True
+2025-11-24 21:47:25,465 - INFO - Evaluation frequency: every 1 epoch(s)
+2025-11-24 21:47:25,465 - INFO - ================================================================================
+2025-11-24 21:47:25,465 - INFO - Loading data from: data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json
+2025-11-24 21:47:26,199 - INFO - Filtered to 18946 correct samples
+2025-11-24 21:47:26,199 - INFO - Total samples: 18946
+2025-11-24 21:47:26,199 - INFO - Sample columns: ['index', 'question', 'ground_truth', 'predicted_answer', 'thinking_process', 'solution', 'raw_output', 'teacher_model', 'tokens_used', 'finish_reason', 'correct', 'status', '_validation', 'generation_round', 'dataset', 'attempt_count', 'attempts_history']
+2025-11-24 21:47:26,199 - INFO - Sample question: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How m...
+2025-11-24 21:47:26,837 - INFO - Training dataset size: 18946
+2025-11-24 21:47:26,888 - INFO - Loading model: pretrained_models/Qwen2.5-Math-1.5B
+2025-11-24 21:47:28,211 - INFO - Model loaded on: cuda:0
+2025-11-24 21:47:28,211 - INFO - Dataset size: 18946
+2025-11-24 21:47:28,211 - INFO - Steps per epoch: 297
+2025-11-24 21:47:28,212 - INFO - Save checkpoint every 297 steps (1 epochs)
+2025-11-24 21:47:28,212 - INFO - 
+Loading evaluation datasets...
+2025-11-24 21:47:28,212 - INFO - Evaluation will run every 1 epoch(s)
+2025-11-24 21:47:28,218 - INFO - Loaded 500 samples from gsm8k
+2025-11-24 21:47:28,220 - INFO - Loaded 500 samples from math500
+2025-11-24 21:47:28,221 - INFO - Loaded evaluation datasets: ['gsm8k', 'math500']
+2025-11-24 21:47:28,221 - INFO - Training metrics will be saved to: logs/final_try_baseline_sft_sft_20251124_214725/training_metrics.csv

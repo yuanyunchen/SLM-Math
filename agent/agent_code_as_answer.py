@@ -1,20 +1,20 @@
 """
-Agent Code as Answer - 直接使用代码执行结果作为答案
+Agent Code as Answer - directly use code execution results as the answer
 
-工作流程：
-1. 模型生成 reasoning + Python 代码
-2. 执行代码获取结果
-3. 直接使用执行结果作为最终答案（不再让模型生成）
+Workflow:
+1. The model generates reasoning + Python code.
+2. Execute the code to obtain a result.
+3. Use the execution result directly as the final answer (skip model re-generation).
 
-与其他 agent 的区别：
-- agent_with_python_tools: 模型生成答案，代码执行只是辅助
-- agent_with_code_feedback: 模型看到执行结果后再生成答案
-- agent_code_as_answer: 直接用代码执行结果作为答案
+Differences from other agents:
+- agent_with_python_tools: the model generates the answer; code execution is only auxiliary.
+- agent_with_code_feedback: the model sees execution results and then generates the answer.
+- agent_code_as_answer: directly uses the code execution result as the answer.
 
-适用场景：
-- 信任代码计算结果
-- 模型容易在最后一步算错
-- 需要精确数值计算的问题
+When to use:
+- You trust the computed result from code.
+- The model tends to miscalculate in the final step.
+- Problems require precise numeric computation.
 """
 
 import sys
@@ -35,7 +35,8 @@ def run_agent_code_as_answer(
     dataset_name: str = "",
     enable_tools: bool = True,
     greedy: bool = True,
-    apply_chat_template: bool = False
+    apply_chat_template: bool = False,
+    use_tool_instruction: bool = False,
 ) -> Dict:
     """
     Run agent that uses code execution result as the final answer
@@ -65,11 +66,13 @@ def run_agent_code_as_answer(
         print(f"Question: {question[:100]}...")
         print(f"Python Tools: {'Enabled' if enable_tools else 'Disabled'}")
         print(f"Greedy: {greedy}")
+        if use_tool_instruction and enable_tools:
+            print(f"Tool Instruction: ON")
         print(f"{'='*80}\n")
     
     # Build prompt (avoid triple backticks in instruction which confuse some models)
     tool_instruction = ""
-    if enable_tools:
+    if enable_tools and use_tool_instruction:
         tool_instruction = "\n\nYou may use Python code to help with calculations. Show your reasoning step by step."
     
     prompt = format_prompt_standard(question, dataset_name) + tool_instruction

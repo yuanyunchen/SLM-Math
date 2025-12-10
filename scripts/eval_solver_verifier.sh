@@ -13,18 +13,19 @@ set -e
 # Model
 MODEL="Qwen2.5-Math-1.5B"
 
-# Checkpoint path (optional)
-CHECKPOINT=""
+# Checkpoint path (optional) - use the latest RL checkpoint (epoch_1) from the recent run
+CHECKPOINT="checkpoints/sft_full_lr5e5_ckpt298_81.6acc"
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-1}"
 
 # Agent method (fixed for this script)
 AGENT="solver_verifier"
 
 # Test round name
-ROUND_NAME="test_solver_verifier"
+ROUND_NAME="test_solver_verifier_sft_reasoning"
 
 # Dataset
 # Options: gsm8k, math500, math
-DATASET="math500"
+DATASET="gsm8k"
 
 # Number of test cases (0 = full dataset)
 COUNT=500
@@ -33,10 +34,10 @@ COUNT=500
 MAX_ITERATIONS=3
 
 # Detailed output
-DETAILED="false"
+DETAILED="true"
 
 # Apply chat template (for chat-tuned models)
-APPLY_CHAT_TEMPLATE="false"
+APPLY_CHAT_TEMPLATE="true"
 
 # Resume from existing results (leave empty to start fresh)
 RESUME_DIR=""

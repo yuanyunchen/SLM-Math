@@ -1,0 +1,49 @@
+2025-11-26 09:05:09,832 - INFO - ================================================================================
+2025-11-26 09:05:09,832 - INFO - Training Configuration
+2025-11-26 09:05:09,832 - INFO - ================================================================================
+2025-11-26 09:05:09,832 - INFO - Round Name: lora_r16_1ep
+2025-11-26 09:05:09,832 - INFO - Mode: lora
+2025-11-26 09:05:09,832 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-11-26 09:05:09,832 - INFO - Data: data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json
+2025-11-26 09:05:09,832 - INFO - Output: checkpoints/lora_r16_1ep_lora_r16_20251126_090509
+2025-11-26 09:05:09,832 - INFO - Logs: logs/lora_r16_1ep_lora_r16_20251126_090509
+2025-11-26 09:05:09,832 - INFO - GPUs: 1
+2025-11-26 09:05:09,832 - INFO - Epochs: 1
+2025-11-26 09:05:09,832 - INFO - Batch size: 16
+2025-11-26 09:05:09,832 - INFO - Gradient accumulation: 4
+2025-11-26 09:05:09,832 - INFO - Max sequence length: 2048
+2025-11-26 09:05:09,832 - INFO - Gradient checkpointing: True
+2025-11-26 09:05:09,833 - INFO - Enable evaluation: True
+2025-11-26 09:05:09,833 - INFO - Evaluation frequency: every 1 epoch(s)
+2025-11-26 09:05:09,833 - INFO - LoRA rank: 16
+2025-11-26 09:05:09,833 - INFO - ================================================================================
+2025-11-26 09:05:09,833 - INFO - Loading data from: data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json
+2025-11-26 09:05:10,565 - INFO - Filtered to 18946 correct samples
+2025-11-26 09:05:10,565 - INFO - Total samples: 18946
+2025-11-26 09:05:10,565 - INFO - Sample columns: ['index', 'question', 'ground_truth', 'predicted_answer', 'thinking_process', 'solution', 'raw_output', 'teacher_model', 'tokens_used', 'finish_reason', 'correct', 'status', '_validation', 'generation_round', 'dataset', 'attempt_count', 'attempts_history']
+2025-11-26 09:05:10,565 - INFO - Sample question: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How m...
+2025-11-26 09:05:11,193 - INFO - Training dataset size: 18946
+2025-11-26 09:05:11,219 - INFO - Loading model: pretrained_models/Qwen2.5-Math-1.5B
+2025-11-26 09:05:12,425 - INFO - Model loaded on: cuda:0
+2025-11-26 09:05:12,425 - INFO - Configuring LoRA with rank=16
+2025-11-26 09:05:12,425 - INFO - Dataset size: 18946
+2025-11-26 09:05:12,425 - INFO - Steps per epoch: 297
+2025-11-26 09:05:12,425 - INFO - Save checkpoint every 297 steps (1 epochs)
+2025-11-26 09:05:12,425 - INFO - 
+Loading evaluation datasets...
+2025-11-26 09:05:12,425 - INFO - Evaluation will run every 1 epoch(s)
+2025-11-26 09:05:12,431 - INFO - Loaded 500 samples from gsm8k
+2025-11-26 09:05:12,433 - INFO - Loaded 500 samples from math500
+2025-11-26 09:05:12,434 - INFO - Loaded evaluation datasets: ['gsm8k', 'math500']
+2025-11-26 09:05:12,434 - INFO - Training metrics will be saved to: logs/lora_r16_1ep_lora_r16_20251126_090509/training_metrics.csv
+2025-11-26 09:05:12,434 - INFO - Using learning rate: 0.0001
+2025-11-26 09:05:57,888 - INFO - Starting training...
+2025-11-26 10:32:15,277 - INFO - Epoch 1.0 completed at step 297
+2025-11-26 10:32:15,277 - INFO - 
+================================================================================
+2025-11-26 10:32:15,277 - INFO - Running evaluation at epoch 1
+2025-11-26 10:32:15,277 - INFO - ================================================================================
+2025-11-26 10:32:15,278 - INFO - Evaluating on gsm8k...
+2025-11-26 12:25:16,856 - INFO - Saved 10 sample logs to logs/lora_r16_1ep_lora_r16_20251126_090509/eval_samples_gsm8k_20251126_122516.txt
+2025-11-26 12:25:16,856 - INFO -   gsm8k accuracy: 0.8320
+2025-11-26 12:25:16,856 - INFO - Evaluating on math500...

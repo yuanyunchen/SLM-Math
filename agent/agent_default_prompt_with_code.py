@@ -1,19 +1,19 @@
 """
 Agent with Default Prompt + Code Execution
-使用默认 prompt，检测代码后执行并反馈
+Use the default prompt, detect code, execute it, and feed back results.
 
-工作流程：
-1. 使用默认 prompt（无 tool instruction）让模型生成
-2. 如果检测到 Python 代码，执行并将结果注入
-3. 模型看到执行结果，继续生成 \boxed{} 答案
+Workflow:
+1. Use the default prompt (no tool instruction) to let the model generate.
+2. If Python code is detected, execute it and inject the results.
+3. The model sees execution results and continues to generate the \boxed{} answer.
 
-与 agent_with_code_feedback 的区别：
-- 本文件：使用默认 prompt，不提示模型可以用代码
-- agent_with_code_feedback：在 prompt 中告诉模型可以用 Python 代码
+Difference from agent_with_code_feedback:
+- This file: uses the default prompt and does not tell the model it can use code.
+- agent_with_code_feedback: explicitly tells the model in the prompt that it may use Python code.
 
-适用场景：
-- 测试模型在无提示下自主使用代码的能力
-- 保持 prompt 一致性的同时支持代码执行
+When to use:
+- Test the model's ability to use code without being prompted.
+- Keep prompt consistency while still supporting code execution.
 """
 
 import sys

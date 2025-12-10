@@ -1,0 +1,48 @@
+2025-11-25 19:03:36,548 - INFO - ================================================================================
+2025-11-25 19:03:36,548 - INFO - Training Configuration
+2025-11-25 19:03:36,548 - INFO - ================================================================================
+2025-11-25 19:03:36,548 - INFO - Round Name: lora_r32
+2025-11-25 19:03:36,549 - INFO - Mode: lora
+2025-11-25 19:03:36,549 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-11-25 19:03:36,549 - INFO - Data: data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json
+2025-11-25 19:03:36,549 - INFO - Output: checkpoints/lora_r32_lora_r32_20251125_190336
+2025-11-25 19:03:36,549 - INFO - Logs: logs/lora_r32_lora_r32_20251125_190336
+2025-11-25 19:03:36,549 - INFO - GPUs: 1
+2025-11-25 19:03:36,549 - INFO - Epochs: 2
+2025-11-25 19:03:36,549 - INFO - Batch size: 16
+2025-11-25 19:03:36,549 - INFO - Gradient accumulation: 8
+2025-11-25 19:03:36,549 - INFO - Max sequence length: 2048
+2025-11-25 19:03:36,549 - INFO - Gradient checkpointing: True
+2025-11-25 19:03:36,549 - INFO - Enable evaluation: True
+2025-11-25 19:03:36,549 - INFO - Evaluation frequency: every 999 epoch(s)
+2025-11-25 19:03:36,549 - INFO - LoRA rank: 32
+2025-11-25 19:03:36,549 - INFO - ================================================================================
+2025-11-25 19:03:36,549 - INFO - Loading data from: data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json
+2025-11-25 19:03:37,303 - INFO - Filtered to 18946 correct samples
+2025-11-25 19:03:37,303 - INFO - Total samples: 18946
+2025-11-25 19:03:37,303 - INFO - Sample columns: ['index', 'question', 'ground_truth', 'predicted_answer', 'thinking_process', 'solution', 'raw_output', 'teacher_model', 'tokens_used', 'finish_reason', 'correct', 'status', '_validation', 'generation_round', 'dataset', 'attempt_count', 'attempts_history']
+2025-11-25 19:03:37,303 - INFO - Sample question: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How m...
+2025-11-25 19:03:37,922 - INFO - Training dataset size: 18946
+2025-11-25 19:03:37,948 - INFO - Loading model: pretrained_models/Qwen2.5-Math-1.5B
+2025-11-25 19:03:39,344 - INFO - Model loaded on: cuda:0
+2025-11-25 19:03:39,345 - INFO - Configuring LoRA with rank=32
+2025-11-25 19:03:39,345 - INFO - Dataset size: 18946
+2025-11-25 19:03:39,345 - INFO - Steps per epoch: 149
+2025-11-25 19:03:39,345 - INFO - Save checkpoint every 148851 steps (999 epochs)
+2025-11-25 19:03:39,345 - INFO - 
+Loading evaluation datasets...
+2025-11-25 19:03:39,345 - INFO - Evaluation will run every 999 epoch(s)
+2025-11-25 19:03:39,354 - INFO - Loaded 500 samples from gsm8k
+2025-11-25 19:03:39,356 - INFO - Loaded 500 samples from math500
+2025-11-25 19:03:39,356 - INFO - Loaded evaluation datasets: ['gsm8k', 'math500']
+2025-11-25 19:03:39,356 - INFO - Training metrics will be saved to: logs/lora_r32_lora_r32_20251125_190336/training_metrics.csv
+2025-11-25 19:03:39,356 - INFO - Using learning rate: 0.0001
+2025-11-25 19:04:25,788 - INFO - Starting training...
+2025-11-25 20:11:19,069 - INFO - Epoch 1.0 completed at step 149
+2025-11-25 21:18:03,022 - INFO - Epoch 2.0 completed at step 298
+2025-11-25 21:18:03,028 - INFO - Training metrics saved to: logs/lora_r32_lora_r32_20251125_190336/training_metrics.csv
+2025-11-25 21:18:03,029 - INFO - Metrics summary saved to: logs/lora_r32_lora_r32_20251125_190336/metrics_summary.txt
+2025-11-25 21:18:03,030 - INFO - Saving final model to: checkpoints/lora_r32_lora_r32_20251125_190336/final_model
+2025-11-25 21:18:03,192 - INFO - Training completed!
+2025-11-25 21:18:03,192 - INFO - Final model saved to: checkpoints/lora_r32_lora_r32_20251125_190336/final_model
+2025-11-25 21:18:03,192 - INFO - Training metrics: {'train_runtime': 8016.9648, 'train_samples_per_second': 4.726, 'train_steps_per_second': 0.037, 'total_flos': 5.319523783104184e+17, 'train_loss': 0.7779316682143499, 'entropy': 0.6978126820856637, 'num_tokens': 37121764.0, 'mean_token_accuracy': 0.8249442094433916, 'epoch': 2.0}

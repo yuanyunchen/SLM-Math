@@ -1,0 +1,86 @@
+2025-12-08 16:02:49,862 - INFO - ================================================================================
+2025-12-08 16:02:49,862 - INFO - Training Configuration
+2025-12-08 16:02:49,862 - INFO - ================================================================================
+2025-12-08 16:02:49,863 - INFO - Round Name: code_sft
+2025-12-08 16:02:49,863 - INFO - Mode: sft
+2025-12-08 16:02:49,863 - INFO - Model: pretrained_models/Qwen2.5-Math-1.5B
+2025-12-08 16:02:49,863 - INFO - Data: data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json
+2025-12-08 16:02:49,863 - INFO - Output: checkpoints/code_sft_sft_20251208_160249
+2025-12-08 16:02:49,863 - INFO - Logs: logs/code_sft_sft_20251208_160249
+2025-12-08 16:02:49,863 - INFO - GPUs: 1
+2025-12-08 16:02:49,863 - INFO - Epochs: 3
+2025-12-08 16:02:49,863 - INFO - Batch size: 16
+2025-12-08 16:02:49,863 - INFO - Gradient accumulation: 4
+2025-12-08 16:02:49,863 - INFO - Max sequence length: 2048
+2025-12-08 16:02:49,863 - INFO - Gradient checkpointing: True
+2025-12-08 16:02:49,863 - INFO - Enable evaluation: True
+2025-12-08 16:02:49,863 - INFO - Evaluation frequency: every 1 epoch(s)
+2025-12-08 16:02:49,863 - INFO - ================================================================================
+2025-12-08 16:02:49,863 - INFO - Loading data from: data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json
+2025-12-08 16:02:50,225 - INFO - Filtered to 16581 correct samples
+2025-12-08 16:02:50,226 - INFO - Total samples: 16581
+2025-12-08 16:02:50,226 - INFO - Sample columns: ['index', 'question', 'ground_truth', 'predicted_answer', 'code_answer', 'boxed_answer', 'answers_match', 'thinking_process', 'solution', 'raw_output', 'code', 'execution', 'answer_source', 'correct', 'teacher_model', 'thinking_effort', 'round', 'attempt_count', 'attempts_history', 'tokens_used', 'status', 'dataset']
+2025-12-08 16:02:50,226 - INFO - Sample question: Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How m...
+2025-12-08 16:02:50,444 - INFO - Training dataset size: 16581
+2025-12-08 16:02:50,466 - INFO - Loading model: pretrained_models/Qwen2.5-Math-1.5B
+2025-12-08 16:02:51,903 - INFO - Model loaded on: cuda:0
+2025-12-08 16:02:51,903 - INFO - Dataset size: 16581
+2025-12-08 16:02:51,903 - INFO - Steps per epoch: 260
+2025-12-08 16:02:51,903 - INFO - Save checkpoint every 260 steps (1 epochs)
+2025-12-08 16:02:51,903 - INFO - 
+Loading evaluation datasets...
+2025-12-08 16:02:51,903 - INFO - Evaluation will run every 1 epoch(s)
+2025-12-08 16:02:51,909 - INFO - Loaded 20 samples from gsm8k
+2025-12-08 16:02:51,913 - INFO - Loaded 20 samples from math500
+2025-12-08 16:02:51,913 - INFO - Loaded evaluation datasets: ['gsm8k', 'math500']
+2025-12-08 16:02:51,913 - INFO - Training metrics will be saved to: logs/code_sft_sft_20251208_160249/training_metrics.csv
+2025-12-08 16:02:51,913 - INFO - Using learning rate: 1e-05
+2025-12-08 16:03:16,112 - INFO - Starting training...
+2025-12-08 16:26:53,527 - INFO - Epoch 1.0 completed at step 260
+2025-12-08 16:26:53,528 - INFO - 
+================================================================================
+2025-12-08 16:26:53,528 - INFO - Running evaluation at epoch 1
+2025-12-08 16:26:53,528 - INFO - ================================================================================
+2025-12-08 16:26:53,529 - INFO - Evaluating on gsm8k...
+2025-12-08 16:27:55,099 - INFO - Saved 10 sample logs to logs/code_sft_sft_20251208_160249/eval_samples_gsm8k_20251208_162755.txt
+2025-12-08 16:27:55,100 - INFO -   gsm8k accuracy: 0.5000
+2025-12-08 16:27:55,100 - INFO - Evaluating on math500...
+2025-12-08 16:30:07,291 - INFO - Saved 10 sample logs to logs/code_sft_sft_20251208_160249/eval_samples_math500_20251208_163007.txt
+2025-12-08 16:30:07,291 - INFO -   math500 accuracy: 0.6000
+2025-12-08 16:30:07,294 - INFO - Logged evaluation results to W&B
+2025-12-08 16:30:07,294 - INFO - ================================================================================
+
+2025-12-08 16:53:28,773 - INFO - Epoch 2.0 completed at step 520
+2025-12-08 16:53:28,774 - INFO - 
+================================================================================
+2025-12-08 16:53:28,774 - INFO - Running evaluation at epoch 2
+2025-12-08 16:53:28,774 - INFO - ================================================================================
+2025-12-08 16:53:28,775 - INFO - Evaluating on gsm8k...
+2025-12-08 16:54:33,505 - INFO - Saved 10 sample logs to logs/code_sft_sft_20251208_160249/eval_samples_gsm8k_20251208_165433.txt
+2025-12-08 16:54:33,506 - INFO -   gsm8k accuracy: 0.6000
+2025-12-08 16:54:33,506 - INFO - Evaluating on math500...
+2025-12-08 16:56:32,033 - INFO - Saved 10 sample logs to logs/code_sft_sft_20251208_160249/eval_samples_math500_20251208_165632.txt
+2025-12-08 16:56:32,034 - INFO -   math500 accuracy: 0.4500
+2025-12-08 16:56:32,037 - INFO - Logged evaluation results to W&B
+2025-12-08 16:56:32,037 - INFO - ================================================================================
+
+2025-12-08 17:20:01,787 - INFO - Epoch 3.0 completed at step 780
+2025-12-08 17:20:01,788 - INFO - 
+================================================================================
+2025-12-08 17:20:01,788 - INFO - Running evaluation at epoch 3
+2025-12-08 17:20:01,788 - INFO - ================================================================================
+2025-12-08 17:20:01,788 - INFO - Evaluating on gsm8k...
+2025-12-08 17:21:05,257 - INFO - Saved 10 sample logs to logs/code_sft_sft_20251208_160249/eval_samples_gsm8k_20251208_172105.txt
+2025-12-08 17:21:05,257 - INFO -   gsm8k accuracy: 0.5500
+2025-12-08 17:21:05,257 - INFO - Evaluating on math500...
+2025-12-08 17:23:09,657 - INFO - Saved 10 sample logs to logs/code_sft_sft_20251208_160249/eval_samples_math500_20251208_172309.txt
+2025-12-08 17:23:09,657 - INFO -   math500 accuracy: 0.5000
+2025-12-08 17:23:09,660 - INFO - Logged evaluation results to W&B
+2025-12-08 17:23:09,660 - INFO - ================================================================================
+
+2025-12-08 17:23:09,664 - INFO - Training metrics saved to: logs/code_sft_sft_20251208_160249/training_metrics.csv
+2025-12-08 17:23:09,667 - INFO - Metrics summary saved to: logs/code_sft_sft_20251208_160249/metrics_summary.txt
+2025-12-08 17:23:09,668 - INFO - Saving final model to: checkpoints/code_sft_sft_20251208_160249/final_model
+2025-12-08 17:23:13,201 - INFO - Training completed!
+2025-12-08 17:23:13,201 - INFO - Final model saved to: checkpoints/code_sft_sft_20251208_160249/final_model
+2025-12-08 17:23:13,202 - INFO - Training metrics: {'train_runtime': 4793.3928, 'train_samples_per_second': 10.377, 'train_steps_per_second': 0.163, 'total_flos': 2.654833750159227e+17, 'train_loss': 0.4515546497626182, 'epoch': 3.0}

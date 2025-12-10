@@ -1,23 +1,23 @@
 """
 Solver-Verifier Agent
-带代码自验证 + Verifier 仲裁的工作流
+Workflow with self-verification via code plus Verifier arbitration.
 
-核心思想：
-- Solver 生成 reasoning + code
-- 如果 code_result == boxed_answer，直接采纳
-- 如果不一致，Verifier 仲裁决定用哪个
-- 如果都错，进入下一轮，反馈包含 reasoning + 执行结果
+Core idea:
+- Solver generates reasoning + code.
+- If code_result == boxed_answer, accept directly.
+- If they differ, Verifier decides which to use.
+- If both are wrong, go to the next round; feedback includes reasoning + execution results.
 
-工作流程：
-1. Solver 生成 reasoning + code
-2. 执行 code 得到 code_result，提取 boxed_answer
-3. 如果一致 → 直接采纳
-4. 如果不一致 → Verifier 验证 code_result
-   - VERIFIED → 采纳 code_result
-   - FAILED → Verifier 验证 boxed_answer
-     - VERIFIED → 采纳 boxed_answer
-     - FAILED → 下一轮（反馈含 reasoning + 执行结果）
-5. 如果没有 code → Verifier 验证 boxed_answer
+Workflow:
+1. Solver generates reasoning + code.
+2. Execute the code to get code_result and extract boxed_answer.
+3. If they match → accept directly.
+4. If they differ → Verifier checks code_result.
+   - VERIFIED → accept code_result.
+   - FAILED → Verifier checks boxed_answer.
+     - VERIFIED → accept boxed_answer.
+     - FAILED → next round (feedback includes reasoning + execution results).
+5. If there is no code → Verifier checks boxed_answer.
 """
 
 import sys
@@ -29,6 +29,13 @@ import re
 from models.generation_config import (
     MAX_NEW_TOKENS, TEMPERATURE, DO_SAMPLE, TOP_P, REPETITION_PENALTY,
     CHECKER_MAX_TOKENS, CHECKER_TEMPERATURE, CHECKER_TOP_P, CHECKER_REPETITION_PENALTY
+)
+
+# Same system prompt used during SFT training to keep chat formatting aligned.
+SYSTEM_PROMPT = (
+    "You are a mathematical reasoning assistant. "
+    "Solve problems using step-by-step reasoning with clear explanations. "
+    "Always provide your final answer in \\boxed{} format."
 )
 
 
@@ -202,7 +209,8 @@ def run_solver_verifier_workflow(
     detailed: bool = False,
     dataset_name: str = "",
     enable_solver_tools: bool = True,
-    consistency_threshold: int = 2
+    consistency_threshold: int = 2,
+    apply_chat_template: bool = False
 ) -> Dict:
     """
     Run Solver-Verifier workflow with forward verification.
@@ -219,6 +227,7 @@ def run_solver_verifier_workflow(
         dataset_name: Dataset name
         enable_solver_tools: Enable code execution for solver
         consistency_threshold: Stop if solver gives same answer N times
+        apply_chat_template: Apply chat template (align with SFT training)
     
     Returns:
         Dict with workflow results
@@ -260,13 +269,26 @@ def run_solver_verifier_workflow(
             tool_instruction = "\n\nYou may use Python code to help with calculations. Show your reasoning step by step."
         
         if iteration_num == 1:
-            solver_prompt = format_prompt_standard(question, dataset_name) + tool_instruction
+            user_prompt = format_prompt_standard(question, dataset_name) + tool_instruction
         else:
             # Include detailed feedback with reasoning
-            solver_prompt = format_prompt_standard(question, dataset_name)
-            solver_prompt += f"\n\n--- Previous Attempt Feedback ---\n{verification_feedback}"
-            solver_prompt += "\n\nPlease carefully review the feedback and provide a corrected solution."
-            solver_prompt += tool_instruction
+            user_prompt = format_prompt_standard(question, dataset_name)
+            user_prompt += f"\n\n--- Previous Attempt Feedback ---\n{verification_feedback}"
+            user_prompt += "\n\nPlease carefully review the feedback and provide a corrected solution."
+            user_prompt += tool_instruction
+
+        if apply_chat_template:
+            messages = [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ]
+            solver_prompt = solver_tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        else:
+            solver_prompt = user_prompt
         
         if detailed:
             print(f"\n[Solver Turn]")

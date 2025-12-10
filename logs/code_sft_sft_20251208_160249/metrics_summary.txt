@@ -1,0 +1,28 @@
+================================================================================
+Training Metrics Summary
+================================================================================
+
+Final Training Loss: nan
+Min Training Loss: 0.360400
+Avg Training Loss: 0.481578
+
+Final Learning Rate: nan
+
+Total Steps: 780
+Total Epochs: 3.00
+
+================================================================================
+Evaluation Results
+================================================================================
+
+GSM8K:
+  Final Accuracy: 0.5500
+  Best Accuracy: 0.6000
+  All Results: [np.float64(0.5), np.float64(0.6), np.float64(0.55)]
+
+MATH500:
+  Final Accuracy: 0.5000
+  Best Accuracy: 0.6000
+  All Results: [np.float64(0.6), np.float64(0.45), np.float64(0.5)]
+
+================================================================================

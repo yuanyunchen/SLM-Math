@@ -1,14 +1,14 @@
 """
 Solver-Checker Chat-based Multi-Agent Workflow (Optimized)
-使用chat template的优化对话实现
+Optimized chat-style implementation using a chat template.
 
-OPTIMIZED CHAT MODE - 使用模型的chat template
-- 使用 tokenizer.apply_chat_template()
-- 正确的消息格式 [{"role": "user/assistant", "content": "..."}]
-- 减少幻觉风险
-- 更符合模型训练方式
+OPTIMIZED CHAT MODE - leverages the model's chat template
+- Uses tokenizer.apply_chat_template().
+- Correct message format [{"role": "user/assistant", "content": "..."}].
+- Reduces hallucination risk.
+- Better aligned with model training style.
 
-适用: 支持chat template的模型（Qwen系列支持）
+Suitable for models that support chat templates (e.g., Qwen series).
 """
 
 from typing import Dict, List

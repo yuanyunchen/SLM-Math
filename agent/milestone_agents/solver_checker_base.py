@@ -1,7 +1,7 @@
 """
 Solver-Checker Base Implementation (Archive Version)
-独立实现的solver-checker工作流，完全保留原始archive逻辑
-不依赖外部utils文件，所有代码自包含
+Standalone solver-checker workflow preserving the original archive logic.
+Does not depend on external utils files; all code is self-contained.
 """
 
 import re
