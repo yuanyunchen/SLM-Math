@@ -22,7 +22,7 @@ data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.jso
 data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.csv
 data/reasoning_code/run_1209_1011/reasoning_code_v2_gsm8k_train_math_train_1209_1011.json
 data/reasoning_code/run_1209_1011/reasoning_code_v2_gsm8k_train_math_train_1209_1011.jsonl
-data/reasoning_code/run_1209_1011/reasoning_code_v2_gsm8k_train_math_train_1209_1011_code_box_eq_gt.jsonl
+# data/reasoning_code/run_1209_1011/reasoning_code_v2_gsm8k_train_math_train_1209_1011_code_box_eq_gt.jsonl  # tracked via LFS
 
 
 # Cache directories
