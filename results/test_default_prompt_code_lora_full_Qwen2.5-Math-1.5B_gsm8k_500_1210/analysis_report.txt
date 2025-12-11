@@ -1,0 +1,172 @@
+================================================================================
+AGENT EVALUATION - DETAILED ANALYSIS REPORT
+================================================================================
+
+Configuration:
+--------------------------------------------------------------------------------
+Model: Qwen2.5-Math-1.5B
+Agent Method: agent_default_prompt_with_code
+Dataset: gsm8k
+Timestamp: 2025-12-10T06:29:48.923594
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Samples: 500
+Correct Answers: 394
+Overall Accuracy: 78.80%
+First Try Correct: 399
+First Try Accuracy: 79.80%
+Average Iterations: 0.00
+Total Iterations: 0
+
+Case Type Distribution:
+--------------------------------------------------------------------------------
+Improved Cases (Wrong -> Correct): 11
+Degraded Cases (Correct -> Wrong): 16
+Failed Cases (Wrong -> Wrong): 90
+First Try Success: 399
+Other Cases: 383
+
+Case Examples:
+--------------------------------------------------------------------------------
+
+Improved Cases (all 11):
+
+  Example 1:
+    Question ID: 20
+    First Answer: 14.666666666666666 (WRONG)
+    Final Answer: 15.0 (CORRECT)
+
+  Example 2:
+    Question ID: 26
+    First Answer: 225 (WRONG)
+    Final Answer: 243.0 (CORRECT)
+
+  Example 3:
+    Question ID: 28
+    First Answer: 5 (WRONG)
+    Final Answer: 25 (CORRECT)
+
+  Example 4:
+    Question ID: 98
+    First Answer: 10 (WRONG)
+    Final Answer: 5 (CORRECT)
+
+  Example 5:
+    Question ID: 101
+    First Answer: 6.25 (WRONG)
+    Final Answer: 6.0 (CORRECT)
+
+  Example 6:
+    Question ID: 259
+    First Answer: 120 (WRONG)
+    Final Answer: 168.0 (CORRECT)
+
+  Example 7:
+    Question ID: 282
+    First Answer: 210 (WRONG)
+    Final Answer: 195 (CORRECT)
+
+  Example 8:
+    Question ID: 293
+    First Answer: 84 (WRONG)
+    Final Answer: 83 (CORRECT)
+
+  Example 9:
+    Question ID: 386
+    First Answer: yes (WRONG)
+    Final Answer: 80 (CORRECT)
+
+  Example 10:
+    Question ID: 404
+    First Answer: 29.33 (WRONG)
+    Final Answer: 22.0 (CORRECT)
+
+  Example 11:
+    Question ID: 413
+    First Answer: 250 (WRONG)
+    Final Answer: 25 (CORRECT)
+
+Degraded Cases (all 16):
+
+  Example 1:
+    Question ID: 13
+    First Answer: 18 (CORRECT)
+    Final Answer: 60 (WRONG)
+
+  Example 2:
+    Question ID: 18
+    First Answer: 7 (CORRECT)
+    Final Answer: 0 (WRONG)
+
+  Example 3:
+    Question ID: 37
+    First Answer: 2 (CORRECT)
+    Final Answer: 23 (WRONG)
+
+  Example 4:
+    Question ID: 129
+    First Answer: 10000 (CORRECT)
+    Final Answer: 3650000.0 (WRONG)
+
+  Example 5:
+    Question ID: 188
+    First Answer: 50 (CORRECT)
+    Final Answer: 400 (WRONG)
+
+  Example 6:
+    Question ID: 211
+    First Answer: 4 (CORRECT)
+    Final Answer: 42 (WRONG)
+
+  Example 7:
+    Question ID: 227
+    First Answer: 9 (CORRECT)
+    Final Answer: 6.0 (WRONG)
+
+  Example 8:
+    Question ID: 316
+    First Answer: 156 (CORRECT)
+    Final Answer: 140 (WRONG)
+
+  Example 9:
+    Question ID: 323
+    First Answer: 75 (CORRECT)
+    Final Answer: 15 (WRONG)
+
+  Example 10:
+    Question ID: 332
+    First Answer: 44 (CORRECT)
+    Final Answer: 2 (WRONG)
+
+  Example 11:
+    Question ID: 357
+    First Answer: 2 (CORRECT)
+    Final Answer: 27 (WRONG)
+
+  Example 12:
+    Question ID: 366
+    First Answer: 9 (CORRECT)
+    Final Answer: 11 (WRONG)
+
+  Example 13:
+    Question ID: 367
+    First Answer: 19 (CORRECT)
+    Final Answer: 5 (WRONG)
+
+  Example 14:
+    Question ID: 370
+    First Answer: 320 (CORRECT)
+    Final Answer: 100 (WRONG)
+
+  Example 15:
+    Question ID: 399
+    First Answer: 12 (CORRECT)
+    Final Answer: 10 (WRONG)
+
+  Example 16:
+    Question ID: 438
+    First Answer: 2 (CORRECT)
+    Final Answer: 1 (WRONG)
+
+================================================================================

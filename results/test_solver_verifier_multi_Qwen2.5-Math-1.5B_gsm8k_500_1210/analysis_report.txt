@@ -1,0 +1,91 @@
+================================================================================
+AGENT EVALUATION - DETAILED ANALYSIS REPORT
+================================================================================
+
+Configuration:
+--------------------------------------------------------------------------------
+Model: Qwen2.5-Math-1.5B
+Agent Method: solver_verifier_multi
+Dataset: gsm8k
+Timestamp: 2025-12-10T09:38:41.923137
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Samples: 500
+Correct Answers: 422
+Overall Accuracy: 84.40%
+First Try Correct: 414
+First Try Accuracy: 82.80%
+Average Iterations: 0.00
+Total Iterations: 570
+
+Case Type Distribution:
+--------------------------------------------------------------------------------
+Improved Cases (Wrong -> Correct): 8
+Degraded Cases (Correct -> Wrong): 1
+Failed Cases (Wrong -> Wrong): 71
+First Try Success: 414
+Other Cases: 420
+
+Case Examples:
+--------------------------------------------------------------------------------
+
+Improved Cases (all 8):
+
+  Example 1:
+    Question ID: 16
+    First Answer: 80 \text{ miles} (WRONG)
+    Final Answer: 230 (CORRECT)
+    Iterations: 3
+
+  Example 2:
+    Question ID: 20
+    First Answer: 24 (WRONG)
+    Final Answer: 15 (CORRECT)
+    Iterations: 3
+
+  Example 3:
+    Question ID: 164
+    First Answer: 195-i (WRONG)
+    Final Answer: 15 (CORRECT)
+    Iterations: 3
+
+  Example 4:
+    Question ID: 324
+    First Answer: 5 (WRONG)
+    Final Answer: 14 (CORRECT)
+    Iterations: 2
+
+  Example 5:
+    Question ID: 395
+    First Answer: 48 (WRONG)
+    Final Answer: 38 (CORRECT)
+    Iterations: 3
+
+  Example 6:
+    Question ID: 407
+    First Answer: 0 (WRONG)
+    Final Answer: 2000 (CORRECT)
+    Iterations: 2
+
+  Example 7:
+    Question ID: 434
+    First Answer: 7 (WRONG)
+    Final Answer: 5.0 (CORRECT)
+    Iterations: 3
+
+  Example 8:
+    Question ID: 496
+    First Answer: 50 (WRONG)
+    Final Answer: 38 (CORRECT)
+    Iterations: 2
+
+Degraded Cases (all 1):
+
+  Example 1:
+    Question ID: 141
+    First Answer: 400 (CORRECT)
+    Final Answer: 700 (WRONG)
+    Iterations: 3
+
+================================================================================

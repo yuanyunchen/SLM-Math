@@ -1,0 +1,622 @@
+================================================================================
+AGENT EVALUATION - DETAILED ANALYSIS REPORT
+================================================================================
+
+Configuration:
+--------------------------------------------------------------------------------
+Model: Qwen2.5-Math-1.5B
+Agent Method: agent_default_prompt_with_code
+Dataset: math500
+Timestamp: 2025-12-10T06:33:57.895805
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Samples: 500
+Correct Answers: 230
+Overall Accuracy: 46.00%
+First Try Correct: 319
+First Try Accuracy: 63.80%
+Average Iterations: 0.00
+Total Iterations: 0
+
+Case Type Distribution:
+--------------------------------------------------------------------------------
+Improved Cases (Wrong -> Correct): 14
+Degraded Cases (Correct -> Wrong): 103
+Failed Cases (Wrong -> Wrong): 167
+First Try Success: 319
+Other Cases: 216
+
+Case Examples:
+--------------------------------------------------------------------------------
+
+Improved Cases (all 14):
+
+  Example 1:
+    Question ID: 21
+    First Answer: 2743 (WRONG)
+    Final Answer: 13535 (CORRECT)
+
+  Example 2:
+    Question ID: 89
+    First Answer: 87 (WRONG)
+    Final Answer: 21 (CORRECT)
+
+  Example 3:
+    Question ID: 105
+    First Answer: 16 (WRONG)
+    Final Answer: 29.0 (CORRECT)
+
+  Example 4:
+    Question ID: 138
+    First Answer: 0.16666666666666666 (WRONG)
+    Final Answer: 0.333102 (CORRECT)
+
+  Example 5:
+    Question ID: 158
+    First Answer: 2257 (WRONG)
+    Final Answer: 2107 (CORRECT)
+
+  Example 6:
+    Question ID: 192
+    First Answer: 24\sqrt{2} (WRONG)
+    Final Answer: 30.0 (CORRECT)
+
+  Example 7:
+    Question ID: 201
+    First Answer: 45 (WRONG)
+    Final Answer: 66 (CORRECT)
+
+  Example 8:
+    Question ID: 213
+    First Answer: 1 (WRONG)
+    Final Answer: 1.999999999999999 (CORRECT)
+
+  Example 9:
+    Question ID: 222
+    First Answer: 72 (WRONG)
+    Final Answer: 54.0 (CORRECT)
+
+  Example 10:
+    Question ID: 230
+    First Answer: 4.8 (WRONG)
+    Final Answer: 3.2 (CORRECT)
+
+  Example 11:
+    Question ID: 249
+    First Answer: 10 (WRONG)
+    Final Answer: 17 (CORRECT)
+
+  Example 12:
+    Question ID: 311
+    First Answer: 1 (WRONG)
+    Final Answer: 3 (CORRECT)
+
+  Example 13:
+    Question ID: 326
+    First Answer: 0.11874 (WRONG)
+    Final Answer: 0.09 (CORRECT)
+
+  Example 14:
+    Question ID: 332
+    First Answer: 18 - \sqrt{2}/4 (WRONG)
+    Final Answer: 2 (CORRECT)
+
+Degraded Cases (all 103):
+
+  Example 1:
+    Question ID: 2
+    First Answer: \frac{14}{3} (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 2:
+    Question ID: 3
+    First Answer: 9 (CORRECT)
+    Final Answer: 7 (WRONG)
+
+  Example 3:
+    Question ID: 4
+    First Answer: evelyn (CORRECT)
+    Final Answer: 3.6 (WRONG)
+
+  Example 4:
+    Question ID: 9
+    First Answer: 4 (CORRECT)
+    Final Answer: 3 (WRONG)
+
+  Example 5:
+    Question ID: 20
+    First Answer: 6+9i (CORRECT)
+    Final Answer: +9 (WRONG)
+
+  Example 6:
+    Question ID: 28
+    First Answer: -2+7i (CORRECT)
+    Final Answer: +7 (WRONG)
+
+  Example 7:
+    Question ID: 30
+    First Answer: 528 (CORRECT)
+    Final Answer: 52 (WRONG)
+
+  Example 8:
+    Question ID: 36
+    First Answer: 357 (CORRECT)
+    Final Answer: 7 (WRONG)
+
+  Example 9:
+    Question ID: 46
+    First Answer: 6 (CORRECT)
+    Final Answer: 21 (WRONG)
+
+  Example 10:
+    Question ID: 48
+    First Answer: \frac{3}{2} (CORRECT)
+    Final Answer: 8.0 (WRONG)
+
+  Example 11:
+    Question ID: 51
+    First Answer: x^5-x^4+x^3-x^2+x-1 (CORRECT)
+    Final Answer: -2 (WRONG)
+
+  Example 12:
+    Question ID: 53
+    First Answer: -\frac{\pi}{6} (CORRECT)
+    Final Answer: -0.5 (WRONG)
+
+  Example 13:
+    Question ID: 54
+    First Answer: 0.15 (CORRECT)
+    Final Answer: 3 (WRONG)
+
+  Example 14:
+    Question ID: 61
+    First Answer: -256 (CORRECT)
+    Final Answer: 7 (WRONG)
+
+  Example 15:
+    Question ID: 65
+    First Answer: 1 (CORRECT)
+    Final Answer: 10 (WRONG)
+
+  Example 16:
+    Question ID: 66
+    First Answer: x^3+3x-6 (CORRECT)
+    Final Answer: 6 (WRONG)
+
+  Example 17:
+    Question ID: 69
+    First Answer: -1 (CORRECT)
+    Final Answer: 12 (WRONG)
+
+  Example 18:
+    Question ID: 70
+    First Answer: 409 (CORRECT)
+    Final Answer: 40 (WRONG)
+
+  Example 19:
+    Question ID: 73
+    First Answer: \frac{3\sqrt{3}}{4} (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 20:
+    Question ID: 74
+    First Answer: cotx (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 21:
+    Question ID: 95
+    First Answer: -4 (CORRECT)
+    Final Answer: 19 (WRONG)
+
+  Example 22:
+    Question ID: 97
+    First Answer: east (CORRECT)
+    Final Answer: 1 (WRONG)
+
+  Example 23:
+    Question ID: 98
+    First Answer: 2k+2 (CORRECT)
+    Final Answer: 2 (WRONG)
+
+  Example 24:
+    Question ID: 101
+    First Answer: 850 (CORRECT)
+    Final Answer: 824.0 (WRONG)
+
+  Example 25:
+    Question ID: 102
+    First Answer: (a+5)(b+2) (CORRECT)
+    Final Answer: 2 (WRONG)
+
+  Example 26:
+    Question ID: 106
+    First Answer: \frac{4}{3} (CORRECT)
+    Final Answer: 1.3333333333333333 (WRONG)
+
+  Example 27:
+    Question ID: 107
+    First Answer: 9 (CORRECT)
+    Final Answer: 16 (WRONG)
+
+  Example 28:
+    Question ID: 120
+    First Answer: even (CORRECT)
+    Final Answer: 14 (WRONG)
+
+  Example 29:
+    Question ID: 123
+    First Answer: 8 (CORRECT)
+    Final Answer: 6 (WRONG)
+
+  Example 30:
+    Question ID: 137
+    First Answer: 2045 (CORRECT)
+    Final Answer: 204 (WRONG)
+
+  Example 31:
+    Question ID: 139
+    First Answer: 1 (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 32:
+    Question ID: 143
+    First Answer: 3\sqrt{5} (CORRECT)
+    Final Answer: 6.708203932499369 (WRONG)
+
+  Example 33:
+    Question ID: 144
+    First Answer: (15, -29) (CORRECT)
+    Final Answer: -29 (WRONG)
+
+  Example 34:
+    Question ID: 146
+    First Answer: \frac{\sqrt{3}}{3} (CORRECT)
+    Final Answer: 0.5773502691896257 (WRONG)
+
+  Example 35:
+    Question ID: 155
+    First Answer: \frac{1}{4} (CORRECT)
+    Final Answer: 152 (WRONG)
+
+  Example 36:
+    Question ID: 156
+    First Answer: 30 (CORRECT)
+    Final Answer: 54.735610317245346 (WRONG)
+
+  Example 37:
+    Question ID: 171
+    First Answer: \frac{13}{15} (CORRECT)
+    Final Answer: 15 (WRONG)
+
+  Example 38:
+    Question ID: 176
+    First Answer: 0.000672 (CORRECT)
+    Final Answer: 9 (WRONG)
+
+  Example 39:
+    Question ID: 179
+    First Answer: 5x-7y+11z+4=0 (CORRECT)
+    Final Answer: 0 (WRONG)
+
+  Example 40:
+    Question ID: 181
+    First Answer: \frac{\sqrt{3}}{3} (CORRECT)
+    Final Answer: 0.5773502691896257 (WRONG)
+
+  Example 41:
+    Question ID: 186
+    First Answer: 7 (CORRECT)
+    Final Answer: 5 (WRONG)
+
+  Example 42:
+    Question ID: 190
+    First Answer: \frac{13}{18} (CORRECT)
+    Final Answer: 18 (WRONG)
+
+  Example 43:
+    Question ID: 197
+    First Answer: 6 (CORRECT)
+    Final Answer: 1 (WRONG)
+
+  Example 44:
+    Question ID: 200
+    First Answer: 40 (CORRECT)
+    Final Answer: 122.5 (WRONG)
+
+  Example 45:
+    Question ID: 218
+    First Answer: (-1, 6) (CORRECT)
+    Final Answer: 6.0 (WRONG)
+
+  Example 46:
+    Question ID: 221
+    First Answer: 900 (CORRECT)
+    Final Answer: 21 (WRONG)
+
+  Example 47:
+    Question ID: 227
+    First Answer: c (CORRECT)
+    Final Answer: 1 (WRONG)
+
+  Example 48:
+    Question ID: 235
+    First Answer: \frac{5}{9} (CORRECT)
+    Final Answer: 9 (WRONG)
+
+  Example 49:
+    Question ID: 253
+    First Answer: \frac{1}{8} (CORRECT)
+    Final Answer: 8 (WRONG)
+
+  Example 50:
+    Question ID: 255
+    First Answer: e (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 51:
+    Question ID: 256
+    First Answer: \frac{8}{21} (CORRECT)
+    Final Answer: 21 (WRONG)
+
+  Example 52:
+    Question ID: 263
+    First Answer: 15 (CORRECT)
+    Final Answer: 180 (WRONG)
+
+  Example 53:
+    Question ID: 269
+    First Answer: 6 (CORRECT)
+    Final Answer: 9 (WRONG)
+
+  Example 54:
+    Question ID: 271
+    First Answer: 333 (CORRECT)
+    Final Answer: 1 (WRONG)
+
+  Example 55:
+    Question ID: 274
+    First Answer: 18 + 2\pi (CORRECT)
+    Final Answer: 24.283185307179586 (WRONG)
+
+  Example 56:
+    Question ID: 277
+    First Answer: sqrt(53) (CORRECT)
+    Final Answer: 53 (WRONG)
+
+  Example 57:
+    Question ID: 280
+    First Answer: 8 (CORRECT)
+    Final Answer: 7 (WRONG)
+
+  Example 58:
+    Question ID: 290
+    First Answer: 4 (CORRECT)
+    Final Answer: 20 (WRONG)
+
+  Example 59:
+    Question ID: 293
+    First Answer: \left(\frac{3}{5}, \frac{8}{3}\right] (CORRECT)
+    Final Answer: 3 (WRONG)
+
+  Example 60:
+    Question ID: 296
+    First Answer: b (CORRECT)
+    Final Answer: 1.222392421336448 (WRONG)
+
+  Example 61:
+    Question ID: 298
+    First Answer: begin{pmatrix}-18-4996end{pmatrix} (CORRECT)
+    Final Answer: 96 (WRONG)
+
+  Example 62:
+    Question ID: 305
+    First Answer: \frac{9}{19} (CORRECT)
+    Final Answer: 0.47368421052631576 (WRONG)
+
+  Example 63:
+    Question ID: 307
+    First Answer: (-infty0] (CORRECT)
+    Final Answer: 16 (WRONG)
+
+  Example 64:
+    Question ID: 309
+    First Answer: 14 (CORRECT)
+    Final Answer: 13 (WRONG)
+
+  Example 65:
+    Question ID: 312
+    First Answer: (5, \infty) (CORRECT)
+    Final Answer: 5 (WRONG)
+
+  Example 66:
+    Question ID: 313
+    First Answer: 12\pi (CORRECT)
+    Final Answer: 37.69911184307752 (WRONG)
+
+  Example 67:
+    Question ID: 314
+    First Answer: (2,4) (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 68:
+    Question ID: 318
+    First Answer: \frac{11+9a}{20} (CORRECT)
+    Final Answer: 1 (WRONG)
+
+  Example 69:
+    Question ID: 339
+    First Answer: 2k (CORRECT)
+    Final Answer: 2 (WRONG)
+
+  Example 70:
+    Question ID: 345
+    First Answer: 1 (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 71:
+    Question ID: 347
+    First Answer: 6r^2-4r-24 (CORRECT)
+    Final Answer: -24 (WRONG)
+
+  Example 72:
+    Question ID: 358
+    First Answer: ellipse (CORRECT)
+    Final Answer: 2 (WRONG)
+
+  Example 73:
+    Question ID: 361
+    First Answer: 16\sqrt{3} (CORRECT)
+    Final Answer: 27.712812921102035 (WRONG)
+
+  Example 74:
+    Question ID: 362
+    First Answer: \frac{1}{4} (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 75:
+    Question ID: 364
+    First Answer: (1, -16, -4, 43) (CORRECT)
+    Final Answer: 43 (WRONG)
+
+  Example 76:
+    Question ID: 365
+    First Answer: 8 (CORRECT)
+    Final Answer: 5 (WRONG)
+
+  Example 77:
+    Question ID: 373
+    First Answer: 1+2i (CORRECT)
+    Final Answer: +2 (WRONG)
+
+  Example 78:
+    Question ID: 375
+    First Answer: 25 (CORRECT)
+    Final Answer: 5 (WRONG)
+
+  Example 79:
+    Question ID: 376
+    First Answer: (8, -2) (CORRECT)
+    Final Answer: -2 (WRONG)
+
+  Example 80:
+    Question ID: 377
+    First Answer: 6 (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 81:
+    Question ID: 384
+    First Answer: 15x-80 (CORRECT)
+    Final Answer: -80 (WRONG)
+
+  Example 82:
+    Question ID: 388
+    First Answer: 5.5 (CORRECT)
+    Final Answer: 14 (WRONG)
+
+  Example 83:
+    Question ID: 393
+    First Answer: \frac{3}{4} (CORRECT)
+    Final Answer: 4 (WRONG)
+
+  Example 84:
+    Question ID: 398
+    First Answer: navin (CORRECT)
+    Final Answer: 1 (WRONG)
+
+  Example 85:
+    Question ID: 402
+    First Answer: 1-12i (CORRECT)
+    Final Answer: -12 (WRONG)
+
+  Example 86:
+    Question ID: 413
+    First Answer: 5r^5 (CORRECT)
+    Final Answer: 5 (WRONG)
+
+  Example 87:
+    Question ID: 434
+    First Answer: 32 (CORRECT)
+    Final Answer: 17 (WRONG)
+
+  Example 88:
+    Question ID: 435
+    First Answer: (-\infty, 2) \cup (3, \infty) (CORRECT)
+    Final Answer: 3 (WRONG)
+
+  Example 89:
+    Question ID: 438
+    First Answer: 4 (CORRECT)
+    Final Answer: 2 (WRONG)
+
+  Example 90:
+    Question ID: 439
+    First Answer: x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1 (CORRECT)
+    Final Answer: 1 (WRONG)
+
+  Example 91:
+    Question ID: 451
+    First Answer: \frac{639}{40} (CORRECT)
+    Final Answer: 40 (WRONG)
+
+  Example 92:
+    Question ID: 452
+    First Answer: 143 (CORRECT)
+    Final Answer: 14 (WRONG)
+
+  Example 93:
+    Question ID: 460
+    First Answer: 75 (CORRECT)
+    Final Answer: 105 (WRONG)
+
+  Example 94:
+    Question ID: 463
+    First Answer: 2 (CORRECT)
+    Final Answer: 1 (WRONG)
+
+  Example 95:
+    Question ID: 464
+    First Answer: 9 (CORRECT)
+    Final Answer: 25 (WRONG)
+
+  Example 96:
+    Question ID: 468
+    First Answer: 8 (CORRECT)
+    Final Answer: 7 (WRONG)
+
+  Example 97:
+    Question ID: 472
+    First Answer: 137\frac{1}{2} (CORRECT)
+    Final Answer: 2 (WRONG)
+
+  Example 98:
+    Question ID: 479
+    First Answer: 2 (CORRECT)
+    Final Answer: 6 (WRONG)
+
+  Example 99:
+    Question ID: 482
+    First Answer: 202 (CORRECT)
+    Final Answer: 19 (WRONG)
+
+  Example 100:
+    Question ID: 484
+    First Answer: 10 (CORRECT)
+    Final Answer: 2 (WRONG)
+
+  Example 101:
+    Question ID: 492
+    First Answer: y=-2x (CORRECT)
+    Final Answer: -2 (WRONG)
+
+  Example 102:
+    Question ID: 495
+    First Answer: (2, 12) \cup (12, 102) (CORRECT)
+    Final Answer: 14 (WRONG)
+
+  Example 103:
+    Question ID: 499
+    First Answer: 106 (CORRECT)
+    Final Answer: 90.30288681847782 (WRONG)
+
+================================================================================
