@@ -1,0 +1,289 @@
+================================================================================
+AGENT EVALUATION - DETAILED ANALYSIS REPORT
+================================================================================
+
+Configuration:
+--------------------------------------------------------------------------------
+Model: Qwen2.5-Math-1.5B
+Agent Method: solver_verifier
+Dataset: gsm8k
+Timestamp: 2025-12-10T10:14:46.568293
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Samples: 500
+Correct Answers: 350
+Overall Accuracy: 70.00%
+First Try Correct: 311
+First Try Accuracy: 62.20%
+Average Iterations: 0.00
+Total Iterations: 794
+
+Case Type Distribution:
+--------------------------------------------------------------------------------
+Improved Cases (Wrong -> Correct): 40
+Degraded Cases (Correct -> Wrong): 2
+Failed Cases (Wrong -> Wrong): 129
+First Try Success: 311
+Other Cases: 329
+
+Case Examples:
+--------------------------------------------------------------------------------
+
+Improved Cases (all 40):
+
+  Example 1:
+    Question ID: 9
+    First Answer: 480 (WRONG)
+    Final Answer: 460 (CORRECT)
+    Iterations: 2
+
+  Example 2:
+    Question ID: 10
+    First Answer: 360 (WRONG)
+    Final Answer: 366 (CORRECT)
+    Iterations: 2
+
+  Example 3:
+    Question ID: 11
+    First Answer: 494 (WRONG)
+    Final Answer: 694 (CORRECT)
+    Iterations: 2
+
+  Example 4:
+    Question ID: 26
+    First Answer: 253.5 (WRONG)
+    Final Answer: 243 (CORRECT)
+    Iterations: 3
+
+  Example 5:
+    Question ID: 31
+    First Answer: 85 (WRONG)
+    Final Answer: 80 (CORRECT)
+    Iterations: 2
+
+  Example 6:
+    Question ID: 63
+    First Answer: 1680 (WRONG)
+    Final Answer: 1596 (CORRECT)
+    Iterations: 2
+
+  Example 7:
+    Question ID: 72
+    First Answer: 227 (WRONG)
+    Final Answer: 221 (CORRECT)
+    Iterations: 2
+
+  Example 8:
+    Question ID: 73
+    First Answer: 1500 (WRONG)
+    Final Answer: 255 (CORRECT)
+    Iterations: 2
+
+  Example 9:
+    Question ID: 77
+    First Answer: 50 (WRONG)
+    Final Answer: 100 (CORRECT)
+    Iterations: 2
+
+  Example 10:
+    Question ID: 86
+    First Answer: 13 (WRONG)
+    Final Answer: 22 (CORRECT)
+    Iterations: 2
+
+  Example 11:
+    Question ID: 144
+    First Answer: 15 (WRONG)
+    Final Answer: 20 (CORRECT)
+    Iterations: 2
+
+  Example 12:
+    Question ID: 151
+    First Answer: 4 (WRONG)
+    Final Answer: 5 (CORRECT)
+    Iterations: 2
+
+  Example 13:
+    Question ID: 153
+    First Answer: 5 (WRONG)
+    Final Answer: 48 (CORRECT)
+    Iterations: 2
+
+  Example 14:
+    Question ID: 155
+    First Answer: 150 (WRONG)
+    Final Answer: 280 (CORRECT)
+    Iterations: 2
+
+  Example 15:
+    Question ID: 157
+    First Answer: 100 (WRONG)
+    Final Answer: 80 (CORRECT)
+    Iterations: 2
+
+  Example 16:
+    Question ID: 175
+    First Answer: 60 (WRONG)
+    Final Answer: 15 (CORRECT)
+    Iterations: 3
+
+  Example 17:
+    Question ID: 178
+    First Answer: 126 (WRONG)
+    Final Answer: 122 (CORRECT)
+    Iterations: 2
+
+  Example 18:
+    Question ID: 189
+    First Answer: 30 (WRONG)
+    Final Answer: 34 (CORRECT)
+    Iterations: 2
+
+  Example 19:
+    Question ID: 238
+    First Answer: 85 (WRONG)
+    Final Answer: 68 (CORRECT)
+    Iterations: 2
+
+  Example 20:
+    Question ID: 267
+    First Answer: 71 (WRONG)
+    Final Answer: 91 (CORRECT)
+    Iterations: 2
+
+  Example 21:
+    Question ID: 294
+    First Answer: 1.5 (WRONG)
+    Final Answer: 3 (CORRECT)
+    Iterations: 2
+
+  Example 22:
+    Question ID: 299
+    First Answer: 15000 (WRONG)
+    Final Answer: 31800 (CORRECT)
+    Iterations: 2
+
+  Example 23:
+    Question ID: 310
+    First Answer: 1000 (WRONG)
+    Final Answer: 2050 (CORRECT)
+    Iterations: 2
+
+  Example 24:
+    Question ID: 311
+    First Answer: 105 (WRONG)
+    Final Answer: 91 (CORRECT)
+    Iterations: 2
+
+  Example 25:
+    Question ID: 316
+    First Answer: 180 (WRONG)
+    Final Answer: 156 (CORRECT)
+    Iterations: 2
+
+  Example 26:
+    Question ID: 327
+    First Answer: 21 (WRONG)
+    Final Answer: 31 (CORRECT)
+    Iterations: 2
+
+  Example 27:
+    Question ID: 335
+    First Answer: 410 (WRONG)
+    Final Answer: 310 (CORRECT)
+    Iterations: 2
+
+  Example 28:
+    Question ID: 341
+    First Answer: 240 (WRONG)
+    Final Answer: 260 (CORRECT)
+    Iterations: 3
+
+  Example 29:
+    Question ID: 346
+    First Answer: 15 (WRONG)
+    Final Answer: 9 (CORRECT)
+    Iterations: 2
+
+  Example 30:
+    Question ID: 348
+    First Answer: 120 (WRONG)
+    Final Answer: 10 (CORRECT)
+    Iterations: 2
+
+  Example 31:
+    Question ID: 354
+    First Answer: 15 (WRONG)
+    Final Answer: 45 (CORRECT)
+    Iterations: 2
+
+  Example 32:
+    Question ID: 356
+    First Answer: 25 (WRONG)
+    Final Answer: 21 (CORRECT)
+    Iterations: 2
+
+  Example 33:
+    Question ID: 398
+    First Answer: 126 (WRONG)
+    Final Answer: 168 (CORRECT)
+    Iterations: 2
+
+  Example 34:
+    Question ID: 424
+    First Answer: 450 (WRONG)
+    Final Answer: 570 (CORRECT)
+    Iterations: 3
+
+  Example 35:
+    Question ID: 429
+    First Answer: 17 (WRONG)
+    Final Answer: 13 (CORRECT)
+    Iterations: 2
+
+  Example 36:
+    Question ID: 430
+    First Answer: 144 (WRONG)
+    Final Answer: 132 (CORRECT)
+    Iterations: 2
+
+  Example 37:
+    Question ID: 442
+    First Answer: 56 (WRONG)
+    Final Answer: 49 (CORRECT)
+    Iterations: 2
+
+  Example 38:
+    Question ID: 457
+    First Answer: 40 (WRONG)
+    Final Answer: 45 (CORRECT)
+    Iterations: 2
+
+  Example 39:
+    Question ID: 459
+    First Answer: 14 (WRONG)
+    Final Answer: 2 (CORRECT)
+    Iterations: 2
+
+  Example 40:
+    Question ID: 476
+    First Answer: 20 (WRONG)
+    Final Answer: 5 (CORRECT)
+    Iterations: 2
+
+Degraded Cases (all 2):
+
+  Example 1:
+    Question ID: 129
+    First Answer: 10000 (CORRECT)
+    Final Answer: -10000 (WRONG)
+    Iterations: 2
+
+  Example 2:
+    Question ID: 145
+    First Answer: 4000 (CORRECT)
+    Final Answer: 10 (WRONG)
+    Iterations: 3
+
+================================================================================
