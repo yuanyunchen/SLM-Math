@@ -1,0 +1,14 @@
+{
+  "total_samples": 19426,
+  "gsm8k": {
+    "total": 7350,
+    "round_1": 7146,
+    "round_2": 108,
+    "round_3": 96
+  },
+  "math": {
+    "total": 12076,
+    "round_1": 11935,
+    "round_2": 141
+  }
+}
