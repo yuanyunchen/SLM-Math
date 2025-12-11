@@ -1,2 +1,0 @@
-model,agent,dataset,total_samples,correct,accuracy,first_try_correct,first_try_accuracy,improved_cases,degraded_cases,failed_cases,avg_time_per_sample,total_time,timestamp
-Qwen2.5-Math-1.5B,agent_default_prompt_with_code,math500,500,205,0.41,291,0.582,15,101,194,57.95060438585281,28975.302192926407,2025-12-10T06:30:28.712046

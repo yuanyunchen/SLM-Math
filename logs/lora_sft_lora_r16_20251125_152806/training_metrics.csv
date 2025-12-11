@@ -1,2 +1,0 @@
-timestamp,step,epoch,loss,grad_norm,learning_rate,entropy,num_tokens,mean_token_accuracy
-2025-11-25 15:29:17,1,0.003798670465337132,1.1085,0.2157212346792221,0.0,0.9330868273973465,74768.0,0.7592926025390625
