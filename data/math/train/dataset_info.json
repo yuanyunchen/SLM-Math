@@ -1,0 +1,50 @@
+{
+  "builder_name": "parquet",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "competition_math",
+  "dataset_size": 9717605,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/qwedsacf/competition_math@e839825f9ec5c6cfa585c654a59610969ec13993/data/train-00000-of-00001-7320a6f3aba8ebd2.parquet": {
+      "num_bytes": 4848345,
+      "checksum": null
+    }
+  },
+  "download_size": 4848345,
+  "features": {
+    "problem": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "level": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "type": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "solution": {
+      "dtype": "string",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 14565950,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 9717605,
+      "num_examples": 12500,
+      "dataset_name": "competition_math"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}

@@ -1,0 +1,50 @@
+================================================================================
+Reasoning + Code Data Generation Statistics (V2)
+================================================================================
+
+Generation Time: 2025-12-09 10:40:54
+
+Configuration:
+--------------------------------------------------------------------------------
+Teacher Models: x-ai/grok-4-1-fast-reasoning
+Expert Models: 
+Round 1 Attempts: 3
+Round 2 Attempts: 5
+Workers: 512
+Code Timeout: 8s
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Solutions Generated: 16420
+Unique Samples Solved: 16420
+
+Per-Dataset Statistics:
+--------------------------------------------------------------------------------
+
+gsm8k-train:
+  Total Samples: 7473
+  Solved: 7196 (96.29%)
+    Round 1: 7196
+    Round 2: 0
+  Unsolved: 277
+  Total Solutions: 7196
+
+math-train:
+  Total Samples: 12500
+  Solved: 9224 (73.79%)
+    Round 1: 9224
+    Round 2: 0
+  Unsolved: 3276
+  Total Solutions: 9224
+
+================================================================================
+Per-Model Statistics:
+--------------------------------------------------------------------------------
+
+x-ai/grok-4-1-fast-reasoning:
+  Solutions: 16420
+  Correct: 16420
+  Unique Samples: 11102
+  Round 1: 16420/16420 correct
+
+================================================================================
