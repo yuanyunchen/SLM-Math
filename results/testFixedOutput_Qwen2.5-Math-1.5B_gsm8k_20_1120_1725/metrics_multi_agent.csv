@@ -1,0 +1,2 @@
+model,dataset,mode,accuracy,correct,total,avg_time_per_sample,total_time
+Qwen2.5-Math-1.5B,gsm8k,multi_agent,0.55,11,20,19.172046434879302,383.44092869758606

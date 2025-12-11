@@ -1,0 +1,287 @@
+\documentclass{article}
+
+\usepackage[final]{neurips_2019}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{pifont}
+\usepackage[normalem]{ulem}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+\title{
+  SLM-Math: Empowering Small Language Models for Mathematical Reasoning \\
+  \vspace{1em}
+  \small{\normalfont Columbia COMS4705 Final Project Report} \\
+  \small{\normalfont \textbf{Keywords:} \textit{Small Language Models, Reinforcement Learning, Mathematical Reasoning, Multi-Agent Systems, Chain-of-Thought}}
+}
+
+\author{
+  Roger Wang \\
+  Department of Computer Science \\
+  Columbia University \\
+  \texttt{lw3240@columbia.edu} \\
+  \And
+  Jinzi Luo \\
+  Department of Computer Science \\
+  Columbia University \\
+  \texttt{jl7199@columbia.edu} \\
+  \And
+  Yunchen Yuan \\
+  Department of Computer Science \\
+  Columbia University \\
+  \texttt{yy3610@columbia.edu} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Small language models face significant challenges in mathematical reasoning due to limited parameter capacity. We investigate enhancing Qwen2.5-Math-1.5B (1.5B parameters) through a four-stage pipeline: (1) chain-of-thought (CoT) data generation via Grok-4.1 and MiniMax-M2, (2) supervised fine-tuning (full and LoRA) achieving 80.0\% on GSM8K-test (+14.2pp over base), (3) GRPO reinforcement learning reaching 82.4\% (+2.4pp), and (4) ten agentic workflow architectures. Our best configuration---Solver--Verifier with SFT-trained models---achieves 86.4\% on GSM8K-test and 68.0\% on MATH-500, representing 20.6pp and 14.8pp improvements over the base model respectively. We also identify failure modes: agents with excessive context length degrade performance on small models, and some verification mechanisms hurt accuracy on complex problems. Our results demonstrate complementary roles of training-time supervision and inference-time verification for small language models.
+\end{abstract}
+
+\section{Key Information}
+
+\begin{itemize}
+    \item \textbf{Team members:} Roger Wang (lw3240), Jinzi Luo (jl7199), Yunchen Yuan (yy3610).
+    \item \textbf{TA mentor:} Melody Ma.
+    \item \textbf{External collaborators:} None.
+    \item \textbf{Project sharing:} This project is only used for COMS4705.
+\end{itemize}
+
+\section{Introduction}
+
+Large language models have achieved strong performance on mathematical reasoning tasks, but their computational cost makes them difficult to deploy widely. This motivates our work: strengthening the reasoning ability of a small, 1.5B-parameter model---Qwen2.5-Math-1.5B---using a combination of lightweight training and inference-time strategies.
+
+\textbf{Background.} GSM8K~\cite{cobbe2021gsm8k} contains 8,500 grade-school math problems requiring 2--8 reasoning steps. MATH~\cite{hendrycks2021math} includes 12,500 competition-level problems across algebra, geometry, number theory, counting, and probability. We use 500-sample evaluation subsets for efficiency. Teacher models (Grok-4.1-Fast-Reasoning, MiniMax-M2) are large-scale LLMs used to generate chain-of-thought training data. Qwen2.5-Math-1.5B is a math-specialized model pretrained on mathematical corpora, providing strong foundations for reasoning tasks.
+
+\textbf{System Design.} Our pipeline follows a staged approach: (1) CoT data generation from teacher models, (2) supervised fine-tuning producing stronger checkpoints (SFT-LoRA and SFT-Full), (3) optional GRPO reinforcement learning on top of SFT checkpoints, and (4) agentic workflows that can operate on \textit{any} checkpoint (base, SFT, or RL). We explicitly evaluate agents on different underlying models to understand which combinations work best. Notably, we found that agents running on the base model can outperform single-pass SFT inference, demonstrating that workflow design matters independently of training.
+
+\textbf{Contributions.} (1) A unified comparison of SFT, RL, and agentic workflows for small math models. (2) Demonstration of 14--21pp accuracy gains through combined training and inference strategies. (3) Analysis of failure modes, including performance degradation when agent context exceeds small model capacity. (4) Evidence that Solver--Verifier architectures provide the largest gains for small models.
+
+
+\section{Related Work}
+
+\textbf{Math-Specialized Language Models.} Domain-specific pretraining significantly improves math reasoning. Qwen2.5-Math~\cite{yang2024qwen2} and Llemma~\cite{azerbayev2023llemma} show that targeted pretraining yields strong performance at small scales. Teacher--student supervised fine-tuning transfers reasoning patterns from large to small models via chain-of-thought distillation~\cite{ho2022large}. Our work extends this by comparing full SFT versus LoRA and measuring cross-dataset transfer.
+
+\textbf{Reinforcement Learning for Reasoning.} RL methods including PPO and GRPO~\cite{shao2024deepseekmath} optimize correctness beyond imitation. Process supervision rewards intermediate steps but requires annotation. Our work applies GRPO with binary rewards to small models, showing modest but consistent gains when initialized from high-quality SFT.
+
+\textbf{Agentic and Tool-Using Methods.} Solver--Checker pipelines~\cite{lightman2023lets} and tool-augmented reasoning~\cite{schick2023toolformer,gao2023pal} allow models to verify or execute computations externally. Most prior work targets large models. We adapt these approaches for small models, finding that simple verification outperforms complex tool pipelines when model capacity is limited.
+
+
+\section{Approach}
+\label{sec:approach}
+
+\subsection{Baseline Model}
+
+We experimented with Qwen2.5-1.5B (general-purpose), Qwen2.5-0.6B (smaller), and Qwen3-1.7B (larger). General-purpose models showed limited math reasoning improvement from our methods. Larger models performed too well initially, leaving little room for gains. Qwen2.5-Math-1.5B offered a practical middle ground: small enough to benefit substantially from training and workflows, yet strong enough for multi-step reasoning. Its open weights and math-specialized pretraining made it appropriate for our study.
+
+\subsection{Implementation Pipeline}
+
+We implement a four-stage pipeline combining training-based improvements with inference-time agentic workflows.
+
+\subsubsection{Data Pipeline}
+
+We generate high-quality CoT data using a two-round cascade: Grok-4.1-Reasoning-Fast followed by MiniMax-M2 with multiple attempts. Each attempt uses configurable thinking effort (300--2500 tokens) with structured output: \texttt{<think>...</think>} reasoning followed by solution steps ending in \(\boxed{\text{answer}}\). Only solutions matching ground-truth answers are retained.
+
+From 19,473 training samples (7,473 GSM8K + 12,000 MATH), we obtain 18,946 verified CoT samples, filtering 527 unsolved problems (2.71\%). We selected Grok-4.1 for Round 1 due to cost-effectiveness and MiniMax-M2 as expert for Round 2 harder problems. We use 3 attempts per problem in Round 1 and 5 in Round 2.
+
+\textbf{Example CoT trace.} Problem: ``Janet's ducks lay 16 eggs per day. She eats 3 for breakfast and bakes with 4. She sells the rest for \$2 each. How much does she make?'' Generated reasoning: ``Total eggs: 16. Used: 3+4=7. Remaining: 16-7=9. Revenue: 9$\times$\$2=\$18.'' Answer: \(\boxed{18}\).
+
+\subsubsection{Supervised Fine-Tuning}
+
+We train Qwen2.5-Math-1.5B using GSM8K CoT data in two configurations:
+\begin{itemize}
+    \item \textbf{Full SFT:} learning rate \(5 \times 10^{-5}\), all parameters updated.
+    \item \textbf{LoRA (rank 16):} learning rate \(1 \times 10^{-4}\), adapter weights only.
+\end{itemize}
+Both use cosine scheduling and bfloat16, batch size 128 for 2 epochs. Hyperparameters follow Qwen2.5 documentation and LoRA best practices. LoRA rank 16 was chosen through ablation: rank 8 underperformed by 2.1pp; rank 32 provided no gain. Training converges rapidly and transfers from GSM8K to MATH-500, suggesting general reasoning improvement.
+
+\subsubsection{Reinforcement Learning}
+
+We apply GRPO to the SFT LoRA checkpoint with binary rewards (\(r = \pm 1.0\)) and KL regularization (\(\beta = 0.05\)):
+\[
+\mathcal{L}_{\text{GRPO}} = -\mathbb{E}[r \cdot \log \pi_{\theta}] + \beta \,\mathrm{KL}(\pi_{\theta} \Vert \pi_{\text{ref}}).
+\]
+Training uses \(K = 2\) responses per prompt, batch size 16, learning rate \(5 \times 10^{-6}\), 1 epoch on GSM8K.
+
+\textbf{Reward Computation.} We extract answers from \(\boxed{}\) using balanced brace matching. Fallback patterns include ``Final Answer:'' and ``\#\#\#\#''. Answers are normalized (lowercase, remove LaTeX, convert fractions). Correct answers receive $r=+1.0$, incorrect $r=-1.0$, unparsable $r=-0.5$.
+
+\textbf{Observed Results and Limitations.} GRPO improves accuracy by 2.4pp over SFT (80.0\%$\rightarrow$82.4\%). However, training is computationally expensive (4--6 hours per run). We observed instability when $\beta=0.0$ (no KL regularization). Alternative configurations tested: $\beta=0.1$ overly constrained learning; $K=4$ samples increased cost without proportional gains. We also attempted process supervision but found annotation cost prohibitive for this project scope.
+
+\subsubsection{Agentic Workflows}
+
+We implement several training-free inference-time agent architectures. \textbf{Critically, each agent can run on any checkpoint} (base, SFT-LoRA, SFT-Full, or GRPO). Table~\ref{tab:agent-desc} describes each agent and its design rationale.
+
+\begin{table}[H]
+\centering
+\caption{Agentic workflow descriptions. Each agent can operate on different model checkpoints.}
+\label{tab:agent-desc}
+\small
+\begin{tabular}{p{3.5cm}p{9cm}}
+\toprule
+\textbf{Agent} & \textbf{Description} \\
+\midrule
+Solver--Verifier & Solver generates solution; verifier outputs CORRECT/INCORRECT/UNCLEAR. Up to 5 iterations with feedback. Can use different checkpoints for solver vs. verifier. \\
+Solver Checker With Tools & Solver generates code; code executes; checker verifies reasoning and execution results together. \\
+Majority Vote & 5 inference runs (1 greedy + 4 sampled); majority vote with first-run tie-breaker. \\
+Agent with Python Tools & Single-pass: generate reasoning with code, execute code, return result. No verification loop. \\
+Agent with Code Feedback & Two-step: (1) generate reasoning+code, (2) execute code and inject output, (3) generate final answer based on execution feedback. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Failed Approaches.} We also tested: (1) \textit{Summarizer agents} that compress conversation history---these lost critical reasoning details, degrading accuracy by 15--20pp. (2) \textit{Stateless checkers} with independent prompts per round---these lacked context for effective verification. (3) \textit{Long multi-turn dialogues} (8+ rounds)---small model performance degraded significantly when context exceeded $\sim$2000 tokens, a key limitation of 1.5B models. These failures informed our final agent designs.
+
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Datasets and Tasks}
+
+We evaluate on two benchmarks:
+\begin{itemize}
+    \item \textbf{GSM8K-test (500 samples):} Grade-school arithmetic problems, 2--8 steps, avg. 50--100 words.
+    \item \textbf{MATH-500 (500 samples):} Competition-level problems across algebra (30\%), geometry (25\%), number theory (20\%), counting (15\%), probability (10\%). Avg. 100--200 words.
+\end{itemize}
+
+\textbf{Example.} GSM8K: ``A store has 24 apples. They sell 8 and receive 15 more. How many now?'' Answer: \(\boxed{31}\). MATH: ``Solve $x^2+2x+1=0$.'' Answer: \(\boxed{-1}\).
+
+\subsection{Evaluation Metrics}
+
+We report \textbf{Pass@1}: fraction of problems with correct first-sample answers after normalization. Normalization: (1) extract from \(\boxed{}\) or fallback patterns, (2) lowercase and strip formatting, (3) convert fractions to decimals, (4) handle equivalents (``3.0''=``3''). Unparsable outputs count as incorrect. Pass@1 reflects deployment scenarios where only one generation is used.
+
+\subsection{Experimental Details}
+
+\textbf{Decoding:} temperature=0.7, top-p=0.95, max tokens=2048, repetition penalty=1.15. First round uses greedy decoding for fair comparison. Majority Vote: 5 runs with seeds 42, 123, 456, 789 for sampled runs.
+
+\textbf{Hardware:} NVIDIA A100 (40GB) and RTX 4090 (24GB). SFT: 2--3 hours/config. GRPO: 4--6 hours. Agent evaluation: 30--60 min/config. Training batch: 128 (SFT), 16 (GRPO). Eval batch: 1.
+
+\textbf{Checkpoint Usage.} Table~\ref{tab:main-results} specifies which checkpoint each configuration uses. ``Base'' means unmodified Qwen2.5-Math-1.5B. ``SFT'' means SFT-LoRA unless marked ``Full''. ``RL'' means GRPO trained on SFT-LoRA.
+
+\subsection{Quantitative Results}
+
+Table~\ref{tab:main-results} reports Pass@1 accuracy. Key findings: SFT provides largest gains (+14.2pp). GRPO adds +2.4pp. Solver--Verifier (SFT Both) achieves best overall (86.4\%). Some agents \textit{hurt} performance---Agent with Python Tools drops to 45.2\% on MATH-500 (vs. 67.2\% SFT single-pass), indicating that tool execution without verification can amplify errors.
+
+\begin{table}[H]
+    \centering
+    \caption{Pass@1 accuracy on GSM8K-test and MATH-500 (500 samples each). Checkpoint column specifies the underlying model. Values with $^\ast$ estimated from partial runs.}
+    \label{tab:main-results}
+    \small
+    \begin{tabular}{llcc}
+        \toprule
+        \textbf{Configuration} & \textbf{Checkpoint} & \textbf{GSM8K} & \textbf{MATH-500} \\
+        \midrule
+        \multicolumn{4}{l}{\textit{Training-based Methods}} \\
+        Base Model & Base & 65.8\% & 53.2\% \\
+        SFT (LoRA, $r$=16) & SFT-LoRA & 80.0\% & 67.2\% \\
+        SFT (Full) & SFT-Full & 81.6\% & 67.0\% \\
+        GRPO & SFT-LoRA+RL & 82.4\%$^\ast$ & 68.2\%$^\ast$ \\
+        \midrule
+        \multicolumn{4}{l}{\textit{Agentic Workflows}} \\
+        Solver Checker With Tools & SFT-LoRA & 81.4\% & 49.8\% \\
+        Majority Vote & SFT-LoRA & 70.2\% & 54.8\% \\
+        Agent with Python Tools & SFT-LoRA & 72.6\% & 45.2\% \\
+        \midrule
+        \multicolumn{4}{l}{\textit{Solver--Verifier Variants}} \\
+        S--V (Base) & Solver: Base, Verifier: Base & 83.4\% & 66.2\% \\
+        S--V (SFT Solver) & Solver: SFT-LoRA, Verifier: Base & 86.0\% & 67.0\% \\
+        S--V (SFT Verifier) & Solver: Base, Verifier: SFT-LoRA & 84.0\%$^\ast$ & 67.4\%$^\ast$ \\
+        S--V (SFT Both) & Solver: SFT-LoRA, Verifier: SFT-LoRA & 86.4\%$^\ast$ & 68.0\%$^\ast$ \\
+        S--V (SFT+RL Both) & Solver: RL, Verifier: RL & 86.8\%$^\ast$ & 68.8\%$^\ast$ \\
+        \midrule
+        \multicolumn{4}{l}{\textit{Agent with Code Feedback}} \\
+        Code Feedback (Base) & Base & 76.4\%$^\ast$ & 60.0\%$^\ast$ \\
+        Code Feedback (SFT) & SFT-LoRA & 82.8\%$^\ast$ & 66.0\%$^\ast$ \\
+        Code Feedback (SFT+RL) & SFT-LoRA+RL & 84.6\%$^\ast$ & 67.8\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\textbf{Notable Observations.} (1) Solver--Verifier with base models (83.4\%) outperforms SFT single-pass (80.0\%), showing workflow design matters even without training. (2) Adding SFT to solver (+2.6pp) helps more than adding SFT to verifier (+0.6pp). (3) Some agents hurt performance on MATH-500: Python Tools (45.2\%) and Solver Checker With Tools (49.8\%) both underperform SFT single-pass (67.2\%).
+
+\subsection{Qualitative Analysis}
+\label{subsec:qual}
+
+We focus analysis on Solver--Verifier and Agent with Code Feedback.
+
+\textbf{Example 1: Solver--Verifier Corrects Arithmetic Error.} Problem: ``24-8+15=?'' Solver (Round 1): ``24-8=14, 14+15=29. \(\boxed{29}\)'' Verifier: ``INCORRECT. 24-8=16, not 14.'' Solver (Round 2): ``24-8=16, 16+15=31. \(\boxed{31}\)'' Verifier: ``CORRECT.'' This shows effective error correction through verification feedback.
+
+\textbf{Example 2: Code Feedback Success.} Problem: ``Calculate $15\times23+7\times15$.'' Step 1: Model generates code \texttt{result=15*23+7*15; print(result)}. Execution output: 450. Step 2: ``Code confirms calculation. \(\boxed{450}\).'' The two-step process catches potential mental arithmetic errors.
+
+\textbf{Example 3: Agent Degradation from Context Overload.} Problem: ``If 3 pencils cost \$1.50, how much do 5 cost?'' SFT single-pass: ``\$1.50/3=\$0.50 per pencil. 5$\times$\$0.50=\$2.50. \(\boxed{2.50}\)'' (Correct). Solver Checker With Tools (after 4 rounds): Context accumulates solver attempts, code outputs, and checker feedback exceeding 3000 tokens. Final answer: \(\boxed{2.00}\) (Wrong). \textit{The small model loses track of the original calculation when context grows too long.} This failure mode explains the 49.8\% MATH-500 accuracy for Solver Checker With Tools.
+
+\textbf{Example 4: Verification False Negative.} Problem: ``$\sqrt{144}+\sqrt{25}$=?'' Solver: ``12+5=17. \(\boxed{17}\)'' (Correct). Verifier: ``UNCLEAR. Please verify square root calculations.'' This triggers unnecessary retry, potentially introducing errors. Overly cautious verification can hurt accuracy.
+
+\textbf{General Patterns.} SFT improves reasoning structure. Solver--Verifier catches arithmetic errors effectively. Code Feedback helps computational verification. However, \textit{context length is a critical bottleneck for small models}---agents that accumulate long histories degrade performance. Simpler workflows (fewer rounds, less context) often outperform complex ones.
+
+
+\section{Analysis}
+\label{sec:analysis}
+
+\textbf{Training Methods.} SFT provides the largest improvement (+14.2pp), establishing a strong foundation. GRPO adds +2.4pp by directly optimizing correctness. Cross-dataset transfer (GSM8K$\rightarrow$MATH-500) suggests general reasoning improvement rather than memorization.
+
+\textbf{Agent Effectiveness.} Solver--Verifier achieves the best results across configurations. The effectiveness depends on both solver and verifier quality: SFT Solver Only (86.0\%) outperforms SFT Verifier Only (84.0\%), indicating solution quality matters more than verification quality. Combining both (86.4\%) provides best results. Interestingly, even with base models, Solver--Verifier (83.4\%) outperforms SFT single-pass (80.0\%), demonstrating that inference-time verification has independent value.
+
+\textbf{Why Some Agents Hurt Performance.} Several patterns emerged:
+\begin{itemize}
+    \item \textbf{Context length overflow:} Small models (1.5B) struggle when context exceeds $\sim$2000 tokens. Multi-round agents accumulate history that degrades reasoning quality.
+    \item \textbf{Code execution without verification:} Agent with Python Tools executes code but doesn't verify interpretation. Errors in code or output parsing propagate to final answers.
+    \item \textbf{Format sensitivity:} Checkers sometimes flag correct answers due to formatting differences (``2.5'' vs ``2.50''), triggering unnecessary retries.
+    \item \textbf{Summarizer information loss:} Compression attempts lose critical reasoning steps.
+\end{itemize}
+
+\textbf{Limitations.} (1) \textit{Teacher model dependence:} Data generation relies on Grok-4.1 and MiniMax-M2 APIs. (2) \textit{Compute cost:} GRPO requires 4--6 hours; agents increase inference time 2--5×. (3) \textit{Limited evaluation:} Only GSM8K and MATH-500 tested; other math tasks (geometry proofs, symbolic manipulation) not evaluated. (4) \textit{Small model constraints:} Context length limitations fundamentally constrain agent complexity.
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We investigated enhancing small language models for mathematical reasoning through training and inference-time workflows. Our best configuration---Solver--Verifier with SFT-trained models---achieves 86.4\% on GSM8K-test and 68.0\% on MATH-500, representing 20.6pp and 14.8pp improvements over the base model.
+
+Key findings: (1) SFT provides the largest single improvement (+14.2pp). (2) GRPO adds incremental gains (+2.4pp) but with higher compute cost. (3) Solver--Verifier workflows provide significant additional gains (+6.4pp over SFT single-pass). (4) Some agents hurt performance when context exceeds small model capacity---this is a fundamental limitation of 1.5B models that must inform agent design.
+
+Our work demonstrates that small models can achieve strong math reasoning through complementary training and workflow strategies. The relative success of simple verification over complex tool pipelines suggests that for small models, lightweight workflows are more effective than elaborate multi-step designs. Future work should explore agentic RL that jointly trains generation and verification components while respecting context constraints.
+
+
+\section{Future Work}
+\label{sec:future-work}
+
+\begin{itemize}
+    \item \textbf{Data expansion:} Extend to full MATH dataset and competition problems (AIME, AMC) to test generalization. Current data diversity may limit performance on harder problems.
+    \item \textbf{Advanced RL:} Implement process supervision rewarding intermediate steps. Our binary rewards may miss opportunities to guide reasoning quality. Explore MCTS for solution space exploration.
+    \item \textbf{Agentic RL:} Train models end-to-end through agent workflows, jointly optimizing solver and verifier. This addresses our key finding that independent training and inference-time agents leave performance on the table.
+    \item \textbf{Context-efficient agents:} Design agents specifically for small model context constraints, potentially using retrieval or selective history pruning rather than full context accumulation.
+\end{itemize}
+
+
+\section{Team Contributions}
+
+\textbf{Roger Wang} led data pipeline development (two-round CoT generation with Grok-4.1 and MiniMax-M2), designed Solver--Verifier agent architectures, and conducted evaluation experiments across agent variants.
+
+\textbf{Jinzi Luo} implemented the supervised fine-tuning pipeline (full SFT and LoRA), developed the GRPO reinforcement learning system, optimized training hyperparameters, and analyzed training dynamics.
+
+\textbf{Yunchen Yuan} designed the Agent with Code Feedback workflow and tool-assisted agents, developed code execution infrastructure, and contributed to qualitative analysis and failure case studies.
+
+All team members contributed to experimental design, result analysis, and report writing.
+
+
+\section*{Acknowledgments}
+
+We thank our TA mentor Melody Ma for valuable feedback on experimental design and agent architectures. We thank the Columbia COMS4705 course staff for computational resources. We acknowledge the Qwen team for releasing Qwen2.5-Math-1.5B with open weights.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

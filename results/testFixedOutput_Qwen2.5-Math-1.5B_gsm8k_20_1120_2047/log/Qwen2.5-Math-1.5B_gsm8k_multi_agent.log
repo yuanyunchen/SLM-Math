@@ -1,0 +1,40 @@
+================================================================================
+Starting evaluation loop - 20 samples
+================================================================================
+
+
+================================================================================
+[Sample 1/20 | Dataset Index: 0]
+Question: Janet’s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the rem...
+Ground Truth: 18
+Full Question: Janet’s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?
+
+========================================
+[Iteration 1/5]
+========================================
+
+----------------------------------------
+[Iteration 1] Generating Solver response...
+----------------------------------------
+
+----------------------------------------
+[Iteration 1] Generating Checker response...
+----------------------------------------
+
+Checker Verdict: UNCLEAR
+
+? Checker verdict is UNCLEAR. 
+Continuing to next iteration...
+
+========================================
+[Iteration 2/5]
+========================================
+
+----------------------------------------
+[Iteration 2] Generating Solver response...
+Checker feedback: The previous solution was unclear. Please try again with clearer reasoning.
+----------------------------------------
+
+----------------------------------------
+[Iteration 2] Generating Checker response...
+----------------------------------------
