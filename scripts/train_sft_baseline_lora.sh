@@ -15,16 +15,16 @@ ROUND_NAME="reasoning_code_lora"  # Change this to identify your training round
 MODEL="pretrained_models/Qwen2.5-Math-1.5B"
 
 # Training data path
-DATA_PATH="data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json"
+DATA_PATH="data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json"
 
 # Training mode (lora = LoRA fine-tuning)
 MODE="lora"
 
-# LoRA rank
-LORA_RANK=32
+# LoRA rank (matches report configuration)
+LORA_RANK=16
 
-# Number of training epochs
-NUM_EPOCHS=3
+# Number of training epochs (matches report: 2 epochs)
+NUM_EPOCHS=2
 
 # Batch size (single GPU, LoRA can use larger batch)
 BATCH_SIZE=20
@@ -87,22 +87,15 @@ if [ -n "$USE_WANDB" ]; then
     fi
 fi
 
-python models/train_sft_baseline.py \
-    --mode "$MODE" \
-    --model_name "$MODEL" \
-    --data_path "$DATA_PATH" \
-    --round_name "$ROUND_NAME" \
+python models/train_sft_lora.py \
+    --model "$MODEL" \
+    --data "$DATA_PATH" \
     --lora_rank "$LORA_RANK" \
-    --num_epochs "$NUM_EPOCHS" \
+    --epochs "$NUM_EPOCHS" \
     --batch_size "$BATCH_SIZE" \
-    --gradient_accumulation_steps "$GRADIENT_ACCUMULATION_STEPS" \
-    --gpus "$GPUS" \
-    --save_every_n_epochs "$SAVE_EVERY_N_EPOCHS" \
-    --eval_every_n_epochs "$EVAL_EVERY_N_EPOCHS" \
-    $WANDB_ARGS \
-    $ENABLE_EVAL \
-    --gradient_checkpointing \
-    --eval_samples "$EVAL_SAMPLES"
+    --gradient_accumulation "$GRADIENT_ACCUMULATION_STEPS" \
+    --learning_rate 1e-4 \
+    --gpus "$GPUS"
 
 echo "=========================================="
 echo "Training completed!"

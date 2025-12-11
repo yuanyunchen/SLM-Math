@@ -15,13 +15,13 @@ ROUND_NAME="code_sft"  # Change this to identify your training round
 MODEL="pretrained_models/Qwen2.5-Math-1.5B"
 
 # Training data path
-DATA_PATH="data/reasoning_code/run_1208_1337/reasoning_code_gsm8k_train_math_train_1208_1337.json"
+DATA_PATH="data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json"
 
 # Training mode (sft = full fine-tuning)
 MODE="sft"
 
-# Number of training epochs
-NUM_EPOCHS=3
+# Number of training epochs (matches report: 2 epochs)
+NUM_EPOCHS=2
 
 # Batch size (single GPU)
 BATCH_SIZE=16
@@ -31,9 +31,8 @@ BATCH_SIZE=16
 # = 16 * 4 = 64
 GRADIENT_ACCUMULATION_STEPS=4
 
-# Learning rate
-# Options: 1e-5 (conservative) or 5e-5 (aggressive)
-LEARNING_RATE=1e-5
+# Learning rate (matches report: 5e-5 for full SFT)
+LEARNING_RATE=5e-5
 
 # Save checkpoint every N epochs
 SAVE_EVERY_N_EPOCHS=1
@@ -88,22 +87,14 @@ if [ -n "$USE_WANDB" ]; then
     fi
 fi
 
-python models/train_sft_baseline.py \
-    --mode "$MODE" \
-    --model_name "$MODEL" \
-    --data_path "$DATA_PATH" \
-    --round_name "$ROUND_NAME" \
-    --num_epochs "$NUM_EPOCHS" \
+python models/train_sft_full.py \
+    --model "$MODEL" \
+    --data "$DATA_PATH" \
+    --epochs "$NUM_EPOCHS" \
     --batch_size "$BATCH_SIZE" \
-    --gradient_accumulation_steps "$GRADIENT_ACCUMULATION_STEPS" \
+    --gradient_accumulation "$GRADIENT_ACCUMULATION_STEPS" \
     --learning_rate "$LEARNING_RATE" \
-    --gpus "$GPUS" \
-    --save_every_n_epochs "$SAVE_EVERY_N_EPOCHS" \
-    --eval_every_n_epochs "$EVAL_EVERY_N_EPOCHS" \
-    $WANDB_ARGS \
-    $ENABLE_EVAL \
-    --gradient_checkpointing \
-    --eval_samples "$EVAL_SAMPLES"
+    --gpus "$GPUS"
 
 echo "=========================================="
 echo "Training completed!"

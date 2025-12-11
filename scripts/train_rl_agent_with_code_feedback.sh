@@ -61,9 +61,9 @@ LEARNING_RATE=5e-6
 NUM_RETURN_SEQUENCES=2
 TEMPERATURE=0.7
 
-# KL divergence coefficient
+# KL divergence coefficient (matches report: 0.05)
 # Set to 0 to disable KL penalty (saves ~3x speed and ~3GB VRAM)
-KL_COEF=0
+KL_COEF=0.05
 
 # Logging and evaluation frequency
 LOGGING_STEPS=10

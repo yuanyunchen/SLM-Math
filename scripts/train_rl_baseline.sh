@@ -132,23 +132,14 @@ if [ -n "$USE_WANDB" ]; then
     fi
 fi
 
-python models/train_rl_base.py \
+python models/train_rl_grpo.py \
+    --sft_checkpoint "$MODEL_PATH" \
     --config "$CONFIG_FILE" \
-    --model_path "$MODEL_PATH" \
-    --output_dir "$OUTPUT_DIR" \
-    --max_samples "$MAX_SAMPLES" \
-    --num_epochs "$NUM_EPOCHS" \
-    --batch_size "$BATCH_SIZE" \
-    --gradient_accumulation_steps "$GRADIENT_ACCUMULATION_STEPS" \
+    --output "$OUTPUT_DIR" \
+    --epochs "$NUM_EPOCHS" \
     --learning_rate "$LEARNING_RATE" \
-    --num_return_sequences "$NUM_RETURN_SEQUENCES" \
-    --temperature "$TEMPERATURE" \
     --kl_coef "$KL_COEF" \
-    --logging_steps "$LOGGING_STEPS" \
-    --eval_steps "$EVAL_STEPS" \
-    --save_steps "$SAVE_STEPS" \
-    --eval_samples "$EVAL_SAMPLES" \
-    $WANDB_ARGS
+    --gpus "${CUDA_VISIBLE_DEVICES}"
 
 ################################################################################
 # Post-training Summary

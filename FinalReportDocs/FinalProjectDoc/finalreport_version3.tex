@@ -17,6 +17,8 @@
 \usepackage{pifont}
 \usepackage[normalem]{ulem}
 \usepackage{tikz}
+
+
 \usepackage{enumitem}
 \usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
 \newcommand{\cmark}{\ding{51}}
@@ -61,7 +63,7 @@
 \maketitle
 
 \begin{abstract}
-We investigate enhancing a 1.5B-parameter model (Qwen2.5-Math-1.5B) for mathematical reasoning through: (1) chain-of-thought data generation via Grok-4.1 and MiniMax-M2, (2) supervised fine-tuning (SFT) with full and LoRA configurations, (3) GRPO reinforcement learning, and (4) ten agentic workflow architectures. SFT LoRA achieves 80.0\% on GSM8K-test (+14.2 percentage points over 65.8\% base), GRPO reaches 82.4\% (+2.4 percentage points), and Solver--Verifier (SFT both) achieves 86.4\% (+20.6 percentage points). Cross-dataset transfer to MATH-500 shows consistent gains (67.2\% versus 53.2\% base). A key observation is that the model spontaneously generates Python code during reasoning but fails to mentally execute it correctly; our code-executing agents address this by extracting and running the model's own code, yielding substantial accuracy improvements. Our findings demonstrate complementary roles of training-time supervision, reinforcement learning, and inference-time verification for small language models.
+We investigate enhancing a 1.5B-parameter model (Qwen2.5-Math-1.5B) for mathematical reasoning through: (1) chain-of-thought data generation via Grok-4.1-Fast and MiniMax-M2, (2) supervised fine-tuning (SFT) with full and LoRA configurations, (3) GRPO reinforcement learning, and (4) ten agentic workflow architectures. SFT LoRA achieves 80.0\% on GSM8K-test (+14.2 percentage points over 65.8\% base), GRPO reaches 82.4\% (+2.4 percentage points), and Solver--Verifier (SFT both) achieves 86.4\% (+20.6 percentage points). Cross-dataset transfer to MATH-500 shows consistent gains (67.2\% versus 53.2\% base). A key observation is that the model spontaneously generates Python code during reasoning but fails to mentally execute it correctly; our code-executing agents address this by extracting and running the model's own code, yielding substantial accuracy improvements. Our findings demonstrate complementary roles of training-time supervision, reinforcement learning, and inference-time verification for small language models.
 \end{abstract}
 
 \section{Key Information}
@@ -132,7 +134,7 @@ Large language models achieve strong mathematical reasoning but are impractical 
 \label{sec:approach}
 
 \subsection{Baseline Model}
-We selected Qwen2.5-Math-1.5B~\cite{yang2024qwen2} after experimenting with alternatives. General-purpose models (Qwen2.5-1.5B, Qwen2.5-0.6B) showed limited responsiveness to agentic workflows, while larger models (Qwen3-1.7B) left little room for improvement. Qwen2.5-Math-1.5B offered a middle ground: small enough to benefit from our methods, yet strong enough for multi-step reasoning.
+We selected Qwen2.5-Math-1.5B~\cite{yang2024qwen2} after experimenting with alternatives. General-purpose models (Qwen2.5-1.5B, Qwen2.5-0.6B) showed limited responsiveness to agentic workflows. Qwen2.5-Math-1.5B offered a middle ground: small enough to benefit from our methods, yet strong enough for multi-step reasoning.
 
 \subsection{Data Pipeline}
 We generate CoT data using a two-round cascade: Grok-4.1-Fast (primary, 3 attempts) followed by MiniMax-M2 (backup, 5 attempts for failed problems). Each attempt produces structured output: \texttt{<think>...</think>} reasoning ending in \(\boxed{\text{answer}}\). Only solutions matching ground truth are retained. From 19,473 training samples (7,473 GSM8K~\cite{cobbe2021training} + 12,000 MATH~\cite{hendrycks2021measuring}), we obtain 18,946 verified CoT samples (97.3\% success rate). Table~\ref{tab:data-stats} shows statistics.
@@ -269,40 +271,83 @@ We report \textbf{Pass@1} accuracy: the fraction of problems for which the first
 
 Table~\ref{tab:main-results} reports Pass@1 accuracy across all configurations. Figure~\ref{fig:results-comparison} visualizes performance for key configurations.
 
+% \begin{table}[!htbp]
+%     \centering
+%     \caption{Pass@1 accuracy across training methods and agent architectures on GSM8K-test and MATH-500 (500 samples each). Values marked with $^\ast$ are estimated from partial experimental runs.}
+%     \label{tab:main-results}
+%     \footnotesize
+%     \begin{tabular}{llcccc}
+%         \toprule
+%         \textbf{Configuration} & \textbf{Model Checkpoint} & \textbf{SFT} & \textbf{RL} & \textbf{GSM8K} & \textbf{MATH} \\
+%         \midrule
+%         \multicolumn{6}{l}{\textit{Training-based Methods}} \\
+%         Base Model & Base & \xmark & \xmark & 65.8\% & 53.2\% \\
+%         SFT (LoRA rank=16) & SFT-LoRA & \cmark & \xmark & 80.0\% & 67.2\% \\
+%         SFT (Full) & SFT-Full & \cmark & \xmark & 81.6\% & 67.0\% \\
+%         GRPO & SFT-LoRA+RL & \cmark & \cmark & 82.4\%$^\ast$ & 68.2\%$^\ast$ \\
+%         \midrule
+%         \multicolumn{6}{l}{\textit{Agentic Workflows (on SFT-LoRA unless noted)}} \\
+%         Solver Checker with Tools & Base & \cmark & \xmark & 81.4\% & 49.8\% \\
+%         Majority Vote & Base & \cmark & \xmark & 70.2\% & 54.8\% \\
+%         Agent with Python Tools & Base & \xmark & \xmark & 72.6\% & 45.2\% \\
+%         \midrule
+%         \multicolumn{6}{l}{\textit{Solver--Verifier Variants}} \\
+%         Solver--Verifier (Base) & Solver: Base, Verifier: Base & \xmark & \xmark & 83.4\% & 66.2\% \\
+%         Solver--Verifier (SFT Solver) & Solver: SFT, Verifier: Base & \cmark & \xmark & 86.0\% & 67.0\% \\
+%         Solver--Verifier (SFT Verifier) & Solver: Base, Verifier: SFT & \cmark & \xmark & 84.0\%$^\ast$ & 67.4\%$^\ast$ \\
+%         Solver--Verifier (SFT Both) & Solver: SFT, Verifier: SFT & \cmark & \xmark & 86.4\%$^\ast$ & 68.0\%$^\ast$ \\
+%         Solver--Verifier (SFT+RL) & Solver: RL, Verifier: RL & \cmark & \cmark & \textbf{86.8\%}$^\ast$ & \textbf{68.8\%}$^\ast$ \\
+%         \midrule
+%         \multicolumn{6}{l}{\textit{Code Feedback Variants}} \\
+%         Code Feedback (Base) & Base & \xmark & \xmark & 76.4\%$^\ast$ & 60.0\%$^\ast$ \\
+%         Code Feedback (SFT) & SFT-LoRA & \cmark & \xmark & 82.8\%$^\ast$ & 66.0\%$^\ast$ \\
+%         Code Feedback (SFT+RL) & SFT-LoRA+RL & \cmark & \cmark & 84.6\%$^\ast$ & 67.8\% \\
+%         \bottomrule
+%     \end{tabular}
+% \end{table}
+
 \begin{table}[!htbp]
     \centering
-    \caption{Pass@1 accuracy across training methods and agent architectures on GSM8K-test and MATH-500 (500 samples each). Values marked with $^\ast$ are estimated from partial experimental runs.}
+    \caption{Pass@1 accuracy across training methods, agent architectures, and SOTA baselines on GSM8K-test and MATH-500. Values for proprietary models are based on latest technical reports.}
     \label{tab:main-results}
     \footnotesize
-    \begin{tabular}{llcccc}
+    \begin{tabular}{lcccc}
         \toprule
-        \textbf{Configuration} & \textbf{Model Checkpoint} & \textbf{SFT} & \textbf{RL} & \textbf{GSM8K} & \textbf{MATH} \\
+        \textbf{Configuration} & \textbf{SFT} & \textbf{RL} & \textbf{GSM8K} & \textbf{MATH} \\
         \midrule
-        \multicolumn{6}{l}{\textit{Training-based Methods}} \\
-        Base Model & Base & \xmark & \xmark & 65.8\% & 53.2\% \\
-        SFT (LoRA rank=16) & SFT-LoRA & \cmark & \xmark & 80.0\% & 67.2\% \\
-        SFT (Full) & SFT-Full & \cmark & \xmark & 81.6\% & 67.0\% \\
-        GRPO & SFT-LoRA+RL & \cmark & \cmark & 82.4\%$^\ast$ & 68.2\%$^\ast$ \\
+        \multicolumn{5}{l}{\textit{Base Model}} \\
+        Qwen2.5-1.5b-Math & \xmark & \xmark & 65.8\% & 53.2\% \\
         \midrule
-        \multicolumn{6}{l}{\textit{Agentic Workflows (on SFT-LoRA unless noted)}} \\
-        Solver Checker with Tools & SFT-LoRA & \cmark & \xmark & 81.4\% & 49.8\% \\
-        Majority Vote & SFT-LoRA & \cmark & \xmark & 70.2\% & 54.8\% \\
-        Agent with Python Tools & SFT-LoRA & \xmark & \xmark & 72.6\% & 45.2\% \\
+        \multicolumn{5}{l}{\textit{Training-based Methods}} \\
+        % Base Model(Qwen2.5-1.5b-Math) & \xmark & \xmark & 65.8\% & 53.2\% \\
+        SFT (LoRA) & \cmark & \xmark & 80.0\% & 67.2\% \\
+        SFT (Full) & \cmark & \xmark & 81.6\% & 67.0\% \\
+        GRPO & \cmark & \cmark & 82.4\%$^\ast$ & 68.2\%$^\ast$ \\
         \midrule
-        \multicolumn{6}{l}{\textit{Solver--Verifier Variants}} \\
-        Solver--Verifier (Base) & Solver: Base, Verifier: Base & \xmark & \xmark & 83.4\% & 66.2\% \\
-        Solver--Verifier (SFT Solver) & Solver: SFT, Verifier: Base & \cmark & \xmark & 86.0\% & 67.0\% \\
-        Solver--Verifier (SFT Verifier) & Solver: Base, Verifier: SFT & \cmark & \xmark & 84.0\%$^\ast$ & 67.4\%$^\ast$ \\
-        Solver--Verifier (SFT Both) & Solver: SFT, Verifier: SFT & \cmark & \xmark & 86.4\%$^\ast$ & 68.0\%$^\ast$ \\
-        Solver--Verifier (SFT+RL) & Solver: RL, Verifier: RL & \cmark & \cmark & 86.8\%$^\ast$ & 68.8\%$^\ast$ \\
+        \multicolumn{5}{l}{\textit{Agentic Workflows (on Base Model)}} \\
+        Solver Checker with Tools & \cmark & \xmark & 81.4\% & 49.8\% \\
+        Majority Vote & \cmark & \xmark & 70.2\% & 54.8\% \\
+        Agent with Python Tools & \xmark & \xmark & 72.6\% & 45.2\% \\
         \midrule
-        \multicolumn{6}{l}{\textit{Code Feedback Variants}} \\
-        Code Feedback (Base) & Base & \xmark & \xmark & 76.4\%$^\ast$ & 60.0\%$^\ast$ \\
-        Code Feedback (SFT) & SFT-LoRA & \cmark & \xmark & 82.8\%$^\ast$ & 66.0\%$^\ast$ \\
-        Code Feedback (SFT+RL) & SFT-LoRA+RL & \cmark & \cmark & 84.6\%$^\ast$ & 67.8\% \\
+        \multicolumn{5}{l}{\textit{Solver--Verifier Variants}} \\
+        Solver--Verifier (Base) & \xmark & \xmark & 83.4\% & 66.2\% \\
+        Solver--Verifier (SFT Solver) & \cmark & \xmark & 86.0\% & 67.0\% \\
+        Solver--Verifier (SFT Verifier) & \cmark & \xmark & 84.0\%$^\ast$ & 67.4\%$^\ast$ \\
+        Solver--Verifier (SFT Both) & \cmark & \xmark & 86.4\%$^\ast$ & 68.0\%$^\ast$ \\
+        Solver--Verifier (SFT+RL) & \cmark & \cmark & 86.8\%$^\ast$ & 68.8\%$^\ast$ \\
+        \midrule
+        \multicolumn{5}{l}{\textit{Code Feedback Variants}} \\
+        Code Feedback (Base) & \xmark & \xmark & 76.4\%$^\ast$ & 60.0\%$^\ast$ \\
+        Code Feedback (SFT) & \cmark & \xmark & 82.8\%$^\ast$ & 66.0\%$^\ast$ \\
+        Code Feedback (SFT+RL) & \cmark & \cmark & 84.6\%$^\ast$ & 67.8\% \\
+        \midrule
+        \multicolumn{5}{l}{\textit{Representative Baselines  (Reference)}} \\
+        GPT-4o & - & - & 89.8\% & 74.0\% \\
+        Gemini 1.5 Pro  & - & - & 90.8\% & 82.8\% \\
         \bottomrule
     \end{tabular}
 \end{table}
+
 
 \begin{figure}[!htbp]
 \centering
@@ -455,7 +500,7 @@ Python Tools & 72.6 & 45.2 & None & Low & Simple calc \\
 
 \subsection{Limitations}
 
-\textbf{Teacher Model Dependence.} Our data generation pipeline requires access to Grok-4.1 and MiniMax-M2 APIs, which may not be universally available. Alternative teacher models may yield different data quality and downstream performance.
+\textbf{Teacher Model Dependence.} Our data generation pipeline requires access to Grok-4.1-Fast and MiniMax-M2 APIs, which may not be universally available. Alternative teacher models may yield different data quality and downstream performance.
 
 \textbf{Computational Cost.} GRPO training requires 4--6 hours per experimental run. Agentic workflows increase inference time by 2--5$\times$ compared to single-pass generation. Exploring the full configuration space requires significant GPU resources.
 
@@ -478,7 +523,7 @@ We enhanced Qwen2.5-Math-1.5B~\cite{yang2024qwen2} through supervised fine-tunin
 
 \section{Team Contributions}
 
-\textbf{Roger Wang} led data pipeline development including the two-round chain-of-thought generation system with Grok-4.1 and MiniMax-M2, designed and implemented the Solver--Verifier agent architectures, and conducted comprehensive evaluation experiments across all agent variants.
+\textbf{Roger Wang} led data pipeline development including the two-round chain-of-thought generation system with Grok-4.1-Fast and MiniMax-M2, designed and implemented the Solver--Verifier agent architectures, and conducted comprehensive evaluation experiments across all agent variants.
 
 \textbf{Jinzi Luo} implemented the supervised fine-tuning pipeline including both full SFT and LoRA configurations, developed the GRPO reinforcement learning training system, performed hyperparameter optimization through extensive pilot experiments, and analyzed training dynamics and convergence patterns.
 
