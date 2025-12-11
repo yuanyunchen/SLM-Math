@@ -1,0 +1,167 @@
+# ==============================================================================
+# Multi-Agent GRPO RL Training Configuration
+# Solver + Verifier Co-Evolution
+# ==============================================================================
+
+# ==============================================================================
+# Solver Model Configuration
+# ==============================================================================
+solver:
+  # Model path - can be base model or SFT checkpoint for code solver
+  model_path: "pretrained_models/Qwen2.5-Math-1.5B"
+  trust_remote_code: true
+  
+  # Learning rate for solver
+  learning_rate: 5.0e-6
+  
+  # LoRA Configuration
+  lora:
+    enabled: true
+    r: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules:
+      - "q_proj"
+      - "k_proj"
+      - "v_proj"
+      - "o_proj"
+  
+  # GRPO Rewards for Solver
+  grpo:
+    num_return_sequences: 2  # Generate 2 responses per prompt
+    reward_correct: 1.0      # Reward for correct answer
+    reward_wrong: -1.0       # Penalty for wrong answer
+    reward_no_answer: -0.5   # Penalty for no valid answer
+    reward_code_error: -0.2  # Penalty for code execution error
+    reward_verified: 0.3     # Bonus when verifier says CORRECT
+    reward_rejected: -0.1    # Penalty when verifier says INCORRECT
+  
+  # Generation Configuration
+  generation:
+    max_new_tokens: 2048
+    temperature: 0.7
+    top_p: 0.9
+    top_k: 50
+    do_sample: true
+
+# ==============================================================================
+# Verifier Model Configuration
+# ==============================================================================
+verifier:
+  # Model path - can be base model or SFT checkpoint for verifier
+  model_path: "pretrained_models/Qwen2.5-Math-1.5B"
+  trust_remote_code: true
+  
+  # Learning rate for verifier (usually higher than solver for faster adaptation)
+  learning_rate: 1.0e-5
+  
+  # LoRA Configuration
+  lora:
+    enabled: true
+    r: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules:
+      - "q_proj"
+      - "k_proj"
+      - "v_proj"
+      - "o_proj"
+  
+  # GRPO Rewards for Verifier
+  grpo:
+    num_return_sequences: 1  # Usually 1 for classifier
+    reward_correct_prediction: 1.0   # Verifier correctly predicts
+    reward_wrong_prediction: -1.0    # Verifier incorrectly predicts
+    reward_unclear: -0.3             # Penalty for UNCLEAR verdict
+  
+  # Generation Configuration (classifier style)
+  generation:
+    max_new_tokens: 128
+    temperature: 0.3
+    top_p: 0.9
+    do_sample: false  # Greedy for classifier
+
+# ==============================================================================
+# Common GRPO Configuration
+# ==============================================================================
+grpo:
+  kl_coef: 0.0        # KL penalty coefficient (0 to disable)
+  whiten_rewards: true  # Normalize rewards within batch
+  clip_range: 0.2       # PPO-style clipping
+
+# ==============================================================================
+# Data Configuration
+# ==============================================================================
+data:
+  datasets:
+    - "gsm8k"
+    - "math500"
+  max_samples: -1       # -1 for all data
+  train_split_ratio: 0.95
+
+# ==============================================================================
+# Training Configuration
+# ==============================================================================
+training:
+  num_epochs: 3
+  max_steps: -1         # -1 for epoch-based training
+  
+  # Batch sizes (smaller due to two models)
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8  # Effective batch = 2 * 8 = 16
+  
+  # Gradient settings
+  max_grad_norm: 1.0
+  
+  # Learning rate schedule
+  warmup_ratio: 0.1
+  
+  # Precision
+  bf16: true
+  gradient_checkpointing: true
+  
+  # Logging and checkpointing
+  logging_steps: 10
+  eval_steps: 200
+  save_steps: 200
+  eval_samples: 100     # Samples per dataset for evaluation
+  
+  # Output
+  output_dir: "results/rl_multi_agent_checkpoints"
+  seed: 42
+  
+  # Multi-agent specific
+  train_solver: true    # Whether to train solver
+  train_verifier: true  # Whether to train verifier
+  verifier_update_frequency: 1  # Update verifier every N solver steps
+
+# ==============================================================================
+# Notes
+# ==============================================================================
+#
+# Memory Usage Estimation (Two 1.5B models):
+# - Solver (Qwen2.5-Math-1.5B): ~3GB (bf16)
+# - Verifier (Qwen2.5-Math-1.5B): ~3GB (bf16)
+# - LoRA adapters: ~0.5GB each
+# - Activations (batch=2): ~4GB
+# - Total: ~12-15GB
+#
+# Recommended GPU:
+# - A100 (40GB/80GB): Comfortable
+# - A6000 (48GB): Good
+# - RTX 4090 (24GB): Tight, may need batch_size=1
+#
+# Training Strategy:
+# 1. Start with pre-trained SFT models for both solver and verifier
+# 2. Solver learns to generate correct code solutions
+# 3. Verifier learns to distinguish correct from incorrect solutions
+# 4. They co-evolve: solver tries to fool verifier, verifier becomes better
+#
+# Example usage:
+#   python models/train_rl_multi_agent.py \
+#     --config configs/rl_multi_agent_config.yaml \
+#     --solver_model_path checkpoints/solver_sft/final_model \
+#     --verifier_model_path checkpoints/verifier_sft/final_model \
+#     --use_wandb
+#
+
