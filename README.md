@@ -14,8 +14,8 @@ This project investigates methods to enhance the mathematical reasoning capabili
 
 1. **Chain-of-Thought Data Generation**: Two-round cascade using Grok-4.1-Fast and MiniMax-M2
 2. **Supervised Fine-Tuning**: Full SFT and LoRA configurations
-3. **Reinforcement Learning**: GRPO (Group Relative Policy Optimization)
-4. **Agentic Workflows**: Ten inference-time architectures including Solver-Verifier and Code Feedback
+3. **Reinforcement Learning**: GRPO applied to both Solver and Verifier components
+4. **Agentic Workflows**: Solver-Verifier with integrated code execution and Code Feedback architectures
 
 ### Key Results
 
@@ -33,10 +33,11 @@ This project investigates methods to enhance the mathematical reasoning capabili
 ### Key Findings
 
 1. **SFT provides the largest gains** (+14.2 pp on GSM8K) by teaching structured reasoning patterns
-2. **GRPO adds incremental refinement** (+2.4 pp) by directly optimizing for answer correctness
+2. **GRPO adds incremental refinement** (+2.4 pp) by optimizing both solver correctness and verifier reliability
 3. **Agentic workflows enable error correction** (+6.4 pp beyond SFT) through inference-time verification
 4. **Emergent code generation**: The model spontaneously generates Python code but fails to mentally execute it correctly—our code-executing agents address this by extracting and running the model's own code
-5. **Simple verification outperforms complex pipelines** for capacity-limited models
+5. **Solver quality > Verifier quality**: SFT on solver alone (+2.6 pp) provides 4× higher returns than SFT on verifier alone (+0.6 pp)
+6. **Iteration 2 is optimal**: Highest accuracy (91.7% on GSM8K) due to feedback benefits without context overload
 
 ---
 
@@ -98,16 +99,21 @@ bash scripts/train_sft_full.sh
 
 ### Reinforcement Learning (GRPO)
 
+GRPO is applied to both the **Solver** and **Verifier** components to optimize:
+- **Solver**: Answer correctness, format quality, and parsability
+- **Verifier**: Decision reliability in the Solver-Verifier loop
+
 ```bash
 # GRPO training (initialized from SFT LoRA)
 bash scripts/train_rl_grpo.sh
 ```
 
 **Key Hyperparameters**:
-- Learning rate: 5e-6 with cosine decay
+- Learning rate: 5e-6 with cosine decay to 1e-7
 - Batch size: 16 prompts, K=2 responses per prompt
 - KL coefficient: β=0.05
 - Training duration: 1 epoch on GSM8K
+- Reward structure: Solver reward (correctness + format + parsing), Verifier reward (decision accuracy)
 
 ### Generate Chain-of-Thought Data
 
@@ -147,11 +153,17 @@ python dataset/build_CoT_data.py \
 
 ### Solver-Verifier Architecture
 
-The Solver-Verifier workflow uses two models:
-1. **Solver**: Generates solutions
+The Solver-Verifier workflow uses two models with integrated code execution:
+1. **Solver**: Generates solutions with Python code generation and execution capability
 2. **Verifier**: Validates with verdicts (CORRECT/INCORRECT/UNCLEAR)
 
-Supports up to 5 iterations with feedback loops. 88% of problems are solved in the first two iterations.
+**Workflow**:
+- Solver can generate and execute code (self-loop)
+- Execution results feed back to Solver
+- Solver output goes to Verifier
+- Verifier provides feedback for iterative refinement
+
+Supports up to 5 iterations with feedback loops. 88% of problems are solved in the first two iterations. Iteration 2 achieves highest accuracy (91.7% on GSM8K); later iterations degrade due to context length limitations.
 
 ```bash
 python -m evaluation.eval_agent \
@@ -277,10 +289,11 @@ All configurations match the final report specifications:
 ### Design Recommendations
 
 1. Start with **LoRA SFT** (efficient, 80.0% accuracy)
-2. Add **Solver-Verifier** for +6 pp gain
-3. Consider **Code Feedback** when models naturally generate code
-4. Apply **GRPO** only after SFT gains saturate
-5. **Avoid long-context approaches** for 1.5B models
+2. Add **Solver-Verifier** with code execution for +6.4 pp gain
+3. Apply **GRPO to both Solver and Verifier** after SFT gains saturate
+4. Use **2-3 iterations** for Solver-Verifier (optimal trade-off)
+5. Consider **Code Feedback** when models naturally generate code
+6. **Avoid long-context approaches** (>2000 tokens) for 1.5B models
 
 ---
 
