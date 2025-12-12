@@ -2,7 +2,7 @@
 
 ################################################################################
 # Agent Evaluation Script Template
-# 统一测试脚本，支持不同的agent方法
+# Unified test script supporting different agent methods
 ################################################################################
 
 set -e

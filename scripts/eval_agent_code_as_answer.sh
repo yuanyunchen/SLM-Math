@@ -14,16 +14,16 @@ set -e
 MODEL="Qwen2.5-Math-1.5B"
 
 # Checkpoint path (optional)
-CHECKPOINT=""
-
+CHECKPOINT="checkpoints/plain_lora_full_lora_r32_20251209_125734/final_model"
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-1}"
 # Agent method
 AGENT="agent_code_as_answer"
 
 # Test round name
-ROUND_NAME="test_code_as_answer"
+ROUND_NAME="test_code_as_answer_lora_full"
 
 # Dataset
-DATASET="math500"
+DATASET="gsm8k"
 
 # Number of test cases (0 = full dataset)
 COUNT=500

@@ -55,9 +55,9 @@ grpo:
   reward_no_answer: -0.5  # Penalty for no valid answer
   
   # KL divergence penalty (prevents policy from deviating too far from reference)
-  # NOTE: Current implementation KL has no gradient, so it only adds compute cost
-  # Set to 0 to disable and save ~3x speed + ~3GB VRAM
-  kl_coef: 0.0  # Set to 0 to disable (recommended until KL is properly implemented)
+  # Regularizes policy to prevent deviation from reference model
+  # β=0.05 found optimal: β=0 causes reward hacking; β>0.1 over-constrains
+  kl_coef: 0.05  # KL coefficient for regularization
   
   # Advantage normalization
   whiten_rewards: true  # Normalize rewards within batch
@@ -85,13 +85,13 @@ generation:
 # ==============================================================================
 training:
   # Epochs and steps
-  num_epochs: 3
+  num_epochs: 1  # 1 epoch on GSM8K (7,473 problems, ~470 steps)
   max_steps: -1  # -1 for epoch-based training
   
   # Batch sizes
-  per_device_train_batch_size: 4  # Batch size per GPU
-  per_device_eval_batch_size: 4
-  gradient_accumulation_steps: 4  # Effective batch = 4 * 4 = 16
+  per_device_train_batch_size: 16  # 16 prompts per step
+  per_device_eval_batch_size: 16
+  gradient_accumulation_steps: 4  # Effective batch = 16 * 4 = 64
   
   # Optimizer
   learning_rate: 5.0e-6  # Lower than SFT

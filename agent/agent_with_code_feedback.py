@@ -1,19 +1,19 @@
 """
 Agent with Code Execution Feedback
-带代码执行反馈的 Agent
+Agent that uses code execution feedback.
 
-工作流程：
-1. 模型生成 reasoning + Python 代码
-2. 自动执行代码，将结果注入
-3. 模型看到执行结果，基于此给出 \boxed{} 答案
+Workflow:
+1. The model generates reasoning + Python code.
+2. Execute the code automatically and inject the results.
+3. The model sees the execution results and, based on them, provides the \boxed{} answer.
 
-与单次推理的区别：
-- 单次推理：模型生成 reasoning + code，执行后直接提取答案（模型看不到执行结果）
-- 代码反馈：模型先生成 code → 看到执行结果 → 再生成 \boxed{} 答案
+Difference from single-pass inference:
+- Single-pass: model generates reasoning + code, then we extract the answer directly after execution (model does not see the execution result).
+- Code-feedback: model first generates code → sees the execution result → then generates the \boxed{} answer.
 
-适用场景：
-- 模型能写对代码，但不确定如何使用执行结果
-- 需要基于计算结果继续推理的问题
+When to use:
+- The model can write correct code but may not know how to use the execution result.
+- Problems that require further reasoning based on computed results.
 """
 
 import sys

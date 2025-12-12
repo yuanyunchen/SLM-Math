@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-11-22T21:16:34.284756",
+  "math500_problems": 500,
+  "stats": {
+    "MATH CoT JSON": {
+      "original": 12076,
+      "removed": 480,
+      "final": 11596
+    },
+    "MATH CoT CSV": {
+      "original": 12076,
+      "removed": 480,
+      "final": 11596
+    },
+    "Combined CoT JSON": {
+      "original": 19426,
+      "removed": 480,
+      "final": 18946
+    },
+    "Combined CoT CSV": {
+      "original": 19426,
+      "removed": 480,
+      "final": 18946
+    },
+    "MATH Train JSON": {
+      "original": 12500,
+      "removed": 500,
+      "final": 12000
+    },
+    "MATH Train CSV": {
+      "original": 12500,
+      "removed": 500,
+      "final": 12000
+    }
+  },
+  "total_removed": 2920
+}

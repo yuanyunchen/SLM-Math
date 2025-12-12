@@ -1,0 +1,205 @@
+================================================================================
+AGENT EVALUATION - DETAILED ANALYSIS REPORT
+================================================================================
+
+Configuration:
+--------------------------------------------------------------------------------
+Model: Qwen2.5-Math-1.5B
+Agent Method: solver_verifier
+Dataset: math500
+Timestamp: 2025-12-10T10:16:05.774160
+
+Overall Statistics:
+--------------------------------------------------------------------------------
+Total Samples: 500
+Correct Answers: 234
+Overall Accuracy: 46.80%
+First Try Correct: 232
+First Try Accuracy: 46.40%
+Average Iterations: 0.00
+Total Iterations: 1048
+
+Case Type Distribution:
+--------------------------------------------------------------------------------
+Improved Cases (Wrong -> Correct): 16
+Degraded Cases (Correct -> Wrong): 12
+Failed Cases (Wrong -> Wrong): 228
+First Try Success: 232
+Other Cases: 244
+
+Case Examples:
+--------------------------------------------------------------------------------
+
+Improved Cases (all 16):
+
+  Example 1:
+    Question ID: 50
+    First Answer: 217 (WRONG)
+    Final Answer: 203 (CORRECT)
+    Iterations: 3
+
+  Example 2:
+    Question ID: 95
+    First Answer: 1.3333333333333333 (WRONG)
+    Final Answer: -4 (CORRECT)
+    Iterations: 3
+
+  Example 3:
+    Question ID: 135
+    First Answer: 10842021724855044719783778806462085981011968 (WRONG)
+    Final Answer: 9 (CORRECT)
+    Iterations: 3
+
+  Example 4:
+    Question ID: 182
+    First Answer: 559 (WRONG)
+    Final Answer: 1251 (CORRECT)
+    Iterations: 2
+
+  Example 5:
+    Question ID: 194
+    First Answer: 0.08333333333333333 (WRONG)
+    Final Answer: \frac{1}{4} (CORRECT)
+    Iterations: 3
+
+  Example 6:
+    Question ID: 216
+    First Answer: 28 (WRONG)
+    Final Answer: 6 (CORRECT)
+    Iterations: 2
+
+  Example 7:
+    Question ID: 235
+    First Answer: 0.5555555555555556 (WRONG)
+    Final Answer: \frac{5}{9} (CORRECT)
+    Iterations: 3
+
+  Example 8:
+    Question ID: 236
+    First Answer: 16 (WRONG)
+    Final Answer: 12 (CORRECT)
+    Iterations: 3
+
+  Example 9:
+    Question ID: 276
+    First Answer: 0 (WRONG)
+    Final Answer: 11 (CORRECT)
+    Iterations: 3
+
+  Example 10:
+    Question ID: 277
+    First Answer: 7.24 (WRONG)
+    Final Answer: 7.28 (CORRECT)
+    Iterations: 3
+
+  Example 11:
+    Question ID: 322
+    First Answer: 2 (WRONG)
+    Final Answer: -1 (CORRECT)
+    Iterations: 2
+
+  Example 12:
+    Question ID: 356
+    First Answer: (-2, 2) (WRONG)
+    Final Answer: (-\sqrt{3}, \sqrt{3}) (CORRECT)
+    Iterations: 3
+
+  Example 13:
+    Question ID: 357
+    First Answer: 1 (WRONG)
+    Final Answer: 4 (CORRECT)
+    Iterations: 3
+
+  Example 14:
+    Question ID: 364
+    First Answer: 5 (WRONG)
+    Final Answer: (1, -16, -4, 43) (CORRECT)
+    Iterations: 3
+
+  Example 15:
+    Question ID: 386
+    First Answer: 1 (WRONG)
+    Final Answer: 11 (CORRECT)
+    Iterations: 2
+
+  Example 16:
+    Question ID: 407
+    First Answer: 0.2 (WRONG)
+    Final Answer: 9 (CORRECT)
+    Iterations: 3
+
+Degraded Cases (all 12):
+
+  Example 1:
+    Question ID: 19
+    First Answer: 3 (CORRECT)
+    Final Answer: 10 (WRONG)
+    Iterations: 3
+
+  Example 2:
+    Question ID: 48
+    First Answer: 1.5 (CORRECT)
+    Final Answer: 2 (WRONG)
+    Iterations: 2
+
+  Example 3:
+    Question ID: 73
+    First Answer: \frac{3\sqrt{3}}{4} (CORRECT)
+    Final Answer: 3\sqrt{3} (WRONG)
+    Iterations: 3
+
+  Example 4:
+    Question ID: 157
+    First Answer: \frac{6}{5} (CORRECT)
+    Final Answer: 6 (WRONG)
+    Iterations: 3
+
+  Example 5:
+    Question ID: 162
+    First Answer: 0.34 (CORRECT)
+    Final Answer: 50 (WRONG)
+    Iterations: 3
+
+  Example 6:
+    Question ID: 163
+    First Answer: -3.888888888888889 (CORRECT)
+    Final Answer: 5 (WRONG)
+    Iterations: 3
+
+  Example 7:
+    Question ID: 183
+    First Answer: 23 (CORRECT)
+    Final Answer: 7 (WRONG)
+    Iterations: 3
+
+  Example 8:
+    Question ID: 197
+    First Answer: 6 (CORRECT)
+    Final Answer: 270 (WRONG)
+    Iterations: 3
+
+  Example 9:
+    Question ID: 202
+    First Answer: \frac{2}{3} (CORRECT)
+    Final Answer: 0.625 (WRONG)
+    Iterations: 3
+
+  Example 10:
+    Question ID: 232
+    First Answer: 998.5 (CORRECT)
+    Final Answer: 998 (WRONG)
+    Iterations: 3
+
+  Example 11:
+    Question ID: 302
+    First Answer: 5 (CORRECT)
+    Final Answer: 90027900279002795616916736555327924765145037354243884324831002595780002497360447608923868604238924906041004469954469378298810908008041244795684184155736079241073142698764507076625533452720587159896064 (WRONG)
+    Iterations: 3
+
+  Example 12:
+    Question ID: 450
+    First Answer: 64 (CORRECT)
+    Final Answer: 33 (WRONG)
+    Iterations: 3
+
+================================================================================

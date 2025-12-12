@@ -2,13 +2,13 @@
 
 ################################################################################
 # Evaluation Script Template (with Multi-Worker Support)
-# 通用评估脚本模板 - 支持多进程并行评估
+# General evaluation script template - supports multi-process parallel runs
 ################################################################################
 
 set -e  # Exit on error
 
 ################################################################################
-# Configuration Variables (需要修改)
+# Configuration Variables (edit as needed)
 
 # Model to evaluate
 MODEL="Qwen2.5-Math-1.5B"
@@ -48,7 +48,7 @@ GREEDY="true"
 APPLY_CHAT_TEMPLATE="false"
 
 ################################################################################
-# Multi-Worker Settings (多进程并行)
+# Multi-Worker Settings (parallel execution)
 
 # Number of workers (0 = single process, no parallelism)
 # Workers will be distributed evenly across available GPUs
@@ -58,7 +58,7 @@ WORKERS=0
 GPUS="0,1"
 
 ################################################################################
-# Advanced Settings (可选)
+# Advanced Settings (optional)
 
 # Resume from existing results directory (leave empty to start fresh)
 RESUME_DIR=""

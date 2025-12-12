@@ -1,25 +1,25 @@
 """
-Agent with Python Tools - 单次推理 + 代码执行
-带Python工具的单次推理Agent
+Agent with Python Tools - single-pass reasoning + code execution
+Single-shot agent equipped with Python tools.
 
-不同于Base Direct:
-- Base Direct: 单次生成，无工具
-- Agent with Python Tools: 单次生成 + 自动代码执行 + 结果注入
+Different from Base Direct:
+- Base Direct: single generation, no tools.
+- Agent with Python Tools: single generation + automatic code execution + result injection.
 
-工作流程：
-1. Agent生成reasoning + Python代码
-2. 自动提取并执行```python```代码块
-3. 将执行结果以```output```形式注入回文本
-4. 提取最终答案
+Workflow:
+1. Agent generates reasoning + Python code.
+2. Automatically extract and execute ```python``` code blocks.
+3. Inject execution results back into the text as ```output```.
+4. Extract the final answer.
 
-适用场景：
-- 需要精确计算但不需要迭代的问题
-- 小模型容易算错但能写对代码的场景
-- 比Base Direct准确，比Solver-Checker简单
+When to use:
+- Problems needing precise calculation without iteration.
+- Small models that can write correct code but may miscalculate manually.
+- More accurate than Base Direct, simpler than Solver-Checker.
 
-预期效果：
-- Baseline (无工具): ~69%
-- With Python Tools: ~75-80% (代码执行消除计算错误)
+Expected effect:
+- Baseline (no tools): ~69%
+- With Python Tools: ~75-80% (code execution removes calculation errors)
 """
 
 import sys

@@ -2,13 +2,13 @@
 
 ################################################################################
 # Training Script Template
-# 通用训练脚本模板 - 可复制此文件创建新的训练任务
+# General training script template - copy to create new runs
 ################################################################################
 
 set -e  # Exit on error
 
 ################################################################################
-# Configuration Variables (需要修改)
+# Configuration Variables (edit as needed)
 
 # Model settings
 MODEL="Qwen2.5-Math-1.5B"
@@ -17,7 +17,7 @@ MODEL_PATH="pretrained_models/${MODEL}"
 # Training type: "sft", "rl", "distill", "qlora"
 TRAINING_TYPE="sft"
 
-# Run name (用于标识本次训练)
+# Run name (identifier for this training run)
 RUN_NAME="my_training_run"
 
 # Dataset settings
@@ -34,7 +34,7 @@ LEARNING_RATE="2.0e-4"
 CONFIG_FILE="configs/${TRAINING_TYPE}_config.yaml"
 
 ################################################################################
-# Advanced Settings (可选修改)
+# Advanced Settings (optional)
 
 # Output directory
 OUTPUT_DIR="results/${TRAINING_TYPE}_checkpoints"

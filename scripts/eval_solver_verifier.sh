@@ -13,18 +13,19 @@ set -e
 # Model
 MODEL="Qwen2.5-Math-1.5B"
 
-# Checkpoint path (optional)
-CHECKPOINT=""
+# Checkpoint path (optional) - use the latest RL checkpoint (epoch_1) from the recent run
+CHECKPOINT="checkpoints/lora_r32_ckpt298_80.4acc"
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 
 # Agent method (fixed for this script)
 AGENT="solver_verifier"
 
 # Test round name
-ROUND_NAME="test_solver_verifier"
+ROUND_NAME="test_solver_verifier_lora_reasoning"
 
 # Dataset
 # Options: gsm8k, math500, math
-DATASET="math500"
+DATASET="gsm8k"
 
 # Number of test cases (0 = full dataset)
 COUNT=500
@@ -33,7 +34,7 @@ COUNT=500
 MAX_ITERATIONS=3
 
 # Detailed output
-DETAILED="false"
+DETAILED="true"
 
 # Apply chat template (for chat-tuned models)
 APPLY_CHAT_TEMPLATE="false"
@@ -123,14 +124,3 @@ echo ""
 echo "Results saved to: results/${ROUND_NAME}_${MODEL}_${DATASET}_*"
 echo "Analysis report: results/${ROUND_NAME}_${MODEL}_${DATASET}_*/analysis_report.txt"
 echo ""
-
-
-
-
-
-
-
-
-
-
-

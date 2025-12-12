@@ -54,23 +54,23 @@ TEACHER_MODELS="x-ai/grok-4-1-fast-reasoning,deepseek/deepseek-reasoner-v3.1"
 # Recommended Expert Models (High accuracy for difficult problems):
 EXPERT_MODELS="alibaba/qwen3-235b-a22b-thinking-2507,minimax/m2"
 
-# ============== Model Reference (已验证 2025-11-23) ==============
-# 价格来源: https://aimlapi.com/ai-ml-api-pricing
+# ============== Model Reference (validated 2025-11-23) ==============
+# Pricing source: https://aimlapi.com/ai-ml-api-pricing
 #
-# Model Name                            | Price ($/1M)    | Think长度 | 准确率 | 推荐用途
-# --------------------------------------|----------------|----------|--------|------------------
-# ✅ alibaba/qwen3-next-80b-a3b-thinking   | $0.158/$1.600  | ~1,700字 | ★★★★  | 🏆 Teacher (性价比最高)
-# ✅ x-ai/grok-4-fast-reasoning            | $0.210/$0.525  | ~1,300字 | ★★★★  | 🏆 Teacher (快速)
-# ✅ x-ai/grok-4-1-fast-reasoning          | $0.210/$0.530  | ~1,800字 | ★★★★☆| 🏆 Teacher (推荐)
-# ✅ alibaba/qwen3-235b-a22b-thinking-2507 | $0.242/$2.415  | ~2,200字 | ★★★★★| 🏆 Expert (高质量)
-# ✅ deepseek/deepseek-reasoner-v3.1       | $0.294/$0.441  | ~5,600字 | ★★★★★| 🏆 Teacher (最长思考)
-# ✅ deepseek-reasoner                     | $0.294/$0.441  | ~500字   | ★★★★  | Teacher (标准)
-# ✅ minimax/m2                            | $0.315/$1.260  | ~1,900字 | ★★★★☆| Expert (稳定)
+# Model Name                            | Price ($/1M)    | Think length | Accuracy | Suggested use
+# --------------------------------------|----------------|--------------|----------|------------------
+# ✅ alibaba/qwen3-next-80b-a3b-thinking   | $0.158/$1.600  | ~1,700 chars | ★★★★    | 🏆 Teacher (best value)
+# ✅ x-ai/grok-4-fast-reasoning            | $0.210/$0.525  | ~1,300 chars | ★★★★    | 🏆 Teacher (fast)
+# ✅ x-ai/grok-4-1-fast-reasoning          | $0.210/$0.530  | ~1,800 chars | ★★★★☆   | 🏆 Teacher (recommended)
+# ✅ alibaba/qwen3-235b-a22b-thinking-2507 | $0.242/$2.415  | ~2,200 chars | ★★★★★   | 🏆 Expert (high quality)
+# ✅ deepseek/deepseek-reasoner-v3.1       | $0.294/$0.441  | ~5,600 chars | ★★★★★   | 🏆 Teacher (long thinking)
+# ✅ deepseek-reasoner                     | $0.294/$0.441  | ~500 chars   | ★★★★    | Teacher (standard)
+# ✅ minimax/m2                            | $0.315/$1.260  | ~1,900 chars | ★★★★☆   | Expert (stable)
 #
-# 💡 组合推荐:
-#   经济型: grok-4-1-fast-reasoning (R1) → qwen3-235b (R2)
-#   平衡型: deepseek-reasoner-v3.1,grok-4-1 (R1) → qwen3-235b,minimax/m2 (R2)
-#   高质量: deepseek-v3.1,qwen3-next-80b,grok-4-1 (R1) → qwen3-235b,minimax/m2 (R2)
+# 💡 Combo recommendations:
+#   Budget: grok-4-1-fast-reasoning (R1) → qwen3-235b (R2)
+#   Balanced: deepseek-reasoner-v3.1,grok-4-1 (R1) → qwen3-235b,minimax/m2 (R2)
+#   High quality: deepseek-v3.1,qwen3-next-80b,grok-4-1 (R1) → qwen3-235b,minimax/m2 (R2)
 
 
 # ============================================================================
@@ -107,17 +107,17 @@ ROUND2_TEMPS="0.7,0.5,0.9,0.3,1.0"  # More diverse for difficult problems
 # ============================================================================
 # Thinking Effort Reference
 # ============================================================================
-# Effort级别 | Thinking长度  | 推荐场景
-# -----------|--------------|------------------
-# low        | ~300-500字符  | 快速验证，简单问题
-# medium     | ~500-800字符  | 标准质量，平衡方案 ✅推荐R1
-# high       | ~800-1500字符 | 高质量，深入推理 ✅推荐R2
-# very_high  | ~1500-3000字符| 极致质量，复杂问题
+# Effort level | Thinking length | Recommended scenario
+# ------------|-----------------|---------------------
+# low         | ~300-500 chars  | Quick checks, simple problems
+# medium      | ~500-800 chars  | Balanced quality (recommended for R1)
+# high        | ~800-1500 chars | High quality, deeper reasoning (recommended for R2)
+# very_high   | ~1500-3000 chars| Maximum quality, complex problems
 #
-# Temperature说明:
-#   - 0.0-0.3: 高确定性，适合需要稳定答案的场景
-#   - 0.5-0.7: 适度多样性，标准CoT生成 ✅推荐
-#   - 0.9-1.0: 高多样性，探索多种解法
+# Temperature reference:
+#   - 0.0-0.3: Highly deterministic, use when stability matters
+#   - 0.5-0.7: Moderate diversity, standard CoT generation (recommended)
+#   - 0.9-1.0: High diversity, explore many solutions
 
 
 # ============================================================================
@@ -128,7 +128,7 @@ ROUND2_TEMPS="0.7,0.5,0.9,0.3,1.0"  # More diverse for difficult problems
 MAX_TOKENS=4096
 
 # Number of parallel workers
-# 建议: 4-8 for teacher models, 2-4 for expert models (避免rate limit)
+# Suggested: 4-8 for teacher models, 2-4 for expert models (avoid rate limits)
 WORKERS=8
 
 # API Configuration

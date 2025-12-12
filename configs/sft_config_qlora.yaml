@@ -51,7 +51,7 @@ qlora:
 # ==============================================================================
 data:
   train_files:
-    - "data/cot_generated/cot_x_ai_grok_4_1_fast_reasoning_gsm8k_train_7473_1120_2035/cot_data.json"
+    - "data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json"
   dataset_name: "gsm8k"
   max_seq_length: 1536
   train_split_ratio: 0.9
@@ -70,11 +70,11 @@ training:
   gradient_accumulation_steps: 8  # Effective batch = 2 * 8 = 16
   
   # Training duration
-  num_train_epochs: 3
+  num_train_epochs: 2  # 2 epochs prevent overfitting
   max_steps: -1
   
-  # Learning rate (QLoRA can use slightly higher LR)
-  learning_rate: 2.0e-4
+  # Learning rate (same as standard LoRA)
+  learning_rate: 1.0e-4
   lr_scheduler_type: "cosine"
   warmup_ratio: 0.1
   

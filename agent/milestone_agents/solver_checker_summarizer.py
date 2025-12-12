@@ -1,6 +1,6 @@
 """
 Solver-Checker-Summarizer Multi-Agent Workflow (Stateless)
-带总结层的Solver-Checker工作流 - Stateless模式
+Solver-Checker workflow with a summarizer layer (stateless mode).
 
 ARCHITECTURE:
 ┌─────────────────────────────────────────────────────────┐
@@ -11,26 +11,26 @@ ARCHITECTURE:
          │      │
          │      ▼
          │   Summarizer (Solver → Checker)
-         │      │ 总结关键推理和答案
+         │      │ Summarize key reasoning and answer
          │      ▼
          │   Checker evaluates summary
          │      │
          │      ▼
          │   Summarizer (Checker → Solver)
-         │      │ 总结反馈要点
+         │      │ Summarize feedback highlights
          │      ▼
          └─► Solver sees summarized feedback
 
 KEY FEATURES:
-- Stateless架构 (稳定、无幻觉)
-- 双向总结: solver→checker, checker→solver
-- 减少噪音，突出关键信息
-- 帮助小模型聚焦重点
+- Stateless architecture (stable, fewer hallucinations).
+- Bidirectional summarization: solver→checker, checker→solver.
+- Reduces noise and surfaces key information.
+- Helps small models focus on essentials.
 
-适用场景：
-- Solver输出冗长的场景
-- 需要提取关键信息的复杂推理
-- 小模型容易被长文本干扰的情况
+When to use:
+- Solver outputs are verbose.
+- Complex reasoning where key information must be extracted.
+- Small models that get distracted by long text.
 """
 
 import sys
@@ -67,7 +67,6 @@ def summarize_solver_output(
 ) -> str:
     """
     Summarize solver's output for checker
-    总结Solver输出供Checker查看
     
     Args:
         question: Original question
@@ -139,7 +138,6 @@ def summarize_checker_feedback(
 ) -> str:
     """
     Summarize checker's feedback for solver
-    总结Checker反馈供Solver查看
     
     Args:
         question: Original question

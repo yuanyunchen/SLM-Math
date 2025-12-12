@@ -1,20 +1,20 @@
 """
 Solver-Checker with Tools Multi-Agent Workflow V2
-带工具调用的Solver-Checker工作流 V2
+Solver-Checker workflow with tool execution (V2).
 
-改进点：
-1. 修复 UNCLEAR 分支逻辑
-2. 更清晰的 case_type 命名
-3. 基于执行结果而非字符串检测工具使用
-4. 答案提取后再添加错误注释，避免干扰提取
-5. 参考 agent_with_code_feedback.py 的代码执行逻辑
+Improvements:
+1. Fix UNCLEAR branch logic.
+2. Clearer case_type naming.
+3. Detect tool usage based on execution results instead of string checks.
+4. Add error notes after answer extraction to avoid interference.
+5. Align code execution logic with agent_with_code_feedback.py.
 
-工作流程：
-1. Solver生成reasoning + code
-2. 自动执行Solver的代码
-3. Solver看到执行结果继续推理
-4. Checker验证代码逻辑和执行结果
-5. 基于反馈迭代改进
+Workflow:
+1. Solver generates reasoning + code.
+2. Execute solver code automatically.
+3. Solver sees execution results and continues reasoning.
+4. Checker validates code logic and execution results.
+5. Iterate based on feedback.
 """
 
 import sys

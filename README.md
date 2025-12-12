@@ -1,51 +1,42 @@
-# SLM-Math: Small Language Models for Mathematical Reasoning
+# SLM-Math: Empowering Small Language Models for Mathematical Reasoning
 
-A comprehensive framework for training and evaluating Small Language Models on mathematical reasoning tasks. Features Chain-of-Thought (CoT) supervised fine-tuning, multi-agent evaluation workflows, and support for GSM8K, MATH, and MATH-500 benchmarks.
+A comprehensive framework for enhancing small language models (1.5B parameters) on mathematical reasoning through supervised fine-tuning, reinforcement learning, and agentic workflows.
 
-**Project**: Columbia University COMS4705 NLP Final Project  
-**Date**: November 2025
+**Columbia University COMS4705 NLP Final Project**  
+**Team**: Roger Wang, Jinzi Luo, Yunchen Yuan  
+**Date**: December 2025
 
 ---
 
-## Experimental Results
+## Overview
 
-### Training Results
+This project investigates methods to enhance the mathematical reasoning capabilities of Qwen2.5-Math-1.5B through:
 
-We evaluate different training configurations on the Qwen2.5-Math-1.5B base model:
+1. **Chain-of-Thought Data Generation**: Two-round cascade using Grok-4.1-Fast and MiniMax-M2
+2. **Supervised Fine-Tuning**: Full SFT and LoRA configurations
+3. **Reinforcement Learning**: GRPO (Group Relative Policy Optimization)
+4. **Agentic Workflows**: Ten inference-time architectures including Solver-Verifier and Code Feedback
 
-| Configuration | GSM8K | MATH-500 |
-|---------------|-------|----------|
-| **Base (Qwen2.5-Math-1.5B)** | 70.0% (350/500) | 53.2% (266/500) |
-| **SFT lr=1e-5** | 81.4% (407/500) | 65.4% (327/500) |
-| **SFT lr=5e-5** | 81.6% (408/500) | 67.0% (335/500) |
-| **LoRA r=16** | 80.0% (400/500) | 67.2% (336/500) |
-| **LoRA r=32** | 80.4% (402/500) | 66.2% (331/500) |
+### Key Results
 
-**Key Findings**:
-- SFT with lr=5e-5 achieves the best overall performance (+11.6% on GSM8K, +13.8% on MATH-500)
-- LoRA is parameter-efficient with comparable performance (80.4% on GSM8K, 67.2% on MATH-500)
-- MATH-500 shows larger improvements than GSM8K, indicating better generalization to complex problems
+| Method | GSM8K-test | MATH-500 | Improvement |
+|--------|------------|----------|-------------|
+| **Base Model** | 65.8% | 53.2% | - |
+| **SFT LoRA (r=16)** | 80.0% | 67.2% | +14.2 pp |
+| **SFT Full** | 81.6% | 67.0% | +15.8 pp |
+| **GRPO (RL)** | 82.4% | 68.2% | +16.6 pp |
+| **Solver-Verifier (SFT Both)** | 86.4% | 68.0% | +20.6 pp |
+| **Solver-Verifier (SFT+RL)** | **86.8%** | **68.8%** | **+21.0 pp** |
+| **Code Feedback (SFT)** | 82.8% | 66.0% | +17.0 pp |
+| **Code Feedback (SFT+RL)** | 84.6% | 67.8% | +18.8 pp |
 
-### Agent Evaluation Results
+### Key Findings
 
-We compare 9 different agent strategies using Qwen2.5-Math-1.5B:
-
-| Rank | Agent | GSM8K | MATH-500 |
-|------|-------|-------|----------|
-| 1 | **solver_checker_with_tools** | 81.4% | 49.8% |
-| 2 | majority_vote | 70.2% | 54.8% |
-| 3 | agent_with_python_tools | 72.6% | 45.2% |
-| 4 | solver_checker_summarizer | 59.4% | 45.2% |
-| 5 | plan_and_reflection | 48.0% | 48.2% |
-| 6 | solver_checker_summarizer_chat | 59.0% | 36.8% |
-| 7 | solver_checker_stateless | 43.4% | 45.4% |
-| 8 | solver_checker_chat | 43.4% | 42.8% |
-| 9 | solver_checker_trivial_chat | 46.8% | 28.6% |
-
-**Key Findings**:
-- solver_checker_with_tools achieves the highest GSM8K accuracy (81.4%) with Python code execution
-- majority_vote shows the best MATH-500 performance (54.8%) through ensemble voting
-- Code execution tools significantly improve performance on computational problems
+1. **SFT provides the largest gains** (+14.2 pp on GSM8K) by teaching structured reasoning patterns
+2. **GRPO adds incremental refinement** (+2.4 pp) by directly optimizing for answer correctness
+3. **Agentic workflows enable error correction** (+6.4 pp beyond SFT) through inference-time verification
+4. **Emergent code generation**: The model spontaneously generates Python code but fails to mentally execute it correctly—our code-executing agents address this by extracting and running the model's own code
+5. **Simple verification outperforms complex pipelines** for capacity-limited models
 
 ---
 
@@ -61,165 +52,132 @@ pip install -r requirements.txt
 
 ### 2. Download Datasets and Models
 
-Get your HuggingFace token from [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens):
-
 ```bash
 python dataset/download_data_and_models.py --hf_token YOUR_HF_TOKEN
 ```
 
-### 3. Quick Test
+### 3. Run Evaluation
 
 ```bash
-conda activate slm_math
-python -m evaluation.eval --model "Qwen2.5-Math-1.5B" --round "test" --dataset "gsm8k" --count 10 --mode standard
-```
-
----
-
-## Evaluation
-
-### Base Model Evaluation
-
-```bash
-# GSM8K evaluation (100 samples)
+# Base model evaluation
 python -m evaluation.eval \
     --model "Qwen2.5-Math-1.5B" \
     --round "test" \
-    --dataset "gsm8k" \
-    --count 100 \
-    --mode standard
-
-# Full dataset evaluation
-python -m evaluation.eval \
-    --model "Qwen2.5-Math-1.5B" \
-    --round "full_eval" \
-    --dataset "math500" \
-    --count 0 \
-    --mode standard
-```
-
-### Agent Evaluation
-
-```bash
-# Solver-Checker with Tools (best performing)
-python -m evaluation.eval_agent \
-    --model "Qwen2.5-Math-1.5B" \
-    --agent "solver_checker_with_tools" \
-    --round "test" \
-    --dataset "gsm8k" \
-    --count 100 \
-    --max_iterations 5
-
-# Majority Vote ensemble
-python -m evaluation.eval_agent \
-    --model "Qwen2.5-Math-1.5B" \
-    --agent "majority_vote" \
-    --round "test" \
-    --dataset "math500" \
-    --count 100 \
-    --num_runs 5 \
-    --temperature 0.7
-```
-
-### Evaluate Fine-tuned Checkpoints
-
-```bash
-# Evaluate LoRA checkpoint
-python -m evaluation.eval \
-    --model "Qwen2.5-Math-1.5B" \
-    --checkpoint "checkpoints/lora_r16_ckpt298_80.0acc" \
-    --round "lora_eval" \
     --dataset "gsm8k" \
     --count 500 \
     --mode standard
 
-# Evaluate SFT checkpoint
-python -m evaluation.eval \
+# Solver-Verifier agent (best performing)
+python -m evaluation.eval_agent \
     --model "Qwen2.5-Math-1.5B" \
-    --checkpoint "checkpoints/sft_full_lr5e5_ckpt298_81.6acc" \
-    --round "sft_eval" \
-    --dataset "math500" \
-    --count 0 \
-    --mode standard
+    --agent "solver_verifier" \
+    --round "test" \
+    --dataset "gsm8k" \
+    --count 500 \
+    --max_iterations 5
 ```
-
-**Output Structure**: `results/<round>_<model>_<dataset>_<count>_<MMDD>/`
-- `log/` - Detailed execution logs
-- `answers/` - Predictions JSON
-- `metrics.csv` - Structured metrics
-- `analysis_report.txt` - Summary report
 
 ---
 
 ## Training
 
-### Supervised Fine-Tuning (SFT)
+### Supervised Fine-Tuning
 
 ```bash
-# Full fine-tuning
-python -m models.train_SFT --config configs/sft_config.yaml
+# LoRA fine-tuning (rank=16, lr=1e-4, 2 epochs)
+bash scripts/train_sft_lora.sh
 
-# LoRA fine-tuning
-python -m models.train_SFT --config configs/sft_config.yaml
-
-# QLoRA (4-bit quantization)
-python -m models.train_SFT --config configs/sft_config_qlora.yaml --qlora
+# Full fine-tuning (lr=5e-5, 2 epochs)
+bash scripts/train_sft_full.sh
 ```
+
+**Key Hyperparameters**:
+- **LoRA**: rank 16, learning rate 1e-4, batch size 128, 2 epochs
+- **Full SFT**: learning rate 5e-5, batch size 128, 2 epochs
+- **Training Data**: 18,946 CoT samples (97.3% success rate from 19,473 problems)
+
+### Reinforcement Learning (GRPO)
+
+```bash
+# GRPO training (initialized from SFT LoRA)
+bash scripts/train_rl_grpo.sh
+```
+
+**Key Hyperparameters**:
+- Learning rate: 5e-6 with cosine decay
+- Batch size: 16 prompts, K=2 responses per prompt
+- KL coefficient: β=0.05
+- Training duration: 1 epoch on GSM8K
 
 ### Generate Chain-of-Thought Data
 
+Our data pipeline uses a two-round cascade:
+1. **Grok-4.1-Fast** (primary, 3 attempts)
+2. **MiniMax-M2** (backup, 5 attempts for failed problems)
+
 ```bash
-# Generate CoT data using GPT-4
 python dataset/build_CoT_data.py \
     --dataset gsm8k \
-    --output data/cot_generated/gsm8k_cot.json \
-    --api_key YOUR_OPENAI_KEY
+    --output data/cot_generated/gsm8k_cot.json
 ```
 
-### Configuration Files
-
-| Config | Description |
-|--------|-------------|
-| `configs/sft_config.yaml` | Full SFT configuration |
-| `configs/sft_config_qlora.yaml` | QLoRA configuration |
-| `configs/rl_config.yaml` | Reinforcement learning |
-| `configs/distill_config.yaml` | Knowledge distillation |
+**Statistics**:
+- GSM8K: 7,298/7,473 (97.7% success), avg 320 tokens, 45% with code
+- MATH: 11,648/12,000 (97.1% success), avg 480 tokens, 72% with code
 
 ---
 
-## Available Agents
+## Agentic Workflows
 
-| Agent | Description | Best For |
-|-------|-------------|----------|
-| `solver_checker_with_tools` | Solver + Checker with Python execution | Computational problems |
-| `majority_vote` | Ensemble voting over multiple runs | Robust answers |
-| `agent_with_python_tools` | Single-shot with code execution | Simple calculations |
-| `solver_checker_summarizer` | Solver + Checker + Summarizer | Complex reasoning |
-| `plan_and_reflection` | Multi-phase planning agent | Multi-step problems |
-| `solver_checker_chat` | Chat-based solver-checker | Iterative refinement |
-| `solver_checker_stateless` | Stateless solver-checker | Independent verification |
+### Available Agents
 
----
+| Agent | Description | GSM8K | MATH-500 |
+|-------|-------------|-------|----------|
+| **Solver-Verifier (SFT+RL)** | Two-model architecture with iterative feedback | **86.8%** | **68.8%** |
+| **Solver-Verifier (SFT Both)** | Solver and verifier both SFT-trained | 86.4% | 68.0% |
+| **Solver-Verifier (SFT Solver)** | Only solver is SFT-trained | 86.0% | 67.0% |
+| **Solver-Verifier (SFT Verifier)** | Only verifier is SFT-trained | 84.0% | 67.4% |
+| **Solver-Verifier (Base)** | Both models use base checkpoint | 83.4% | 66.2% |
+| **Code Feedback (SFT+RL)** | Two-step: generate code → execute → answer | 84.6% | 67.8% |
+| **Code Feedback (SFT)** | Code feedback with SFT model | 82.8% | 66.0% |
+| **Code Feedback (Base)** | Code feedback with base model | 76.4% | 60.0% |
+| **Solver Checker with Tools** | Solver + checker with Python execution | 81.4% | 49.8% |
+| **Majority Vote** | Ensemble voting over 5 runs | 70.2% | 54.8% |
+| **Agent with Python Tools** | Single-pass with code execution | 72.6% | 45.2% |
 
-## Supported Models
+### Solver-Verifier Architecture
 
-| Model | Parameters | Status |
-|-------|------------|--------|
-| Qwen2.5-Math-1.5B | 1.5B | Primary |
-| Qwen2.5-Math-1.5B-Instruct | 1.5B | Supported |
-| Qwen3-0.6B | 0.6B | Lightweight |
-| Qwen3-1.7B | 1.7B | Supported |
-| Qwen3-4B-Thinking-2507 | 4B | Advanced |
+The Solver-Verifier workflow uses two models:
+1. **Solver**: Generates solutions
+2. **Verifier**: Validates with verdicts (CORRECT/INCORRECT/UNCLEAR)
 
----
+Supports up to 5 iterations with feedback loops. 88% of problems are solved in the first two iterations.
 
-## Supported Datasets
+```bash
+python -m evaluation.eval_agent \
+    --model "Qwen2.5-Math-1.5B" \
+    --agent "solver_verifier" \
+    --solver_checkpoint "checkpoints/sft_lora_r16" \
+    --verifier_checkpoint "checkpoints/sft_lora_r16" \
+    --max_iterations 5
+```
 
-| Dataset | Description | Test Samples |
-|---------|-------------|--------------|
-| **GSM8K** | Grade school math problems | 1,319 |
-| **MATH** | Competition math problems | ~5,000 |
-| **MATH-500** | Curated subset of MATH | 500 |
+### Code Feedback Architecture
+
+Two-step workflow that addresses the model's emergent code generation:
+1. **Generate reasoning with code**
+2. **Execute code** in sandbox
+3. **Inject execution results** into context
+4. **Generate final answer** based on feedback
+
+```bash
+python -m evaluation.eval_agent \
+    --model "Qwen2.5-Math-1.5B" \
+    --agent "code_feedback" \
+    --checkpoint "checkpoints/sft_lora_r16"
+```
+
+**Why it works**: The model generates Python code spontaneously but cannot mentally execute it correctly. External execution achieves 89.8% accuracy when code runs successfully.
 
 ---
 
@@ -227,76 +185,102 @@ python dataset/build_CoT_data.py \
 
 ```
 SLM-Math/
-├── agent/                      # Agent workflows
-│   ├── solver_checker_*.py     # Solver-checker variants
-│   ├── plan_and_reflection.py  # Planning agent
-│   ├── majority_vote.py        # Ensemble voting
-│   └── unified_config.py       # Unified generation configs
-├── configs/                    # Training configurations
-│   ├── sft_config.yaml
-│   ├── sft_config_qlora.yaml
-│   └── rl_config.yaml
-├── data/                       # Datasets (excluded from git)
-│   ├── gsm8k/
-│   ├── math/
-│   ├── math500/
-│   └── cot_generated/          # Generated CoT data
-├── dataset/                    # Data utilities
-│   ├── dataloader.py
-│   ├── build_CoT_data.py
-│   └── download_data_and_models.py
-├── evaluation/                 # Evaluation scripts
-│   ├── eval.py                 # Base evaluation
-│   ├── eval_agent.py           # Agent evaluation
-│   └── inference_adapter.py
-├── models/                     # Model utilities
-│   ├── inference.py            # Model loading & generation
-│   ├── inference_engine.py     # Unified inference engine
-│   ├── train_SFT.py            # SFT training
-│   └── train_RL.py             # RL training
-├── pretrained_models/          # Model checkpoints (excluded from git)
-├── checkpoints/                # Training checkpoints
-├── results/                    # Evaluation results (excluded from git)
-├── scripts/                    # Shell scripts
-│   └── template/               # Script templates
-├── utils/                      # Utility functions
-│   ├── prompt_utils.py         # Prompts & answer extraction
-│   ├── python_code_execution.py
-│   └── train_utils.py
-├── requirements.txt
-└── README.md
+├── agent/                          # Agent workflow implementations
+│   ├── solver_verifier.py          # Solver-Verifier architecture
+│   ├── code_feedback.py            # Code Feedback agent
+│   ├── majority_vote.py            # Ensemble voting
+│   └── unified_config.py           # Unified generation configs
+├── configs/                        # Training configurations
+│   ├── sft_config.yaml             # Full SFT (lr=5e-5, 2 epochs)
+│   ├── sft_config_qlora.yaml       # LoRA (rank=16, lr=1e-4)
+│   ├── rl_grpo_config.yaml         # GRPO (β=0.05, K=2)
+│   └── rl_multi_agent_config.yaml  # Multi-agent RL
+├── data/                           # Datasets
+│   ├── gsm8k/                      # GSM8K dataset
+│   ├── math/                       # MATH dataset
+│   ├── math500/                    # MATH-500 subset
+│   └── cot_generated/              # Generated CoT data (18,946 samples)
+├── dataset/                        # Data utilities
+│   ├── build_CoT_data.py           # CoT data generation
+│   └── download_data_and_models.py # Setup script
+├── evaluation/                     # Evaluation scripts
+│   ├── eval.py                     # Base evaluation
+│   └── eval_agent.py               # Agent evaluation
+├── models/                         # Model training
+│   ├── train_sft_lora.py           # LoRA training
+│   ├── train_sft_full.py           # Full SFT training
+│   ├── train_rl_grpo.py            # GRPO training
+│   ├── train_sft_verifier.py       # Verifier training
+│   ├── train_sft_solver.py         # Solver training
+│   └── __training_scripts_index__.py # Training script documentation
+├── scripts/                        # Shell scripts
+│   ├── train_sft_lora.sh           # LoRA training script
+│   ├── train_sft_full.sh           # Full SFT script
+│   ├── train_rl_grpo.sh            # GRPO script
+│   └── train_rl_code_feedback.sh   # Code feedback RL
+├── results/                        # Evaluation results (29 configs)
+├── utils/                          # Utility functions
+│   ├── prompt_utils.py             # Prompts & answer extraction
+│   └── python_code_execution.py    # Code sandbox
+└── FinalReportDocs/                # Final report (LaTeX)
+    └── FinalProjectDoc/
+        └── finalreport_version3.tex
 ```
 
 ---
 
-## Evaluation Parameters
+## Configuration Files
 
-### Base Evaluation (`evaluation.eval`)
+All configurations match the final report specifications:
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `--model` | Model name | Required |
-| `--checkpoint` | Checkpoint path | None |
-| `--round` | Test round identifier | Required |
-| `--dataset` | Dataset name | Required |
-| `--count` | Number of samples (0=all) | Required |
-| `--mode` | Evaluation mode | `standard` |
-| `--detailed` | Verbose output | `false` |
-| `--batch_size` | Batch size | 1 |
-| `--greedy` | Greedy decoding | `true` |
+| Config | Learning Rate | Epochs | Batch Size | Special Parameters |
+|--------|--------------|--------|------------|-------------------|
+| `sft_config.yaml` | 5e-5 | 2 | 128 | Full fine-tuning |
+| `sft_config_qlora.yaml` | 1e-4 | 2 | 128 | LoRA rank=16 |
+| `rl_grpo_config.yaml` | 5e-6 | 1 | 16 prompts | β=0.05, K=2 |
+| `rl_multi_agent_config.yaml` | 5e-6 | 1 | 16 prompts | Multi-agent setup |
 
-### Agent Evaluation (`evaluation.eval_agent`)
+---
 
-All base parameters plus:
+## Datasets
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `--agent` | Agent method | Required |
-| `--max_iterations` | Max iterations | 5 |
-| `--num_runs` | Runs for majority_vote | 5 |
-| `--temperature` | Sampling temperature | 0.7 |
-| `--enable_solver_tools` | Enable solver tools | `true` |
-| `--enable_checker_tools` | Enable checker tools | `true` |
+| Dataset | Train | Test | Description |
+|---------|-------|------|-------------|
+| **GSM8K** | 7,473 | 500 | Grade-school arithmetic (2-8 steps) |
+| **MATH** | 12,000 | - | Competition-level problems |
+| **MATH-500** | - | 500 | Curated MATH subset |
+
+**CoT Data Statistics**:
+- Total: 18,946 verified samples (97.3% success rate)
+- Average length: 320 tokens (GSM8K), 480 tokens (MATH)
+- Code generation: 45% (GSM8K), 72% (MATH)
+
+---
+
+## Key Insights
+
+### What Works
+
+1. **SFT is foundational**: Provides +14.2 pp by teaching structured reasoning
+2. **GRPO refines**: Adds +2.4 pp by optimizing for correctness
+3. **Solver quality > Verifier quality**: SFT on solver alone (+2.6 pp) beats SFT on verifier alone (+0.6 pp)
+4. **Simple workflows win**: Solver-Verifier (5 iterations max) outperforms complex tool pipelines
+5. **Code execution helps**: When code runs successfully, accuracy reaches 89.8%
+
+### What Doesn't Work
+
+1. **Long contexts hurt**: Agents with >2000 tokens degrade performance
+2. **Tool-only approaches fail**: Python Tools without verification drops to 45.2% on MATH-500
+3. **Majority Vote underperforms**: Only 70.2% vs 80.0% for SFT single-pass (small models have high variance)
+4. **Summarizers lose information**: 15-20 pp drops from compressing reasoning traces
+
+### Design Recommendations
+
+1. Start with **LoRA SFT** (efficient, 80.0% accuracy)
+2. Add **Solver-Verifier** for +6 pp gain
+3. Consider **Code Feedback** when models naturally generate code
+4. Apply **GRPO** only after SFT gains saturate
+5. **Avoid long-context approaches** for 1.5B models
 
 ---
 
@@ -304,35 +288,54 @@ All base parameters plus:
 
 - Python 3.10+
 - PyTorch 2.0+
-- CUDA 11.8+ (recommended for GPU training)
-- 16GB+ GPU memory (for training)
-- 8GB+ GPU memory (for inference)
+- CUDA 11.8+ (for GPU training)
+- 16GB+ GPU memory (training)
+- 8GB+ GPU memory (inference)
+
+**Hardware Used**:
+- NVIDIA H20 (96GB) for training
+- RTX 4090 (24GB) for evaluation
 
 See `requirements.txt` for complete dependencies.
 
 ---
 
-## Troubleshooting
+## Citation
 
-**Model not found**
-- Ensure model is downloaded to `pretrained_models/<model_name>/`
-- Check for `config.json` and `model.safetensors`
+If you use this code or find our work helpful, please cite:
 
-**CUDA out of memory**
-- Reduce batch size
-- Enable gradient checkpointing
-- Use LoRA/QLoRA for training
-
-**Dataset not found**
-- Run download script: `python dataset/download_data_and_models.py`
-- Verify dataset in `data/<dataset_name>/`
-
-**Import errors**
-- Activate conda environment: `conda activate slm_math`
-- Reinstall: `pip install -r requirements.txt --upgrade`
+```bibtex
+@article{wang2025slmmath,
+  title={SLM-Math: Empowering Small Language Models for Mathematical Reasoning},
+  author={Wang, Roger and Luo, Jinzi and Yuan, Yunchen},
+  journal={Columbia University COMS4705 Final Project},
+  year={2025}
+}
+```
 
 ---
 
 ## License
 
-This project is for academic research purposes. Model weights are subject to their respective licenses (Qwen models under Apache 2.0).
+This project is for academic research purposes. Model weights are subject to their respective licenses:
+- Qwen models: Apache 2.0
+- Datasets: See individual dataset licenses
+
+---
+
+## Acknowledgments
+
+- **TA Mentor**: Melody Ma
+- **Course**: Columbia University COMS4705 Natural Language Processing
+- **Models**: Qwen2.5-Math-1.5B by Alibaba Cloud
+- **Datasets**: GSM8K (OpenAI), MATH (Hendrycks et al.)
+- **APIs**: Grok-4.1-Fast (xAI), MiniMax-M2
+
+---
+
+## Contact
+
+For questions or issues, please open a GitHub issue or contact:
+- Roger Wang: lw3240@columbia.edu
+- Jinzi Luo: jl7199@columbia.edu
+- Yunchen Yuan: yy3610@columbia.edu

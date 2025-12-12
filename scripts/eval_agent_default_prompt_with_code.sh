@@ -18,22 +18,22 @@ set -e
 MODEL="Qwen2.5-Math-1.5B"
 
 # Checkpoint path (optional)
-CHECKPOINT=""
-
+CHECKPOINT="checkpoints/plain_sft_full_sft_20251209_125322/final_model"
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-1}"
 # Agent method
 AGENT="agent_default_prompt_with_code"
 
 # Test round name
-ROUND_NAME="test_default_prompt_code"
+ROUND_NAME="test_default_prompt_code_sft_full"
 
 # Dataset
-DATASET="math500"
+DATASET="gsm8k"
 
 # Number of test cases (0 = full dataset)
 COUNT=500
 
 # Detailed output
-DETAILED="false"
+DETAILED="true"
 
 # Apply chat template (for chat-tuned models)
 APPLY_CHAT_TEMPLATE="false"

@@ -1,24 +1,24 @@
 """
 Solver-Checker with Tools Multi-Agent Workflow
-带工具调用的Solver-Checker工作流
+Solver-Checker workflow with tool execution.
 
 STATELESS MODE + TOOL EXECUTION
-- 基于stateless架构（稳定、无幻觉）
-- Solver可以生成并执行Python代码
-- Checker可以验证代码和结果
-- 自动代码执行提升准确性
+- Built on a stateless architecture (stable, reduced hallucinations).
+- Solver can generate and execute Python code.
+- Checker can verify the code and results.
+- Automatic code execution improves accuracy.
 
-工作流程：
-1. Solver生成reasoning + code
-2. 自动执行Solver的代码
-3. Solver看到执行结果继续推理
-4. Checker验证代码逻辑和执行结果
-5. 基于反馈迭代改进
+Workflow:
+1. Solver generates reasoning + code.
+2. Execute solver code automatically.
+3. Solver sees execution results and continues reasoning.
+4. Checker verifies code logic and execution results.
+5. Iterate based on feedback.
 
-适用场景：
-- 需要精确计算的数学问题
-- 小模型容易算错的问题
-- 需要验证计算过程的场景
+When to use:
+- Math problems that need precise calculation.
+- Small models that easily miscalculate.
+- Scenarios that need verification of computation.
 """
 
 import sys

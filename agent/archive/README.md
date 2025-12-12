@@ -1,195 +1,195 @@
 # Multi-Agent Workflow
 
-从 `dev/multiagent` 分支提取的多智能体评估系统（Solver-Checker 迭代工作流）。
+Pulled from the `dev/multiagent` branch: a solver-checker iterative evaluation system.
 
-## 📁 文件说明
+## 📁 Files
 
 ```
 agent/
-├── README.md                       # 本文件
-├── run_multi_agent_eval.sh        # ⭐ 运行脚本
-├── analyze_results.py              # ⭐ 结果分析工具
+├── README.md                       # This file
+├── run_multi_agent_eval.sh         # ⭐ Runner script
+├── analyze_results.py              # ⭐ Result analysis tool
 │
-└── 以下是 multiagent 版本的核心模块（对应主项目的修改版）:
+└── Core modules for the multiagent variant (modified from main project):
     ├── eval_pipeline_multiagent.py     # evaluation/eval_pipeline.py
     ├── prompt_utils_multiagent.py      # utils/prompt_utils.py
     └── inference_multiagent.py         # models/inference.py
 ```
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 运行评估
+### 1. Run evaluation
 
 ```bash
 cd agent
 ./run_multi_agent_eval.sh
 ```
 
-### 2. 修改配置（可选）
+### 2. Optional: adjust config
 
-编辑 `run_multi_agent_eval.sh`:
+Edit `run_multi_agent_eval.sh`:
 
 ```bash
-MODEL="Qwen2.5-Math-1.5B"      # 模型名称
-DATASET="gsm8k"                # 数据集 (gsm8k/math)
-COUNT=20                       # 样本数量 (0=全部)
+MODEL="Qwen2.5-Math-1.5B"      # Model name
+DATASET="gsm8k"                # Dataset (gsm8k/math)
+COUNT=20                       # Number of samples (0 = all)
 ```
 
-### 3. 分析结果
+### 3. Analyze results
 
 ```bash
 python analyze_results.py
 ```
 
-## 💡 Multi-Agent 工作流
+## 💡 Multi-Agent Flow
 
 ```
-问题
+Problem
  ↓
-Solver 生成答案
+Solver generates an answer
  ↓
-Checker 验证 → 判断: CORRECT / INCORRECT / UNCLEAR
+Checker verifies → CORRECT / INCORRECT / UNCLEAR
  ↓
-如果 CORRECT: 完成 ✓
-如果不正确: 提供反馈 → Solver 重试 (最多5次)
+If CORRECT: done ✓
+If incorrect: provide feedback → Solver retries (up to 5 times)
 ```
 
-## 📊 分析报告 - 4类案例
+## 📊 Analysis Report — 4 Case Types
 
-运行 `python analyze_results.py` 后会生成 CSV 报告，包含：
+`python analyze_results.py` produces a CSV with:
 
-| 类型 | 说明 | 意义 |
-|------|------|------|
-| **Type 1: Improved** | 第一次错误 → 后来正确 | ✅ 系统有效 |
-| **Type 2: Degraded** | 第一次正确 → 后来错误 | ⚠️ 需要改进 |
-| **Type 3: First Try** | 一次成功 | 🎯 效率高 |
-| **Type 4: Unnecessary** | 正确但 Checker 未识别 | 🔍 可优化 |
+| Type | Description | Meaning |
+|------|-------------|---------|
+| **Type 1: Improved** | First wrong → later correct | ✅ System helpful |
+| **Type 2: Degraded** | First correct → later wrong | ⚠️ Needs improvement |
+| **Type 3: First Try** | Success in one shot | 🎯 Efficient |
+| **Type 4: Unnecessary** | Correct but checker missed it | 🔍 Checker can improve |
 
-## 🔧 关键参数
+## 🔧 Key Parameters
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `MODEL` | Solver 模型 | Qwen2.5-Math-1.5B |
-| `CHECKER_MODEL` | Checker 模型（可选） | Qwen2.5-Math-1.5B-Instruct |
-| `DATASET` | 数据集 | gsm8k, math |
-| `COUNT` | 样本数 | 20 (0=全部) |
-| `MODE` | 必须为 multi_agent | multi_agent |
+| Param | Description | Example |
+|-------|-------------|---------|
+| `MODEL` | Solver model | Qwen2.5-Math-1.5B |
+| `CHECKER_MODEL` | Optional checker model | Qwen2.5-Math-1.5B-Instruct |
+| `DATASET` | Dataset | gsm8k, math |
+| `COUNT` | Sample count | 20 (0 = all) |
+| `MODE` | Must be multi_agent | multi_agent |
 
-## 📈 输出文件
+## 📈 Output Files
 
-### 评估结果
+### Evaluation results
 ```
 results/<ROUND>_<MODEL>_<DATASET>_<COUNT>_<MMDD>/
-├── log/*.log          # 详细日志（每次迭代对话）
-├── metrics.csv        # 准确率等指标
-├── summary.txt        # 摘要
-└── answer.json        # 详细答案
+├── log/*.log          # Detailed logs (per-iteration dialogue)
+├── metrics.csv        # Accuracy and other metrics
+├── summary.txt        # Summary
+└── answer.json        # Detailed answers
 ```
 
-### 分析报告
+### Analysis report
 ```
 summary/<dataset>_<model>_<count>problems_<timestamp>_analysis.csv
 ```
 
-## 🆚 与 Main 分支的区别
+## 🆚 Differences vs Main Branch
 
-| 特性 | Main 分支 | Multiagent 分支 |
-|------|-----------|-----------------|
-| 评估模式 | standard, thinking | **+ multi_agent** |
-| 迭代机制 | 无 | **Solver-Checker 循环** |
-| 分析工具 | 基础 | **4类案例自动分析** |
+| Feature | Main | Multiagent |
+|---------|------|------------|
+| Eval modes | standard, thinking | **+ multi_agent** |
+| Iteration | none | **Solver-Checker loop** |
+| Analysis | basic | **Automatic 4-case analysis** |
 
-## 💻 使用示例
+## 💻 Usage Examples
 
-### 示例 1: 基础评估
+### Example 1: Basic evaluation
 
 ```bash
 ./run_multi_agent_eval.sh
 ```
 
-### 示例 2: 自定义参数
+### Example 2: Custom parameters
 
 ```bash
-# 编辑脚本
+# Edit the script
 nano run_multi_agent_eval.sh
 
-# 修改:
+# Change values:
 MODEL="Qwen3-1.7B"
 COUNT=100
 DATASET="math"
 
-# 运行
+# Run
 ./run_multi_agent_eval.sh
 ```
 
-### 示例 3: 使用不同的 Checker
+### Example 3: Different checker
 
 ```bash
-# 在 run_multi_agent_eval.sh 中取消注释:
+# Uncomment in run_multi_agent_eval.sh:
 CHECKER_MODEL="Qwen2.5-Math-1.5B-Instruct"
 ```
 
-## 📝 核心文件说明
+## 📝 Key Files
 
-### Python 模块
+### Python modules
 
-| 文件 | 来源 | 主要修改 |
-|------|------|---------|
-| `eval_pipeline_multiagent.py` | evaluation/eval_pipeline.py | 添加 multi_agent 模式 |
-| `prompt_utils_multiagent.py` | utils/prompt_utils.py | 添加 Solver/Checker prompt |
-| `inference_multiagent.py` | models/inference.py | 优化推理参数 |
-| `analyze_results.py` | 新增 | 4类案例分析工具 |
+| File | Source | Main change |
+|------|--------|-------------|
+| `eval_pipeline_multiagent.py` | evaluation/eval_pipeline.py | Adds multi_agent mode |
+| `prompt_utils_multiagent.py` | utils/prompt_utils.py | Adds Solver/Checker prompts |
+| `inference_multiagent.py` | models/inference.py | Tuning inference params |
+| `analyze_results.py` | new | 4-case analysis tool |
 
-### 关键函数（prompt_utils_multiagent.py）
+### Key functions (prompt_utils_multiagent.py)
 
 ```python
 format_prompt_solver(question, checker_feedback=None)    # Solver prompt
 format_prompt_checker(question, solver_response)         # Checker prompt
-parse_checker_verdict(checker_response)                  # 提取判断
-parse_checker_tip(checker_response)                      # 提取反馈
+parse_checker_verdict(checker_response)                  # Extract verdict
+parse_checker_tip(checker_response)                      # Extract feedback
 ```
 
-## 🐛 常见问题
+## 🐛 FAQ
 
-### Q: 如何运行？
+### Q: How to run?
 ```bash
 ./run_multi_agent_eval.sh
 ```
 
-### Q: 结果在哪里？
-- 评估: `../results/<最新目录>/`
-- 分析: `../summary/*.csv`
+### Q: Where are results?
+- Evaluation: `../results/<latest>/`
+- Analysis: `../summary/*.csv`
 
-### Q: 如何分析？
+### Q: How to analyze?
 ```bash
 python analyze_results.py
 ```
 
-### Q: Checker 总是返回 UNCLEAR？
-优化 `prompt_utils_multiagent.py` 中的 `format_prompt_checker()` 函数。
+### Q: Checker always returns UNCLEAR?
+Refine `format_prompt_checker()` in `prompt_utils_multiagent.py`.
 
-## 🎯 优化建议
+## 🎯 Optimization Tips
 
-根据分析报告：
+Based on the analysis report:
 
-1. **Improved Cases 多** → 系统有效，继续使用
-2. **Degraded Cases 多** → 优化 Checker prompt
-3. **Unnecessary Iterations 多** → 优化 Checker 识别能力
-4. **First Try Rate 低** → 优化 Solver prompt
+1. **Many Improved cases** → system is effective; keep using.
+2. **Many Degraded cases** → improve the checker prompt.
+3. **Many Unnecessary iterations** → strengthen checker detection.
+4. **Low First Try rate** → improve solver prompt.
 
-## ✅ 检查清单
+## ✅ Checklist
 
-运行前:
-- [ ] 模型文件在 `../pretrained_models/`
-- [ ] 数据集在 `../data/`
-- [ ] 已配置 `run_multi_agent_eval.sh`
+Before running:
+- [ ] Models in `../pretrained_models/`
+- [ ] Datasets in `../data/`
+- [ ] `run_multi_agent_eval.sh` configured
 
-运行后:
-- [ ] 查看 `../results/<dir>/summary.txt`
-- [ ] 运行 `python analyze_results.py`
-- [ ] 查看 4类案例统计
+After running:
+- [ ] Check `../results/<dir>/summary.txt`
+- [ ] Run `python analyze_results.py`
+- [ ] Review 4-case statistics
 
 ---
 
-**快速开始**: `./run_multi_agent_eval.sh`  
-**来源**: `dev/multiagent` 分支
+**Quick start**: `./run_multi_agent_eval.sh`  
+**Source**: `dev/multiagent` branch

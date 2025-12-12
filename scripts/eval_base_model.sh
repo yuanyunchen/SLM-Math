@@ -2,13 +2,13 @@
 
 ################################################################################
 # Evaluation Script Template (with Multi-Worker Support)
-# 通用评估脚本模板 - 支持多进程并行评估
+# General evaluation script template - supports multi-process parallel runs
 ################################################################################
 
 set -e  # Exit on error
 
 ################################################################################
-# Configuration Variables (需要修改)
+# Configuration Variables (edit as needed)
 
 # Model to evaluate
 MODEL="Qwen2.5-Math-1.5B"
@@ -17,13 +17,15 @@ MODEL="Qwen2.5-Math-1.5B"
 # Set to empty string "" to use base pretrained model
 # For LoRA: "checkpoints/lora_r16_lora_r16_20251125_164902/final_model"
 # For SFT: "checkpoints/sft_lr5e5_sft_20251125_190347/final_model"
-CHECKPOINT=""
+CHECKPOINT="checkpoints/plain_lora_full_lora_r32_20251209_125734/final_model"
+# GPU selection (default to cuda:2)
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-1}"
 
 # Test round name
-ROUND_NAME="my_evaluation"
+ROUND_NAME="my_evaluation_lora_full"
 
 # Dataset: "gsm8k", "math500"
-DATASET="gsm8k"
+DATASET="math500"
 
 # Number of test cases (0 = full dataset)
 COUNT=500
@@ -32,7 +34,7 @@ COUNT=500
 MODE="standard"
 
 # Streaming console output (per-sample print)
-DETAILED="false"
+DETAILED="true"
 
 # Log full sample details to file (question, response, answer)
 LOG_SAMPLES="true"
@@ -48,17 +50,17 @@ GREEDY="true"
 APPLY_CHAT_TEMPLATE="false"
 
 ################################################################################
-# Multi-Worker Settings (多进程并行)
+# Multi-Worker Settings (parallel execution)
 
 # Number of workers (0 = single process, no parallelism)
 # Workers will be distributed evenly across available GPUs
 WORKERS=0
 
 # Available GPUs (comma-separated, e.g., "0,1,2,3")
-GPUS="0"
+GPUS="1"
 
 ################################################################################
-# Advanced Settings (可选)
+# Advanced Settings (optional)
 
 # Resume from existing results directory (leave empty to start fresh)
 RESUME_DIR=""

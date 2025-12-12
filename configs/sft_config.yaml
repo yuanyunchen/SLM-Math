@@ -63,7 +63,7 @@ qlora:
 data:
   # Training data files (can be single file or list)
   train_files:
-    - "data/cot_generated/cot_x_ai_grok_4_1_fast_reasoning_gsm8k_train_7473_1120_2035/cot_data.json"
+    - "data/cot_generated/first_round_final_gsm8k_math/first_round_final_gsm8k_math.json"
   # Dataset name (for prompt formatting)
   dataset_name: "gsm8k"
   # Maximum sequence length (tokens)
@@ -86,24 +86,24 @@ training:
   
   # Batch size per device (GPU)
   # Adjust based on available memory
-  per_device_train_batch_size: 2
-  per_device_eval_batch_size: 2
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
   
   # Gradient accumulation steps
   # Effective batch size = per_device_batch_size × gradient_accumulation_steps × num_gpus
-  # Recommended effective batch size: 32-64 for math reasoning tasks
-  gradient_accumulation_steps: 16
+  # Effective batch size: 16 × 8 = 128 (balances gradient stability with memory constraints)
+  gradient_accumulation_steps: 8
   
   # Number of training epochs
-  num_train_epochs: 3
+  num_train_epochs: 2  # 2 epochs prevent overfitting while ensuring full data coverage
   
   # Maximum training steps (set to 0 to disable, will use num_train_epochs instead)
   max_steps: 0
   
   # Learning rate
-  # LoRA: 1e-4 to 2e-4
-  # Full fine-tuning: 5e-6 to 1e-5
-  learning_rate: 2.0e-4
+  # LoRA: 1e-4 (chosen for stability and convergence)
+  # Full fine-tuning: 5e-5 (lower to prevent catastrophic forgetting)
+  learning_rate: 1.0e-4
   
   # Learning rate scheduler type
   # Options: "linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"

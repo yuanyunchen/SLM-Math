@@ -1,0 +1,2 @@
+model,agent,dataset,total_samples,correct,accuracy,first_try_correct,first_try_accuracy,improved_cases,degraded_cases,failed_cases,avg_time_per_sample,total_time,timestamp,avg_iterations,max_iterations
+Qwen2.5-Math-1.5B,solver_verifier,gsm8k,500,417,0.834,409,0.818,11,3,65,31.60283922624588,15801.41961312294,2025-12-08T17:33:49.057544,1.172,3

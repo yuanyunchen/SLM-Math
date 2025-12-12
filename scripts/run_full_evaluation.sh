@@ -1,38 +1,38 @@
 #!/bin/bash
 
 ################################################################################
-# 完整评估脚本 - 所有模型配置和工作流
-# 
-# 用途: 系统性评估所有agent在不同模型配置下的性能
-# 
-# 模型配置:
+# Full evaluation script - all model configurations and workflows
+#
+# Purpose: systematically evaluate all agents under different model setups.
+#
+# Model configurations:
 #   1. Qwen2.5-Math-1.5B (solver only)
 #   2. Qwen3-1.7B (solver only)
 #   3. Qwen2.5-Math-1.5B (solver) + Qwen3-1.7B (checker)
-# 
-# 工作流:
-#   - Base Direct (配置1, 2)
-#   - Majority Vote (配置1, 2)
-#   - Solver-Checker系列 (配置2, 3)
-#   - Plan-and-Reflection (配置1, 2)
 #
-# 总测试数: 18个
+# Workflows:
+#   - Base Direct (configs 1, 2)
+#   - Majority Vote (configs 1, 2)
+#   - Solver-Checker family (configs 2, 3)
+#   - Plan-and-Reflection (configs 1, 2)
+#
+# Total tests: 18
 ################################################################################
 
 set -e  # Exit on error
 
 ################################################################################
-# 配置参数
+# Configuration
 ################################################################################
 
-# Sample数量 (可调整)
-# 推荐: 40 (约8.8小时) 或 45 (约9.9小时)
+# Number of samples (adjustable)
+# Recommended: 40 (~8.8h) or 45 (~9.9h)
 COUNT=${1:-40}
 
 # Dataset
 DATASET="gsm8k"
 
-# Round名称 (添加时间戳)
+# Round name (adds timestamp)
 TIMESTAMP=$(date +"%m%d_%H%M")
 ROUND_NAME="full_eval_${TIMESTAMP}"
 
@@ -40,10 +40,10 @@ ROUND_NAME="full_eval_${TIMESTAMP}"
 BATCH_SIZE=${2:-1}  # Default: 1 (no batching), recommended: 16-32 for A100
 INFERENCE_BACKEND=${3:-transformers}  # Default: transformers, options: transformers, vllm
 
-# 详细输出
-DETAILED="false"  # 改为true可以看到详细过程，但会很慢
+# Verbose output
+DETAILED="false"  # Set true to see per-sample details (slower)
 
-# 迭代/运行次数限制
+# Iteration/run limits
 MAX_ITERATIONS=5
 NUM_RUNS=5
 
@@ -82,12 +82,12 @@ log_section() {
 }
 
 ################################################################################
-# 预检查
+# Pre-checks
 ################################################################################
 
-log_section "预检查"
+log_section "Pre-checks"
 
-# 检查Python环境
+# Check Python environment
 if ! command -v python &> /dev/null; then
     log_error "Python not found!"
     exit 1
@@ -95,11 +95,11 @@ fi
 
 log_info "Python version: $(python --version)"
 
-# 检查工作目录
+# Check working directory
 cd /Users/yuanyunchen/Desktop/GitHub/SLM-Math || exit 1
 log_info "Working directory: $(pwd)"
 
-# 检查模型文件
+# Check model files
 MODEL1="Qwen2.5-Math-1.5B"
 MODEL2="Qwen3-1.7B"
 
@@ -115,8 +115,8 @@ fi
 
 log_success "Models found: $MODEL1, $MODEL2"
 
-# 显示配置
-log_section "评估配置"
+# Show configuration
+log_section "Evaluation Configuration"
 echo "Round Name:       $ROUND_NAME"
 echo "Dataset:          $DATASET"
 echo "Samples/Test:     $COUNT"
@@ -127,7 +127,7 @@ echo "Num Runs (MV):    $NUM_RUNS"
 echo "Detailed Output:  $DETAILED"
 echo ""
 
-# 估算时间
+# Estimate time
 ESTIMATED_HOURS=$(python3 -c "
 workflows = [
     (2, 10),   # Base Direct (1-2)
@@ -144,13 +144,13 @@ total = sum(configs * $COUNT * time for configs, time in workflows)
 print(f'{total/3600:.1f}')
 ")
 
-echo "预计总时间:      约 ${ESTIMATED_HOURS} 小时"
+echo "Estimated total time: ~${ESTIMATED_HOURS} hours"
 echo ""
 
-read -p "确认开始评估? (y/n): " -n 1 -r
+read -p "Start evaluation? (y/n): " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    log_warning "评估已取消"
+    log_warning "Evaluation canceled"
     exit 0
 fi
 
@@ -162,7 +162,7 @@ START_TIME=$(date +%s)
 TOTAL_TESTS=18
 CURRENT_TEST=0
 
-log_section "开始完整评估"
+log_section "Start full evaluation"
 
 ################################################################################
 # 1. Base Direct - Qwen2.5-Math-1.5B
@@ -181,7 +181,7 @@ python -m evaluation.eval \
     --batch_size "$BATCH_SIZE" \
     --inference_backend "$INFERENCE_BACKEND"
 
-log_success "完成: Base Direct - $MODEL1"
+log_success "Done: Base Direct - $MODEL1"
 
 ################################################################################
 # 2. Base Direct - Qwen3-1.7B
@@ -200,7 +200,7 @@ python -m evaluation.eval \
     --batch_size "$BATCH_SIZE" \
     --inference_backend "$INFERENCE_BACKEND"
 
-log_success "完成: Base Direct - $MODEL2"
+log_success "Done: Base Direct - $MODEL2"
 
 ################################################################################
 # 3. Majority Vote - Qwen2.5-Math-1.5B
@@ -222,7 +222,7 @@ python -m evaluation.eval_agent \
     --batch_size "$BATCH_SIZE" \
     --inference_backend "$INFERENCE_BACKEND"
 
-log_success "完成: Majority Vote - $MODEL1"
+log_success "Done: Majority Vote - $MODEL1"
 
 ################################################################################
 # 4. Majority Vote - Qwen3-1.7B
@@ -244,7 +244,7 @@ python -m evaluation.eval_agent \
     --batch_size "$BATCH_SIZE" \
     --inference_backend "$INFERENCE_BACKEND"
 
-log_success "完成: Majority Vote - $MODEL2"
+log_success "Done: Majority Vote - $MODEL2"
 
 ################################################################################
 # 5. Solver-Checker Stateless (Qwen2.5-Math + Qwen3)
@@ -263,7 +263,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Stateless"
+log_success "Done: Solver-Checker Stateless"
 
 ################################################################################
 # 6. Solver-Checker Stateless - Qwen3 only
@@ -281,7 +281,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Stateless - $MODEL2 only"
+log_success "Done: Solver-Checker Stateless - $MODEL2 only"
 
 ################################################################################
 # 7. Solver-Checker Summarizer (Qwen2.5-Math + Qwen3)
@@ -300,7 +300,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Summarizer"
+log_success "Done: Solver-Checker Summarizer"
 
 ################################################################################
 # 8. Solver-Checker Summarizer - Qwen3 only
@@ -318,7 +318,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Summarizer - $MODEL2 only"
+log_success "Done: Solver-Checker Summarizer - $MODEL2 only"
 
 ################################################################################
 # 9. Solver-Checker Summarizer Chat (Qwen2.5-Math only)
@@ -337,7 +337,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Summarizer Chat"
+log_success "Done: Solver-Checker Summarizer Chat"
 
 ################################################################################
 # 10. Solver-Checker Summarizer Chat - Qwen3 only
@@ -355,7 +355,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Summarizer Chat - $MODEL2 only"
+log_success "Done: Solver-Checker Summarizer Chat - $MODEL2 only"
 
 ################################################################################
 # 11. Solver-Checker With Tools (Qwen2.5-Math + Qwen3)
@@ -376,7 +376,7 @@ python -m evaluation.eval_agent \
     --enable_checker_tools "true" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker With Tools"
+log_success "Done: Solver-Checker With Tools"
 
 ################################################################################
 # 12. Solver-Checker With Tools - Qwen3 only
@@ -396,7 +396,7 @@ python -m evaluation.eval_agent \
     --enable_checker_tools "true" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker With Tools - $MODEL2 only"
+log_success "Done: Solver-Checker With Tools - $MODEL2 only"
 
 ################################################################################
 # 13. Solver-Checker Trivial Chat (Qwen2.5-Math only)
@@ -414,7 +414,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Trivial Chat"
+log_success "Done: Solver-Checker Trivial Chat"
 
 ################################################################################
 # 14. Solver-Checker Trivial Chat - Qwen3 only
@@ -432,7 +432,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Trivial Chat - $MODEL2 only"
+log_success "Done: Solver-Checker Trivial Chat - $MODEL2 only"
 
 ################################################################################
 # 15. Solver-Checker Chat (Optimized) (Qwen2.5-Math only)
@@ -450,7 +450,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Chat (Optimized)"
+log_success "Done: Solver-Checker Chat (Optimized)"
 
 ################################################################################
 # 16. Solver-Checker Chat (Optimized) - Qwen3 only
@@ -468,7 +468,7 @@ python -m evaluation.eval_agent \
     --max_iterations "$MAX_ITERATIONS" \
     --detailed "$DETAILED"
 
-log_success "完成: Solver-Checker Chat (Optimized) - $MODEL2 only"
+log_success "Done: Solver-Checker Chat (Optimized) - $MODEL2 only"
 
 ################################################################################
 # 17. Plan-and-Reflection - Qwen2.5-Math-1.5B
@@ -487,7 +487,7 @@ python -m evaluation.eval_agent \
     --max_subproblems 5 \
     --detailed "$DETAILED"
 
-log_success "完成: Plan-and-Reflection - $MODEL1"
+log_success "Done: Plan-and-Reflection - $MODEL1"
 
 ################################################################################
 # 12. Plan-and-Reflection - Qwen3-1.7B
@@ -506,7 +506,7 @@ python -m evaluation.eval_agent \
     --max_subproblems 5 \
     --detailed "$DETAILED"
 
-log_success "完成: Plan-and-Reflection - $MODEL2"
+log_success "Done: Plan-and-Reflection - $MODEL2"
 
 ################################################################################
 # 评估完成
@@ -517,102 +517,102 @@ ELAPSED=$((END_TIME - START_TIME))
 HOURS=$((ELAPSED / 3600))
 MINUTES=$(((ELAPSED % 3600) / 60))
 
-log_section "评估完成！"
+log_section "Evaluation complete!"
 
-echo "总耗时: ${HOURS}小时 ${MINUTES}分钟"
-echo "完成测试: $TOTAL_TESTS 个"
-echo "总样本数: $((COUNT * TOTAL_TESTS))"
+echo "Total time: ${HOURS}h ${MINUTES}m"
+echo "Tests completed: $TOTAL_TESTS"
+echo "Total samples: $((COUNT * TOTAL_TESTS))"
 echo ""
 echo "结果目录: results/"
-echo "Round前缀: ${ROUND_NAME}"
+echo "Round prefix: ${ROUND_NAME}"
 echo ""
 
-# 生成结果汇总
-log_info "生成结果汇总..."
+# Generate summary
+log_info "Generating summary..."
 
 SUMMARY_FILE="results/${ROUND_NAME}_SUMMARY.txt"
 
 cat > "$SUMMARY_FILE" << EOF
 ================================================================================
-完整评估结果汇总
+Full Evaluation Summary
 ================================================================================
 
-评估时间: $(date)
+Evaluated at: $(date)
 Round: $ROUND_NAME
 Dataset: $DATASET
 Samples/Test: $COUNT
-总耗时: ${HOURS}h ${MINUTES}m
+Total time: ${HOURS}h ${MINUTES}m
 
 ================================================================================
-测试列表
+Test List
 ================================================================================
 
 1.  Base Direct - $MODEL1
-    目录: results/${ROUND_NAME}_base_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_base_${MODEL1}_${DATASET}_${COUNT}_*/
 
 2.  Base Direct - $MODEL2
-    目录: results/${ROUND_NAME}_base_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_base_${MODEL2}_${DATASET}_${COUNT}_*/
 
 3.  Majority Vote - $MODEL1
-    目录: results/${ROUND_NAME}_mv_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_mv_${MODEL1}_${DATASET}_${COUNT}_*/
 
 4.  Majority Vote - $MODEL2
-    目录: results/${ROUND_NAME}_mv_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_mv_${MODEL2}_${DATASET}_${COUNT}_*/
 
 5.  Solver-Checker Stateless (2.5+3)
-    目录: results/${ROUND_NAME}_stateless_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_stateless_${MODEL1}_${DATASET}_${COUNT}_*/
 
 6.  Solver-Checker Stateless (3 only)
-    目录: results/${ROUND_NAME}_stateless_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_stateless_${MODEL2}_${DATASET}_${COUNT}_*/
 
 7.  Solver-Checker Summarizer (2.5+3)
-    目录: results/${ROUND_NAME}_summarizer_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_summarizer_${MODEL1}_${DATASET}_${COUNT}_*/
 
 8.  Solver-Checker Summarizer (3 only)
-    目录: results/${ROUND_NAME}_summarizer_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_summarizer_${MODEL2}_${DATASET}_${COUNT}_*/
 
 9.  Solver-Checker Summarizer Chat (2.5 only)
-    目录: results/${ROUND_NAME}_summarizer_chat_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_summarizer_chat_${MODEL1}_${DATASET}_${COUNT}_*/
 
 10. Solver-Checker Summarizer Chat (3 only)
-    目录: results/${ROUND_NAME}_summarizer_chat_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_summarizer_chat_${MODEL2}_${DATASET}_${COUNT}_*/
 
 11. Solver-Checker With Tools (2.5+3)
-    目录: results/${ROUND_NAME}_with_tools_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_with_tools_${MODEL1}_${DATASET}_${COUNT}_*/
 
 12. Solver-Checker With Tools (3 only)
-    目录: results/${ROUND_NAME}_with_tools_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_with_tools_${MODEL2}_${DATASET}_${COUNT}_*/
 
 13. Solver-Checker Trivial Chat (2.5 only)
-    目录: results/${ROUND_NAME}_trivial_chat_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_trivial_chat_${MODEL1}_${DATASET}_${COUNT}_*/
 
 14. Solver-Checker Trivial Chat (3 only)
-    目录: results/${ROUND_NAME}_trivial_chat_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_trivial_chat_${MODEL2}_${DATASET}_${COUNT}_*/
 
 15. Solver-Checker Chat (Optimized) (2.5 only)
-    目录: results/${ROUND_NAME}_chat_opt_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_chat_opt_${MODEL1}_${DATASET}_${COUNT}_*/
 
 16. Solver-Checker Chat (Optimized) (3 only)
-    目录: results/${ROUND_NAME}_chat_opt_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_chat_opt_${MODEL2}_${DATASET}_${COUNT}_*/
 
 17. Plan-and-Reflection - $MODEL1
-    目录: results/${ROUND_NAME}_planref_${MODEL1}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_planref_${MODEL1}_${DATASET}_${COUNT}_*/
 
 18. Plan-and-Reflection - $MODEL2
-    目录: results/${ROUND_NAME}_planref_${MODEL2}_${DATASET}_${COUNT}_*/
+    Directory: results/${ROUND_NAME}_planref_${MODEL2}_${DATASET}_${COUNT}_*/
 
 ================================================================================
-下一步分析
+Next Steps for Analysis
 ================================================================================
 
-使用以下Python脚本分析所有结果:
+Use the Python snippet below to analyze all results:
 
 python3 << 'PYEOF'
 import json
 from pathlib import Path
 import glob
 
-# 查找所有结果目录
+# Locate all result directories
 result_dirs = glob.glob("results/${ROUND_NAME}_*_${DATASET}_${COUNT}_*/")
 
 results = []
@@ -628,25 +628,25 @@ for result_dir in result_dirs:
                 'total': data.get('total', 0)
             })
 
-# 排序并显示
+# Sort and display
 results.sort(key=lambda x: x['accuracy'], reverse=True)
-print(f"\n{'排名':<5} {'准确率':<10} {'正确数':<10} {'测试名称'}")
+print(f"\n{'Rank':<5} {'Accuracy':<10} {'Correct':<10} {'Test Name'}")
 print("-" * 80)
 for i, r in enumerate(results, 1):
-    print(f"{i:<5} {r['accuracy']*100:>6.2f}%   {r['correct']:>3}/{r['total']:<3}     {r['name']}")
+    print(f\"{i:<5} {r['accuracy']*100:>6.2f}%   {r['correct']:>3}/{r['total']:<3}     {r['name']}\")
 PYEOF
 
 ================================================================================
 EOF
 
-log_success "结果汇总已保存到: $SUMMARY_FILE"
+log_success "Summary saved to: $SUMMARY_FILE"
 
-log_section "🎉 所有评估完成！"
+log_section "All evaluations finished!"
 
-echo "查看结果汇总:"
+echo "View summary:"
 echo "  cat $SUMMARY_FILE"
 echo ""
-echo "查看具体结果:"
+echo "View individual results:"
 echo "  ls -d results/${ROUND_NAME}_*/"
 echo ""
 

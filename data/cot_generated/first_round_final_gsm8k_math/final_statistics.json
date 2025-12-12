@@ -1,0 +1,24 @@
+{
+  "total_samples": 19473,
+  "successful_samples": 18946,
+  "success_rate": 0.973,
+  "gsm8k": {
+    "total": 7473,
+    "successful": 7298,
+    "success_rate": 0.977,
+    "average_length_tokens": 320,
+    "with_code_percentage": 0.45,
+    "round_1": 7146,
+    "round_2": 108,
+    "round_3": 44
+  },
+  "math": {
+    "total": 12000,
+    "successful": 11648,
+    "success_rate": 0.971,
+    "average_length_tokens": 480,
+    "with_code_percentage": 0.72,
+    "round_1": 11507,
+    "round_2": 141
+  }
+}

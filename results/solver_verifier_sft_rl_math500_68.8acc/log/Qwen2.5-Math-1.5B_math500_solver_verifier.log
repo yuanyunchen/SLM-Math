@@ -1,0 +1,10 @@
+================================================================================
+Starting agent evaluation - 500 samples
+================================================================================
+
+
+================================================================================
+[Sample 1/500 | Index: 0]
+Question: Convert the point $(0,3)$ in rectangular coordinates to polar coordinates.  Enter your answer in the form $(r,\theta),$ where $r > 0$ and $0 \le \theta < 2 \pi.$
+Ground Truth: \left( 3, \frac{\pi}{2} \right)
+Full Question: Convert the point $(0,3)$ in rectangular coordinates to polar coordinates.  Enter your answer in the form $(r,\theta),$ where $r > 0$ and $0 \le \theta < 2 \pi.$
